@@ -158,8 +158,8 @@ class InputHandler(tff.DefaultHandler):
     def __clear(self):
         candidate_length = self.__candidate.getwidth()
         cooking_length = len(self.__word_buffer) * 2 + len(self.__context.getbuffer())
-        s = ' ' * max(candidate_length, cooking_length)
-        self.__write('\x1b7%s\x1b8\x1b[?25h' % s)
+        s = u' ' * max(candidate_length, cooking_length)
+        self.__write(u'\x1b7%s\x1b8\x1b[?25h' % s)
 
     def __write(self, s):
         self.__stdout.write(s.encode(self.__termenc))
@@ -169,16 +169,16 @@ class InputHandler(tff.DefaultHandler):
         if not self.__candidate.isempty():
             result, remarks = self.__candidate.getcurrent()
 
-            self.__write('\x1b7\x1b[1;4;32;44m%s\x1b[m\x1b8\x1b[?25l' % result)
+            self.__write(u'\x1b7\x1b[1;4;32;44m%s\x1b[m\x1b8\x1b[?25l' % result)
             if remarks:
-                self.__write('\x1b]0;[sskk] 三 ┏( ^o^)┛ ＜ %s - %s\x07' % (result, remarks))
+                self.__write(u'\x1b]0;[sskk] 三 ┏( ^o^)┛ ＜ %s - %s\x07' % (result, remarks))
         else:
             s1 = self.__word_buffer
             s2 = self.__context.getbuffer() 
             if not len(s1) + len(s2) == 0:
-                self.__write('\x1b7\x1b[1;4;31m%s\x1b[1;4;33m%s\x1b[m\x1b8\x1b[?25l' % (s1, s2))
+                self.__write(u'\x1b7\x1b[1;4;31m%s\x1b[1;4;33m%s\x1b[m\x1b8\x1b[?25l' % (s1, s2))
             else:
-                self.__write('\x1b[?25h')
+                self.__write(u'\x1b[?25h')
 
     def __draincharacters(self):
         s = self.__context.getbuffer()
@@ -400,7 +400,7 @@ class InputHandler(tff.DefaultHandler):
                             s = backup[1:]
                             s += self.__word_buffer
                             s += self.__context.getbuffer()
-                            self.__write('\x1b7\x1b[1;4;35m%s\x1b[m\x1b8\x1b[?25l' % s)
+                            self.__write(u'\x1b7\x1b[1;4;35m%s\x1b[m\x1b8\x1b[?25l' % s)
 
                         # 先行する入力があるか
                         elif len(self.__word_buffer) > 1:
@@ -435,7 +435,7 @@ class InputHandler(tff.DefaultHandler):
                             s = backup[1:]
                             s += self.__word_buffer
                             s += self.__context.getbuffer()
-                            self.__write('\x1b7\x1b[1;4;31m%s\x1b[m\x1b8\x1b[?25l' % s)
+                            self.__write(u'\x1b7\x1b[1;4;31m%s\x1b[m\x1b8\x1b[?25l' % s)
                             self.__word_buffer = u''
                         if self.__context.isfinal():
                             if backup or len(self.__word_buffer) == 0:
