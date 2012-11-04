@@ -1,0 +1,6 @@
+include COPYING
+include README.md
+include README-ja.md
+include README.rst
+include sskk/skk/SKK-JISYO.L
+include *.py
