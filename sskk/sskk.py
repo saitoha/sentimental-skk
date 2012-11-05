@@ -22,8 +22,10 @@ def main():
     import sys, os, optparse, select
     import tff
     import skk
+
     # parse options and arguments
-    parser = optparse.OptionParser(usage='usage: %prog [options] [command | - ]')
+    usage = 'usage: %prog [options] [command | - ]'
+    parser = optparse.OptionParser(usage=usage)
 
     parser.add_option('--version', dest='version',
                       action="store_true", default=False,
@@ -74,7 +76,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         command = '/bin/sh'
 
     # retrive TERM setting
-    if not options.term is None:
+    if options.term:
         term = options.term
     elif not os.getenv('TERM') is None:
         term = os.getenv('TERM')
@@ -82,7 +84,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         term = 'xterm'
 
     # retrive LANG setting
-    if not options.lang is None:
+    if options.lang:
         lang = options.term
     elif not os.getenv('LANG') is None:
         lang = os.getenv('LANG')
@@ -91,7 +93,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         lang = '%s.%s' % locale.getdefaultlocale()
 
     # retrive terminal encoding setting
-    if not options.enc is None:
+    if options.enc:
         termenc = options.enc
     else:
         import locale
@@ -102,11 +104,12 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     inputhandler = skk.InputHandler(sys.stdout, termenc)
     outputhandler = skk.OutputHandler()
 
-    inputscanner=tff.DefaultScanner()
+    inputscanner = tff.DefaultScanner()
 
-    outputscanner=tff.DefaultScanner()
+    outputscanner = tff.DefaultScanner()
 
-    sys.stdout.write("\x1b]0;[sskk]\x07")
+    startmessage = u'\x1b]0;sskk\x07'
+    sys.stdout.write(startmessage)
 
     settings = tff.Settings(command=command,
                             term=term,
@@ -123,7 +126,8 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     session = tff.Session()
     session.start(settings)
 
-    sys.stdout.write("\x1b]0;三 ┏( ^o^)┛ ＜ sskkを使ってくれてありがとう\x07")
+    endmessage = u'\x1b]0;三 ┏( ^o^)┛ ＜ sskkを使ってくれてありがとう\x07'
+    sys.stdout.write(endmessage)
 
 ''' main '''
 if __name__ == '__main__':    

@@ -80,8 +80,9 @@ def _maketree(rule):
     for key, value in tree.items(): 
         context = tree
         if key == 0x6e: # 'n'
+            #value['buffer'] = u'n'
             for code in [ord(c) for c in list('bcdfghjkmprstvwxz')]: 
-                value[code] = { 'value': rule['nn'], 'next': context[code], buffer: 'nn' }
+                value[code] = { 'value': rule['nn'], 'next': context[code], 'buffer': 'nn' }
         else:
             if not value.has_key('value'):
                 value[key] = { 'value': rule['xtu'], 'next': context[key], 'buffer': chr(key) + chr(key) }

@@ -57,10 +57,11 @@ def to_hira(s):
     ''' convert Japanese Katakana String into Hiragana '''
     def conv(c):
         if _kata_to_hira.has_key(c):
-            return _hira_to_kata[c]
+            return _kata_to_hira[c]
         return c
     return ''.join([conv(c) for c in s])
 
-thread.start_new_thread(_loaddb, ())
+_loaddb()
+#thread.start_new_thread(_loaddb, ())
 
 

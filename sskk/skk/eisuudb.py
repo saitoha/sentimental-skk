@@ -58,5 +58,6 @@ def to_zenkaku_cp(code):
         return _han_to_zen_cp[code]
     return code
 
-thread.start_new_thread(_loaddb, ())
+#thread.start_new_thread(_loaddb, ())
+_loaddb()
 
