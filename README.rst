@@ -47,6 +47,7 @@ Reference
 ---------
  - Daredevil SKK (DDSKK) http://openlab.ring.gr.jp/skk/ddskk-ja.html
  - libfep https://github.com/ueno/libfep
+ - uim https://code.google.com/p/uim/
  - Unicode Text Editor MinEd http://towo.net/mined/
 
 
