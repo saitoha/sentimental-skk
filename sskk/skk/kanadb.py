@@ -20,46 +20,58 @@
 
 import thread
 
-_kanadb = [[u'あ', u'ア'], [u'い', u'イ'], [u'う', u'ウ'], [u'え', u'エ'], [u'お', u'オ'],
-           [u'ぁ', u'ァ'], [u'ぃ', u'ィ'], [u'ぅ', u'ゥ'], [u'ぇ', u'ェ'], [u'ぉ', u'ォ'],
-           [u'か', u'カ'], [u'き', u'キ'], [u'く', u'ク'], [u'け', u'ケ'], [u'こ', u'コ'],
-           [u'が', u'ガ'], [u'ぎ', u'ギ'], [u'ぐ', u'グ'], [u'げ', u'ゲ'], [u'ご', u'ゴ'],
-           [u'さ', u'サ'], [u'し', u'シ'], [u'す', u'ス'], [u'せ', u'セ'], [u'そ', u'ソ'],
-           [u'ざ', u'ザ'], [u'じ', u'ジ'], [u'ず', u'ズ'], [u'ぜ', u'ゼ'], [u'ぞ', u'ゾ'],
-           [u'た', u'タ'], [u'ち', u'チ'], [u'つ', u'ツ'], [u'て', u'テ'], [u'と', u'ト'],
-           [u'だ', u'ダ'], [u'ぢ', u'ヂ'], [u'づ', u'ヅ'], [u'で', u'デ'], [u'ど', u'ド'],
-           [u'な', u'ナ'], [u'に', u'ニ'], [u'ぬ', u'ヌ'], [u'ね', u'ネ'], [u'の', u'ノ'],
-           [u'は', u'ハ'], [u'ひ', u'ヒ'], [u'ふ', u'フ'], [u'へ', u'ヘ'], [u'ほ', u'ホ'],
-           [u'ぱ', u'パ'], [u'ぴ', u'ピ'], [u'ぷ', u'プ'], [u'ぺ', u'ペ'], [u'ぽ', u'ポ'],
-           [u'ば', u'バ'], [u'び', u'ビ'], [u'ぶ', u'ブ'], [u'べ', u'ベ'], [u'ぼ', u'ボ'],
-           [u'ま', u'マ'], [u'み', u'ミ'], [u'む', u'ム'], [u'め', u'メ'], [u'も', u'モ'],
-           [u'や', u'ヤ'], [u'ゆ', u'ユ'], [u'よ', u'ヨ'], [u'ら', u'ラ'], [u'り', u'リ'],
-           [u'る', u'ル'], [u'れ', u'レ'], [u'ろ', u'ロ'], [u'わ', u'ワ'], [u'を', u'ヲ'],
-           [u'っ', u'ッ'], [u'ゃ', u'ャ'], [u'ゅ', u'ュ'], [u'ょ', u'ョ'], [u'ん', u'ン']]
+_kanadb = [[u'あ', u'ア', u'ｱ' ], [u'い', u'イ', u'ｲ' ], [u'う', u'ウ', u'ｳ' ], [u'え', u'エ', u'ｴ' ], [u'お', u'オ', u'ｵ' ],
+           [u'ぁ', u'ァ', u'ｧ' ], [u'ぃ', u'ィ', u'ｨ' ], [u'ぅ', u'ゥ', u'ｩ' ], [u'ぇ', u'ェ', u'ｪ' ], [u'ぉ', u'ォ', u'ｫ' ],
+           [u'か', u'カ', u'ｶ' ], [u'き', u'キ', u'ｷ' ], [u'く', u'ク', u'ｸ' ], [u'け', u'ケ', u'ｹ' ], [u'こ', u'コ', u'ｺ' ],
+           [u'が', u'ガ', u'ｶﾞ'], [u'ぎ', u'ギ', u'ｷﾞ'], [u'ぐ', u'グ', u'ｸﾞ'], [u'げ', u'ゲ', u'ｹﾞ'], [u'ご', u'ゴ', u'ｺﾞ'],
+           [u'さ', u'サ', u'ｻ' ], [u'し', u'シ', u'ｼ' ], [u'す', u'ス', u'ｽ' ], [u'せ', u'セ', u'ｾ' ], [u'そ', u'ソ', u'ｿ' ],
+           [u'ざ', u'ザ', u'ｻﾞ'], [u'じ', u'ジ', u'ｼﾞ'], [u'ず', u'ズ', u'ｽﾞ'], [u'ぜ', u'ゼ', u'ｾﾞ'], [u'ぞ', u'ゾ', u'ｿﾞ'],
+           [u'た', u'タ', u'ﾀ' ], [u'ち', u'チ', u'ﾁ' ], [u'つ', u'ツ', u'ﾂ' ], [u'て', u'テ', u'ﾃ' ], [u'と', u'ト', u'ﾄ' ],
+           [u'だ', u'ダ', u'ﾀﾞ'], [u'ぢ', u'ヂ', u'ﾁﾞ'], [u'づ', u'ヅ', u'ﾂﾞ'], [u'で', u'デ', u'ﾃﾞ'], [u'ど', u'ド', u'ﾄﾞ'],
+           [u'な', u'ナ', u'ﾅ' ], [u'に', u'ニ', u'ﾆ' ], [u'ぬ', u'ヌ', u'ﾇ' ], [u'ね', u'ネ', u'ﾈ' ], [u'の', u'ノ', u'ﾉ' ],
+           [u'は', u'ハ', u'ﾊ' ], [u'ひ', u'ヒ', u'ﾋ' ], [u'ふ', u'フ', u'ﾌ' ], [u'へ', u'ヘ', u'ﾍ' ], [u'ほ', u'ホ', u'ﾎ' ],
+           [u'ぱ', u'パ', u'ﾊﾟ'], [u'ぴ', u'ピ', u'ﾋﾟ'], [u'ぷ', u'プ', u'ﾌﾟ'], [u'ぺ', u'ペ', u'ﾍﾟ'], [u'ぽ', u'ポ', u'ﾎﾟ'],
+           [u'ば', u'バ', u'ﾊﾞ'], [u'び', u'ビ', u'ﾋﾞ'], [u'ぶ', u'ブ', u'ﾌﾞ'], [u'べ', u'ベ', u'ﾍﾞ'], [u'ぼ', u'ボ', u'ﾎﾞ'],
+           [u'ま', u'マ', u'ﾏ' ], [u'み', u'ミ', u'ﾐ' ], [u'む', u'ム', u'ﾑ' ], [u'め', u'メ', u'ﾒ' ], [u'も', u'モ', u'ﾓ' ],
+           [u'や', u'ヤ', u'ﾔ' ], [u'ゆ', u'ユ', u'ﾕ' ], [u'よ', u'ヨ', u'ﾖ' ], [u'ら', u'ラ', u'ﾗ' ], [u'り', u'リ', u'ﾘ' ],
+           [u'る', u'ル', u'ﾙ' ], [u'れ', u'レ', u'ﾚ' ], [u'ろ', u'ロ', u'ﾛ' ], [u'わ', u'ワ', u'ﾜ' ], [u'を', u'ヲ', u'ｦ' ],
+           [u'っ', u'ッ', u'ｯ' ], [u'ゃ', u'ャ', u'ｬ' ], [u'ゅ', u'ュ', u'ｭ' ], [u'ょ', u'ョ', u'ｮ' ], [u'ん', u'ン', u'ﾝ' ]]
 
-_hira_to_kata = {}
-_kata_to_hira = {}
+_to_kata = {}
+_to_hira = {}
+_to_hankata = {}
 
 def _loaddb():
-    for hira, kata in _kanadb:
-        _hira_to_kata[hira] = kata
-        _kata_to_hira[kata] = hira
+    for hira, kata, hankata in _kanadb:
+        _to_kata[hira] = kata
+        _to_hira[kata] = hira
+        _to_hankata[hira] = hankata
+        _to_hankata[kata] = hankata
 
 def to_kata(s):
     ''' convert Japanese Hiragana String into Katakana '''
     def conv(c):
-        if _hira_to_kata.has_key(c):
-            return _hira_to_kata[c]
+        if _to_kata.has_key(c):
+            return _to_kata[c]
         return c
     return ''.join([conv(c) for c in s])
 
 def to_hira(s):
     ''' convert Japanese Katakana String into Hiragana '''
     def conv(c):
-        if _kata_to_hira.has_key(c):
-            return _kata_to_hira[c]
+        if _to_hira.has_key(c):
+            return _to_hira[c]
         return c
     return ''.join([conv(c) for c in s])
+
+def to_hankata(s):
+    ''' convert Japanese Kana String into Half-Width-Katakana '''
+    def conv(c):
+        if _to_hankata.has_key(c):
+            return _to_hankata[c]
+        return c
+    return ''.join([conv(c) for c in s])
+
 
 _loaddb()
 #thread.start_new_thread(_loaddb, ())

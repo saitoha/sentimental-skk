@@ -18,230 +18,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
-import sys, os
-
-import kanadb
-import eisuudb
-import romanrule
-import dictionary
-import title
-
 import tff
 
-################################################################################
-#
-# CharacterContext
-#
-class CharacterContext:
+import title
+import wcwidth
+import terminfo
+import kanadb, eisuudb, dictionary
+import mode, candidate, context, word
 
-    def __init__(self):
-        # トライ木の生成
-        self.__hira_tree = romanrule.makehiratree()
-        self.__kata_tree = romanrule.makekatatree()
-        self.hardreset()
-
-    def toggle(self):
-        if id(self.__current_tree) == id(self.__hira_tree):
-            self.__current_tree = self.__kata_tree
-        else:
-            self.__current_tree = self.__hira_tree
-
-    def reset(self):
-        self.context = self.__current_tree
-
-    def hardreset(self):
-        self.__current_tree = self.__hira_tree
-        self.reset()
-
-    def isempty(self):
-        return id(self.context) == id(self.__current_tree)
-
-    def isfinal(self):
-        return self.context.has_key('value')
-
-    def drain(self):
-        if self.context.has_key('value'):
-            s = self.context['value']
-            if self.context.has_key('next'):
-                self.context = self.context['next']
-            else:
-                self.reset()
-            return s
-        return u''
-
-    def getbuffer(self):
-        return self.context['buffer']
-
-    def put(self, c):
-        if self.context.has_key(c):
-            self.context = self.context[c]
-            return True
-        return False
-
-    def back(self):
-        self.context = self.context['prev']
-
-# モード
-SKK_MODE_HANKAKU = 0
-SKK_MODE_ZENKAKU = 1
-SKK_MODE_HIRAGANA = 2
-SKK_MODE_KATAKANA = 3
-SKK_MODE_EISUU_HENKAN = 4
 
 # マーク
-COOK_MARK = u'▽'
-SELECT_MARK = u'▼'
-OKURI_MARK = u'*'
-SKK_MARK_OPEN = u'【'
-SKK_MARK_CLOSE = u'】'
-
-class Mode():
-
-    def __init__(self):
-        self.__value = SKK_MODE_HANKAKU
-        title.setmode(u'@')
-
-    def isdirect(self):
-        value = self.__value
-        return value == SKK_MODE_HANKAKU or value == SKK_MODE_ZENKAKU
-    
-    def reset(self):
-        self.__value = SKK_MODE_HANKAKU
-        title.setmode(u'@')
-    
-    def starteisuu(self):
-        self.__value |= SKK_MODE_EISUU_HENKAN
-        title.setmode(u'A')
-
-    def endeisuu(self):
-        self.__value &= 3
-        if self.ishira():
-            title.setmode(u'あ')
-        elif self.iskata():
-            title.setmode(u'ア')
-
-    def startzen(self):
-        self.__value = SKK_MODE_ZENKAKU
-        title.setmode(u'Ａ')
-
-    def ishira(self):
-        return self.__value == SKK_MODE_HIRAGANA
-
-    def iskata(self):
-        return self.__value == SKK_MODE_KATAKANA
-
-    def iseisuu(self):
-        return self.__value & 4 == SKK_MODE_EISUU_HENKAN
-
-    def iszen(self):
-        return self.__value == SKK_MODE_ZENKAKU
-
-    def ishan(self):
-        return self.__value == SKK_MODE_HANKAKU
-
-    def toggle(self):
-        if self.__value == SKK_MODE_HANKAKU:
-            self.__value = SKK_MODE_HIRAGANA
-            title.setmode(u'あ')
-        elif self.__value == SKK_MODE_ZENKAKU:
-            self.__value = SKK_MODE_HIRAGANA
-            title.setmode(u'あ')
-        elif self.__value == SKK_MODE_HIRAGANA:
-            self.__value = SKK_MODE_KATAKANA
-            title.setmode(u'ア')
-        elif self.__value == SKK_MODE_KATAKANA:
-            self.__value = SKK_MODE_HIRAGANA
-            title.setmode(u'あ')
-        else:
-            raise
-
-################################################################################
-#
-# Candidate
-#
-class Candidate():
-
-    def __init__(self):
-        self.reset()
-
-    def assign(self, value, okuri=u''):
-        self.__index = 0
-        self.__list = value.split(u'/')
-        self.__okuri = okuri
-
-    def reset(self):
-        self.__index = 0
-        self.__list = None
-        self.__okuri = None
-
-    def isempty(self):
-        return self.__list == None
-
-    def getcurrent(self):
-        self.__index %= len(self.__list)
-        value = self.__list[self.__index]
-
-        # 補足説明
-        index = value.find(";")
-        if index >= 0:
-            result = value[:index]
-            remarks = value[index:]
-        else:
-            result = value
-            remarks = None
-
-        return SELECT_MARK + result + self.__okuri, remarks 
-
-    def getwidth(self):
-        if self.isempty():
-            return 0
-        result, remarks = self.getcurrent()
-        return len(result) * 2
-
-    def movenext(self):
-        self.__index += 1
-
-    def moveprev(self):
-        self.__index -= 1
-
-################################################################################
-#
-# OutputHandler
-#
-class OutputHandler(tff.DefaultHandler):
-
-    def __init__(self):
-        self.__super = super(OutputHandler, self)
-
-#    def handle_csi(self, context, prefix, params, final):
-#        self.__super.handle_csi(context, prefix, params, final)
-#
-#    def handle_esc(self, context, prefix, final):
-#        self.__super.handle_esc(context, prefix, final)
-#
-    def handle_control_string(self, context, prefix, value):
-        if prefix == 0x5d: # ']'
-            pos = value.index(0x3b)
-            if pos == -1:
-                pass
-            elif pos == 0:
-                num = [0]
-            else:
-                try:
-                    num = value[:pos]
-                except:
-                    num = None 
-            if not num is None:
-                if num == [0x30] or num == [0x32]:
-                    arg = value[pos + 1:]
-                    title.setoriginal(u''.join([unichr(x) for x in arg]))
-                    value = num + [0x3b] + [ord(x) for x in title.get()]
-                    
-        self.__super.handle_control_string(context, prefix, value)
-
-#    def handle_char(self, context, c):
-#        self.__super.handle_char(context, c)
-
+_SKK_MARK_COOK = u'▽'
+_SKK_MARK_SELECT = u'▼'
+_SKK_MARK_OKURI = u'*'
+_SKK_MARK_OPEN = u'【'
+_SKK_MARK_CLOSE = u'】'
 
 ################################################################################
 #
@@ -249,28 +40,34 @@ class OutputHandler(tff.DefaultHandler):
 #
 class InputHandler(tff.DefaultHandler):
 
-    def __init__(self, stdout, termenc):
+    def __init__(self, screen, stdout, termenc):
+        self.__screen = screen
         self.__stdout = stdout
         self.__termenc = termenc
-        self.__context = CharacterContext()
-        self.__mode = Mode()
-        self.__word_buffer = u'' 
-        self.__candidate = Candidate()
+        self.__context = context.CharacterContext()
+        self.__mode = mode.ModeManager()
+        self.__word = word.WordBuffer()
+        self.__candidate = candidate.CandidateManager(screen)
         self.__counter = 0
 
     def __reset(self):
         self.__clear()
         self.__context.reset()
-        self.__candidate.reset()
+        if not self.__candidate.isempty():
+            self.__candidate.clear()
         self.__mode.endeisuu()
-        self.__word_buffer = u'' 
+        self.__word.reset() 
         self.__refleshtitle()
 
     def __clear(self):
-        candidate_length = self.__candidate.getwidth()
-        cooking_length = len(self.__word_buffer) * 2 + len(self.__context.getbuffer())
-        s = u' ' * max(candidate_length, cooking_length)
-        self.__write(u'\x1b7%s\x1b8\x1b[?25h' % s)
+        candidate_length = wcwidth.wcswidth(_SKK_MARK_SELECT) + self.__candidate.getwidth()
+        cooking_length = wcwidth.wcswidth(_SKK_MARK_COOK) + self.__word.length() + wcwidth.wcswidth(self.__context.getbuffer())
+        length = max(candidate_length, cooking_length)
+        x = self.__screen.cursor.col
+        y = self.__screen.cursor.row
+        self.__screen.drawrect(x, y, length, 1)
+        self.__write(u"\x1b[%d;%dH" % (y + 1, x + 1))
+        self.__write(u'%s' % terminfo.cvvis)
 
     def __write(self, s):
         self.__stdout.write(s.encode(self.__termenc))
@@ -285,25 +82,45 @@ class InputHandler(tff.DefaultHandler):
 
     def __getface(self):
         self.__counter = 1 - self.__counter
-        return [u'┗( ^o^)┓', u'┏( ^o^)┛'][self.__counter]
+        return [u'三 ┗( ^o^)┓ ＜', u'三 ┏( ^o^)┛ ＜'][self.__counter]
 
     def __display(self):
         if not self.__candidate.isempty():
             result, remarks = self.__candidate.getcurrent()
 
-            self.__write(u'\x1b7\x1b[1;4;32;44m%s\x1b[m\x1b8\x1b[?25l' % result)
             face = self.__getface()
+
             if remarks:
-                self.__settitle(u'三 %s ＜ %s - %s' % (face, result, remarks))
+                self.__settitle(u'%s %s - %s' % (face, result, remarks))
             else:
-                self.__settitle(u'三 %s ＜ %s' % (face, result))
-        else:
-            s1 = self.__word_buffer
+                self.__settitle(u'%s %s' % (face, result))
+
+            result = _SKK_MARK_SELECT + result
+            seq = self.__candidate.getselections()
+            self.__write(
+                u'%s\x1b[1;4;32;44m%s%s%s%s%s'
+                % (terminfo.sc,
+                   result,
+                   terminfo.sgr0,
+                   terminfo.rc,
+                   terminfo.civis,
+                   seq))
+        elif not self.__word.isempty() or not self.__context.isempty():
+            if self.__word.isempty():
+                s1 = u''
+            elif self.__word.is_okuri():
+                s1 = _SKK_MARK_COOK + self.__word.get() + _SKK_MARK_OKURI
+            else:
+                s1 = _SKK_MARK_COOK + self.__word.get()
             s2 = self.__context.getbuffer() 
-            if not len(s1) + len(s2) == 0:
-                self.__write(u'\x1b7\x1b[1;4;31m%s\x1b[1;4;33m%s\x1b[m\x1b8\x1b[?25l' % (s1, s2))
+            if len(s1) + len(s2) == 0:
+                self.__write(u'%s' % terminfo.cvvis)
             else:
-                self.__write(u'\x1b[?25h')
+                self.__write(
+                    u'%s\x1b[1;4;31m%s\x1b[33m%s%s%s%s'
+                    % (terminfo.sc, s1, s2, terminfo.sgr0, terminfo.rc, terminfo.civis))
+        else:
+            pass
 
     def __draincharacters(self):
         s = self.__context.getbuffer()
@@ -312,16 +129,10 @@ class InputHandler(tff.DefaultHandler):
         s = self.__context.drain()
         return s
 
-    def __fix(self):
-        s = self.__draincharacters()
-        if len(self.__word_buffer) == 0:
-            self.__word_buffer += COOK_MARK
-        self.__word_buffer += s
-
     def __iscooking(self):
         if not self.__candidate.isempty():
             return True
-        if len(self.__word_buffer) > 0:
+        if not self.__word.isempty():
             return True
         if not self.__context.isempty():
             return True
@@ -330,10 +141,9 @@ class InputHandler(tff.DefaultHandler):
     def __convert_kana(self, value):
         if self.__mode.ishira():
             return kanadb.to_kata(value)
-        elif self.__mode.iskata():
-            return kanadb.to_hira(value)
         else:
-            raise
+            assert self.__mode.iskata()
+            return kanadb.to_hira(value)
 
     def __toggle_kana(self):
         self.__context.toggle()
@@ -341,7 +151,7 @@ class InputHandler(tff.DefaultHandler):
         self.__reset()
 
     def __tango_henkan(self):
-        key = self.__word_buffer[1:]
+        key = self.__word.get()
 
         if self.__mode.iskata():
             key = kanadb.to_hira(key)
@@ -349,8 +159,9 @@ class InputHandler(tff.DefaultHandler):
         result = dictionary.gettango(key)
 
         if result: 
-            self.__settitle(u'三 ┏( ^o^)┛ ＜ %s' % key)
-            self.__candidate.assign(result + u'/' + key)
+            face = self.__getface()
+            self.__settitle(u'%s %s' % (face, key))
+            self.__candidate.assign(key, result)
             self.__clear()
             self.__display()
             return True
@@ -362,99 +173,171 @@ class InputHandler(tff.DefaultHandler):
 
     def __okuri_henkan(self):
         buf = self.__context.getbuffer()[0]
-        s = self.__context.drain()
-        self.__word_buffer += s
-        key, okuri = self.__word_buffer[1:].split(OKURI_MARK)
+        okuri = self.__draincharacters()
+        key = self.__word.get()
 
         if self.__mode.iskata():
             key = kanadb.to_hira(key)
 
         result = dictionary.getokuri(key + buf)
 
-        self.__settitle(u'三 ┏( ^o^)┛ ＜ %s - %s' % (key, buf))
+        face = self.__getface()
+        self.__settitle(u'%s %s - %s' % (face, key, buf))
         if not result is None:
-            self.__candidate.assign(result + u'/' + key, okuri)
+            self.__candidate.assign(key, result, okuri)
             self.__clear()
-            self.__word_buffer = u''
+            self.__display()
+            self.__word.reset() 
             return True
 
         # かな読みだけを候補とする
         if self.__mode.iskata():
             key = kanadb.to_kata(key)
-        self.__candidate.assign(key, okuri)
+        self.__candidate.assign(key, [], okuri)
 
         return True
 
     def __kakutei(self, context):
-        self.__fix()
+        ''' 確定 '''
+        s = self.__draincharacters()
+        self.__word.append(s)
         if self.__candidate.isempty():
-            word = self.__word_buffer[1:]
+            word = self.__word.get()
         else:
-            result, remarks = self.__candidate.getcurrent()
-            word = result[1:]
-        self.__reset()
-        context.writestring(word)
+            word, remarks = self.__candidate.getcurrent(kakutei=True)
         self.__settitle(u'＼(^o^)／')
+        context.writestring(word)
+        self.__candidate.clear()
+        self.__reset()
+
+    def __restore(self):
+        ''' 再変換 '''
+        self.__clear()
+        self.__word.reset()
+        self.__word.append(self.__candidate.getyomi())
+        self.__candidate.clear()
+        self.__display()
+
+    def __next(self):
+        ''' 次候補 '''
+        if self.__candidate.isempty():
+            if self.__word.is_okuri():
+                self.__okuri_henkan()
+            else:
+                s = self.__draincharacters()
+                self.__word.append(s)
+                if not self.__tango_henkan():
+                    self.__kakutei(context)
+        else:
+            self.__clear()
+            self.__candidate.movenext()
+            self.__display()
+
+    def __prev(self):
+        ''' 前候補 '''
+        if not self.__candidate.isempty():
+            self.__clear()
+            self.__candidate.moveprev()
+            self.__display()
 
     def handle_char(self, context, c):
-        if c == 0xa5:
-            c = 0x5c
-        if c == 0x07:
-            self.__reset()
-        elif c == 0x0a: # LF C-j
+        if c == 0x0a: # LF C-j
             if self.__mode.isdirect():
                 self.__mode.toggle()
                 self.__refleshtitle()
             else:
                 if self.__iscooking():
                     self.__kakutei(context)
+
         elif c == 0x0d: # CR C-m
             if self.__iscooking():
                 self.__kakutei(context)
             else:
                 context.write(c)
+
+        elif c == 0x07: # BEL
+            if self.__candidate.isempty():
+                self.__reset()
+            else:
+                self.__restore()
+
         elif c == 0x08 or c == 0x7f: # BS or DEL
             if self.__context.isempty():
-                word = self.__word_buffer
                 if not self.__candidate.isempty():
-                    self.__candidate.reset()
-                    self.__clear()
-                    self.__display()
-                if len(word) == 0:
+                    self.__restore()
+                elif self.__word.isempty():
                     context.write(c)
                 else:
                     self.__clear()
-                    self.__word_buffer = word[:-1]
+                    self.__mode.endeisuu()
+                    self.__word.back()
                     self.__display()
             else:
                 self.__clear()
                 self.__context.back()
                 self.__display()
-        elif c == 0x20:        
-            if self.__mode.iszen():
-                context.write(c)
-            elif self.__mode.ishan():
-                context.write(eisuudb.to_zenkaku_cp(c))
+
+        elif c == 0x09: # 
+            if not self.__context.isempty():
+                # キャラクタバッファ編集中
+                pass # 何もしない 
+            elif not self.__word.isempty():
+                # ワードバッファ編集中
+                pass # 何もしない TODO: 補完
+            elif not self.__candidate.isempty():
+                # 候補選択中
+                self.__next()
             else:
-                if self.__iscooking():
-                    # 単語変換
-                    if self.__candidate.isempty():
-                        s = self.__draincharacters()
-                        self.__word_buffer += s
-                        if not self.__tango_henkan():
-                            self.__kakutei(context)
-                    else:
-                        self.__clear()
-                        self.__candidate.movenext()
-                        self.__display()
-                else:
-                    context.write(c)
+                context.write(c)
+        elif c == 0x0e: # C-n
+            if not self.__word.isempty():
+                self.__next()
+            elif not self.__context.isempty():
+                self.__reset()
+            elif not self.__candidate.isempty():
+                self.__next()
+            else:
+                context.write(c)
+
+        elif c == 0x10: # C-p
+            if self.__iscooking():
+                self.__prev()
+            else:
+                context.write(c)
+
+        elif c == 0x11: # C-q
+            if not self.__word.isempty():
+                s = self.__draincharacters()
+                w = self.__word.get()
+                s = kanadb.to_hankata(w + s)
+                context.writestring(s)
+                self.__clear()
+                self.__word.reset()
+            else:
+                context.write(c)
+
+        elif c == 0x20: # SP 
+            if self.__mode.ishan():
+                context.write(c)
+            elif self.__mode.iszen():
+                context.write(eisuudb.to_zenkaku_cp(c))
+            elif not self.__word.isempty():
+                self.__next()
+            elif not self.__context.isempty():
+                self.__reset()
+                context.write(c)
+            elif not self.__candidate.isempty():
+                self.__next()
+            else:
+                context.write(c)
+
         elif c < 0x20 or 0x7f < c:
             if self.__mode.isdirect():
                 context.write(c)
             else:
                 self.__reset()
                 context.write(c)
+
         else:
             if self.__mode.ishan():
                 # 半角直接入力
@@ -464,28 +347,27 @@ class InputHandler(tff.DefaultHandler):
                 context.write(eisuudb.to_zenkaku_cp(c))
             elif self.__mode.iseisuu():
                 # 英数変換モード
-                if len(self.__word_buffer) == 0:
-                    self.__word_buffer = COOK_MARK
-                self.__word_buffer += unichr(c)
+                self.__word.append(unichr(c))
                 self.__display()
             elif self.__mode.ishira() or self.__mode.iskata():
                 # ひらがな変換モード・カタカナ変換モード
-                if c == 0x2f: # /
+                if c == 0x2f and (self.__context.isempty() or self.__context.getbuffer() != u'z'): # /
                     if self.__iscooking():
-                        self.__word_buffer += unichr(c)
+                        self.__word.append(unichr(c))
                         self.__display()
                     else:
                         self.__mode.starteisuu()
                         self.__refleshtitle()
-                        self.__word_buffer = COOK_MARK
+                        self.__word.reset()
+                        self.__word.startedit()
                         self.__display()
                 elif c == 0x71: # q
-                    word = self.__word_buffer
                     if self.__iscooking():
-                        self.__fix()
-                        word = self.__word_buffer
+                        s = self.__draincharacters()
+                        self.__word.append(s)
+                        word = self.__word.get()
                         self.__reset()
-                        s = self.__convert_kana(word[1:])
+                        s = self.__convert_kana(word)
                         context.writestring(s)
                     else:
                         self.__toggle_kana()
@@ -500,78 +382,71 @@ class InputHandler(tff.DefaultHandler):
                     self.__mode.reset()
                     self.__reset()
                 else:
-                    # 変換中か
-                    if not self.__candidate.isempty():
-                        # 変換中であれば、現在の候補をバックアップしておく
-                        backup, remarks = self.__candidate.getcurrent()
-                        self.__word_buffer = u''
-                    else:
-                        backup = None
-
                     if 0x41 <= c and c <= 0x5a: # A - Z
                         # 大文字のとき
                         self.__context.put(c + 0x20) # 子音に変換し、文字バッファに溜める
-
-                        # バックアップがあるか
-                        if backup:
+                        # 変換中か
+                        if not self.__candidate.isempty():
+                            # 変換中であれば、現在の候補をバックアップしておく
+                            backup, remarks = self.__candidate.getcurrent(kakutei=True)
                             # バックアップがあるとき、変換候補をリセット
-                            self.__candidate.reset()
+                            self.__candidate.clear()
 
                             # 現在の候補を確定
-                            context.writestring(backup[1:])
-                            self.__word_buffer = COOK_MARK
+                            context.writestring(backup)
+                            self.__word.reset()
+                            self.__word.startedit()
                             if self.__context.isfinal():
                                 # cが母音のとき、文字バッファを吸い出し、
                                 s = self.__context.drain()
                                 # 単語バッファに追加
-                                self.__word_buffer += s
-                            s = backup[1:]
-                            s += self.__word_buffer
-                            s += self.__context.getbuffer()
-                            self.__write(u'\x1b7\x1b[1;4;35m%s\x1b[m\x1b8\x1b[?25l' % s)
+                                self.__word.append(s)
 
                         # 先行する入力があるか
-                        elif len(self.__word_buffer) > 1:
-                            # 先行する入力があるとき、送り仮名マーク('*')をつける
-                            if self.__word_buffer[-1] != OKURI_MARK:
-                                self.__word_buffer += OKURI_MARK
-                            # cが母音か
-                            if self.__context.isfinal():
-
-                                # 送り仮名変換
-                                self.__okuri_henkan()
-                        else:
+                        elif self.__word.isempty() or len(self.__word.get()) == 0:
                             # 先行する入力が無いとき、単語バッファを編集マーク('▽')とする
-                            self.__word_buffer = COOK_MARK
+                            self.__word.startedit()
                             # cが母音か
                             if self.__context.isfinal():
                                 # cが母音のとき、文字バッファを吸い出し、
                                 s = self.__context.drain()
                                 # 単語バッファに追加
-                                self.__word_buffer += s
+                                self.__word.append(s)
+                        else:
+                            # 先行する入力があるとき、送り仮名マーク('*')をつける
+                            self.__word.startokuri()
+                            # cが母音か
+                            if self.__context.isfinal():
+                                # 送り仮名変換
+                                self.__okuri_henkan()
 
                     elif self.__context.put(c):
-                        if not backup is None:
-                            self.__candidate.reset()
-                            context.writestring(backup[1:])
-                            s = backup[1:]
-                            s += self.__word_buffer
-                            s += self.__context.getbuffer()
-                            self.__write(u'\x1b7\x1b[1;4;31m%s\x1b[m\x1b8\x1b[?25l' % s)
-                            self.__word_buffer = u''
-                        if self.__context.isfinal():
-                            if backup or len(self.__word_buffer) == 0:
+                        # 変換中か
+                        if not self.__candidate.isempty():
+                            # 変換中であれば、確定
+                            result, remarks = self.__candidate.getcurrent(kakutei=True)
+                            self.__word.reset() 
+                            #self.__clear()
+                            self.__candidate.clear()
+                            context.writestring(result)
+                            if self.__context.isfinal():
+                                s = self.__context.drain()
+                                context.writestring(s)
+                        elif self.__context.isfinal():
+                            if self.__word.isempty():
                                 s = self.__context.drain()
                                 context.writestring(s)
                             else:
                                 # 送り仮名変換
-                                if self.__word_buffer[-1] == OKURI_MARK:
+                                if self.__word.is_okuri():
                                     self.__okuri_henkan()
                                 else:
                                     s = self.__context.drain()
-                                    self.__word_buffer += s
+                                    self.__word.append(s)
                     else:
                         self.__reset()
                         context.write(c)
                     self.__display()
+
+        return True # handled
 

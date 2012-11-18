@@ -1,5 +1,8 @@
 
 all:
+
+run:
+	python sskk/__init__.py
 	
 
 install:

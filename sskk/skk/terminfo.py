@@ -18,13 +18,35 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
-__author__  = "Hayaki Saito (user@zuse.jp)"
-__version__ = "0.0.5"
-__license__ = "GPL v3"
+import curses
 
-from sskk import *
+curses.setupterm()
 
-''' main '''
-if __name__ == '__main__':    
-    main()
+sc = curses.tigetstr('sc')
+if sc is None:
+    sc = u'\x1b7'
+
+rc = curses.tigetstr('rc')
+if rc is None:
+    rc = u'\x1b8'
+
+civis = curses.tigetstr('civis')
+if civis is None:
+    civis = u'\x1b[?25l'
+ 
+cvvis = curses.tigetstr('cvvis')
+if cvvis is None:
+    cvvis = u'\x1b[?25h'
+
+sgr0 = curses.tigetstr('sgr0')
+if sgr0 is None:
+    sgr0 = u'\x1b[0;10m'
+
+setab = curses.tigetstr('setab')
+if setab is None:
+    setab = u'\x1b[4%p1%dm'
+
+setaf = curses.tigetstr('setaf')
+if setaf is None:
+    setaf = u'\x1b[3%p1%dm'
 

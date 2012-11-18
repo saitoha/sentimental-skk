@@ -19,4 +19,5 @@
 # ***** END LICENSE BLOCK *****
 
 from skk import *
+from outputfilter import *
 

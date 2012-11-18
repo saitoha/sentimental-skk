@@ -1,8 +1,6 @@
 Sentimental SKK
 ===============
 
-Provides Japanese Input Method SKK (Simple Kana to Kanji conversion) on your terminal.
-
 Install
 -------
 
@@ -22,7 +20,7 @@ Usage
 
 ::
 
-    $ sskk [options] [command | -]
+    $ sskk [options]
 
 
 * Options::
@@ -39,6 +37,10 @@ Dependency
 
    This package includes the large SKK dictionary, SKK-JISYO.L.
    http://openlab.jp/skk/skk/dic/SKK-JISYO.L
+
+ - wcwidth.py
+   https://svn.wso2.org/repos/wso2/carbon/platform/trunk/dependencies/cassandra/pylib/cqlshlib/wcwidth.py
+   (Licensed under Apache License 2.0)
 
  - Hayaki Saito's TFF, Terminal Filter Framework
    https://github.com/saitoha/tff

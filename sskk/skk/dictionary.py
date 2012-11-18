@@ -31,15 +31,15 @@ def _load_dictionary():
     for line in open(dirpath + '/SKK-JISYO.L'):
         if line[1] == ';':
             continue
-        line = unicode(line, 'eucjp')
+        line = unicode(line, u'eucjp')
         g = p.match(line)
         key = g.group(1)
         okuri = g.group(2)
         value = g.group(3)
         if okuri:
-            _okuridb[key + okuri] = value
+            _okuridb[key + okuri] = value.split(u'/')
         else:
-            _tangodb[key] = value
+            _tangodb[key] = value.split(u'/')
 
 def gettango(key):
     if _tangodb.has_key(key):

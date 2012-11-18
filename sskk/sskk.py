@@ -18,10 +18,37 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
+def _getpos(stdin, stdout):
+    import os, termios, select
+    
+    stdin_fileno = stdin.fileno()
+    vdisable = os.fpathconf(stdin_fileno, 'PC_VDISABLE')
+    backup = termios.tcgetattr(stdin_fileno)
+    new = termios.tcgetattr(stdin_fileno)
+    new[3] &= ~(termios.ECHO | termios.ICANON)
+    new[6][termios.VMIN] = 1
+    new[6][termios.VTIME] = 0
+    termios.tcsetattr(stdin_fileno, termios.TCSANOW, new)
+    try:
+        stdout.write("\x1b[6n")
+        stdout.flush()
+        
+        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 2)
+        if rfd:
+            data = os.read(stdin_fileno, 1024)
+            assert data[:2] == '\x1b['
+            assert data[-1] == 'R'
+            pos = [int(n) - 1 for n in data[2:-1].split(';')]
+            assert len(pos) == 2
+            return pos
+    finally:
+        termios.tcsetattr(stdin_fileno, termios.TCSANOW, backup)
+
 def main():
     import sys, os, optparse, select
     import tff
     import skk
+    import canossa
 
     # parse options and arguments
     usage = 'usage: %prog [options] [command | - ]'
@@ -45,11 +72,10 @@ def main():
     if options.version:
         import __init__
         print '''
-      　　／   ／
-      　／^o^／ エッスカレーター
-      ／　 ／
 
-sskk %s 
+      ＼＾o＾＼ｴｯｽｶﾚｰﾀｰ
+
+sentimental-skk %s 
 Copyright (C) 2012 Hayaki Saito <user@zuse.jp>. 
 
 This program is free software; you can redistribute it and/or modify
@@ -84,8 +110,8 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         term = 'xterm'
 
     # retrive LANG setting
-    if options.lang:
-        lang = options.term
+    if not options.lang is None:
+        lang = options.lang
     elif not os.getenv('LANG') is None:
         lang = os.getenv('LANG')
     else:
@@ -93,41 +119,34 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         lang = '%s.%s' % locale.getdefaultlocale()
 
     # retrive terminal encoding setting
-    if options.enc:
+    if options.enc is not None:
         termenc = options.enc
     else:
         import locale
         language, encoding = locale.getdefaultlocale()
         termenc = encoding
+    if termenc is None:
+        raise Exception(
+            'Invalid TERM environment is detected: "%s"' % termenc)
 
-    # retrive skk setting
-    inputhandler = skk.InputHandler(sys.stdout, termenc)
+    # make skk setting
+    y, x = _getpos(sys.stdin, sys.stdout)
+    tty = tff.DefaultPTY(term, lang, command, sys.stdin)
+    row, col = tty.fitsize()
+    screen = canossa.Screen(row, col, y, x)
+
+    canossahandler = canossa.OutputHandler(screen, visibility=False)
+
+    inputhandler = skk.InputHandler(screen, sys.stdout, termenc)
+
     outputhandler = skk.OutputHandler()
-
-    inputscanner = tff.DefaultScanner()
-
-    outputscanner = tff.DefaultScanner()
-
-    startmessage = u'\x1b]0;sskk\x07'
-    sys.stdout.write(startmessage)
-
-    settings = tff.Settings(command=command,
-                            term=term,
-                            lang=lang,
-                            termenc=termenc,
-                            stdin=sys.stdin,
-                            stdout=sys.stdout,
-                            inputscanner=inputscanner,
-                            inputparser=tff.DefaultParser(),
-                            inputhandler=inputhandler,
-                            outputscanner=outputscanner,
-                            outputparser=tff.DefaultParser(),
-                            outputhandler=outputhandler)
-    session = tff.Session()
-    session.start(settings)
-
-    endmessage = u'\x1b]0;三 ┏( ^o^)┛ ＜ sskkを使ってくれてありがとう\x07'
-    sys.stdout.write(endmessage)
+    multiplexer = tff.FilterMultiplexer(canossahandler, outputhandler)
+    session = tff.Session(tty)
+    session.start(termenc=termenc,
+                  stdin=sys.stdin,
+                  stdout=sys.stdout,
+                  inputhandler=inputhandler,
+                  outputhandler=multiplexer)
 
 ''' main '''
 if __name__ == '__main__':    

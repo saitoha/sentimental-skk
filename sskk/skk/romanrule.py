@@ -65,6 +65,11 @@ _kata_rule = {}
 for key, value in _hira_rule.items():
     _kata_rule[key] = kanadb.to_kata(value) 
 
+SKK_ROMAN_VALUE = 0
+SKK_ROMAN_NEXT = 1
+SKK_ROMAN_PREV = 2
+SKK_ROMAN_BUFFER = 3
+
 def _maketree(rule):
     tree = {}
     for key, value in rule.items():
@@ -72,22 +77,25 @@ def _maketree(rule):
         context = tree
         for code in [ord(c) for c in list(key)]:
             if not context.has_key(code):
-                context[code] = { 'prev': context }
+                context[code] = { SKK_ROMAN_PREV: context }
             context = context[code]
             buf += chr(code)
-            context['buffer'] = buf 
-        context['value'] = value
+            context[SKK_ROMAN_BUFFER] = buf 
+        context[SKK_ROMAN_VALUE] = value
     for key, value in tree.items(): 
         context = tree
         if key == 0x6e: # 'n'
-            #value['buffer'] = u'n'
             for code in [ord(c) for c in list('bcdfghjkmprstvwxz')]: 
-                value[code] = { 'value': rule['nn'], 'next': context[code], 'buffer': 'nn' }
+                value[code] = { SKK_ROMAN_VALUE: rule['nn'],
+                                SKK_ROMAN_NEXT: context[code],
+                                SKK_ROMAN_BUFFER: 'nn' }
         else:
-            if not value.has_key('value'):
-                value[key] = { 'value': rule['xtu'], 'next': context[key], 'buffer': chr(key) + chr(key) }
-    tree['buffer'] = '' 
-    tree['prev'] = tree 
+            if not value.has_key(SKK_ROMAN_VALUE):
+                value[key] = { SKK_ROMAN_VALUE: rule['xtu'],
+                               SKK_ROMAN_NEXT: context[key],
+                               SKK_ROMAN_BUFFER: chr(key) + chr(key) }
+    tree[SKK_ROMAN_BUFFER] = '' 
+    tree[SKK_ROMAN_PREV] = tree 
     return tree
 
 def makehiratree():

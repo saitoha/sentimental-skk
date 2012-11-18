@@ -23,7 +23,9 @@ _message = u''
 _original = u''
 
 def get():
-    return u'%s   [%s] %s' % (_original, _mode, _message)
+    if _mode:
+        return u'%s   [%s] %s' % (_original, _mode, _message)
+    return u'%s   %s' % (_original, _message)
 
 def setmode(value):
     global _mode
