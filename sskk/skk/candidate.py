@@ -129,7 +129,7 @@ class CandidateManager():
         self.width = width
         self.height = min(5, len(l))
         if self.__screen.cursor.col + width > self.__screen.width:
-            offset = self.__screen.cursor.col + width - self.__screen.width
+            offset = self.__screen.cursor.col + width - self.__screen.width + 1
         else:
             offset = 0
         return l, pos, width, offset
@@ -174,8 +174,8 @@ class CandidateManager():
         return s.getvalue()
 
     def erase(self):
-        if self.__screen.cursor.col + self.width > self.__screen.width:
-            offset = self.__screen.cursor.col + self.width - self.__screen.width
+        if self.__screen.cursor.col + self.width >= self.__screen.width:
+            offset = self.__screen.cursor.col + self.width - self.__screen.width + 2
         else:
             offset = 0
         vdirection = self.__getdirection()
@@ -185,7 +185,7 @@ class CandidateManager():
             y = screen.cursor.row + 1
         else:
             y = screen.cursor.row - self.height
-        w = self.width
+        w = self.width + 2
         h = self.height
         sys.stdout.write("\x1b7")
         screen.drawrect(x, y, w, h)
