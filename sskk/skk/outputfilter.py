@@ -20,7 +20,7 @@
 
 import tff
 import title
-
+import os
 
 ################################################################################
 #
@@ -43,9 +43,9 @@ class OutputHandler(tff.DefaultHandler):
             try:
                 pos = value.index(0x3b)
             except ValueError:
-                pass 
+                return 
             if pos == -1:
-                pass
+                return
             elif pos == 0:
                 num = [0]
             else:

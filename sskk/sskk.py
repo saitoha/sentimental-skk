@@ -140,7 +140,10 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     inputhandler = skk.InputHandler(screen, sys.stdout, termenc)
 
     outputhandler = skk.OutputHandler()
-    multiplexer = tff.FilterMultiplexer(canossahandler, outputhandler)
+    if "xterm" in term:
+        multiplexer = tff.FilterMultiplexer(canossahandler, outputhandler)
+    else:
+        multiplexer = tff.FilterMultiplexer(canossahandler, tff.DefaultHandler())
     session = tff.Session(tty)
     session.start(termenc=termenc,
                   stdin=sys.stdin,

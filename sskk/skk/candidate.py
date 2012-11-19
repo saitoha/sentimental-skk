@@ -37,6 +37,7 @@ class CandidateManager():
     __list = None
     __movedir = _POPUP_NORMALDIR
     __scrollpos = 0
+    __show = False 
 
     width = 10
     height = 5
@@ -144,7 +145,8 @@ class CandidateManager():
 
     def getselections(self):
         if self.__index >= len(self.__list):
-            self.erase()
+            if self.__show == True:
+                self.erase()
             return u''
         vdirection = self.__getdirection()
         l, pos, width, offset = self.__getdisplayinfo(self.__movedir)
@@ -171,6 +173,7 @@ class CandidateManager():
             s.write(u'\x1b[%dA' % (self.height + 1))
         else:
             pass
+        self.__show = True
         return s.getvalue()
 
     def erase(self):
@@ -190,6 +193,7 @@ class CandidateManager():
         sys.stdout.write("\x1b7")
         screen.drawrect(x, y, w, h)
         sys.stdout.write("\x1b8")
+        self.__show = False
          
     def clear(self):
         self.erase()

@@ -60,14 +60,17 @@ class InputHandler(tff.DefaultHandler):
         self.__refleshtitle()
 
     def __clear(self):
-        candidate_length = wcwidth.wcswidth(_SKK_MARK_SELECT) + self.__candidate.getwidth()
-        cooking_length = wcwidth.wcswidth(_SKK_MARK_COOK) + self.__word.length() + wcwidth.wcswidth(self.__context.getbuffer())
+        candidate_length = wcwidth.wcswidth(_SKK_MARK_SELECT)
+        candidate_length += self.__candidate.getwidth()
+        cooking_length = wcwidth.wcswidth(_SKK_MARK_COOK)
+        cooking_length += self.__word.length()
+        cooking_length += wcwidth.wcswidth(_SKK_MARK_OKURI)
+        cooking_length += wcwidth.wcswidth(self.__context.getbuffer())
         length = max(candidate_length, cooking_length)
         x = self.__screen.cursor.col
         y = self.__screen.cursor.row
         self.__screen.drawrect(x, y, length, 1)
-        self.__write(u"\x1b[%d;%dH" % (y + 1, x + 1))
-        self.__write(u'%s' % terminfo.cvvis)
+        self.__write(u"\x1b[%d;%dH\x1b[?25h" % (y + 1, x + 1))
 
     def __write(self, s):
         self.__stdout.write(s.encode(self.__termenc))
@@ -97,14 +100,7 @@ class InputHandler(tff.DefaultHandler):
 
             result = _SKK_MARK_SELECT + result
             seq = self.__candidate.getselections()
-            self.__write(
-                u'%s\x1b[1;4;32;44m%s%s%s%s%s'
-                % (terminfo.sc,
-                   result,
-                   terminfo.sgr0,
-                   terminfo.rc,
-                   terminfo.civis,
-                   seq))
+            self.__write(u'\x1b7\x1b[1;4;32;44m%s\x1b[m\x1b8\x1b[?25l%s' % (result, seq))
         elif not self.__word.isempty() or not self.__context.isempty():
             if self.__word.isempty():
                 s1 = u''
@@ -113,12 +109,7 @@ class InputHandler(tff.DefaultHandler):
             else:
                 s1 = _SKK_MARK_COOK + self.__word.get()
             s2 = self.__context.getbuffer() 
-            if len(s1) + len(s2) == 0:
-                self.__write(u'%s' % terminfo.cvvis)
-            else:
-                self.__write(
-                    u'%s\x1b[1;4;31m%s\x1b[33m%s%s%s%s'
-                    % (terminfo.sc, s1, s2, terminfo.sgr0, terminfo.rc, terminfo.civis))
+            self.__write(u'\x1b7\x1b[1;4;31m%s\x1b[33m%s\x1b[m\x1b8\x1b[?25l' % (s1, s2))
         else:
             pass
 
@@ -206,9 +197,12 @@ class InputHandler(tff.DefaultHandler):
         else:
             word, remarks = self.__candidate.getcurrent(kakutei=True)
         self.__settitle(u'＼(^o^)／')
-        context.writestring(word)
+        ''' 再変換 '''
+        self.__clear()
+        self.__word.reset()
+        self.__context.reset()
         self.__candidate.clear()
-        self.__reset()
+        context.writestring(word)
 
     def __restore(self):
         ''' 再変換 '''
@@ -229,14 +223,14 @@ class InputHandler(tff.DefaultHandler):
                 if not self.__tango_henkan():
                     self.__kakutei(context)
         else:
-            self.__clear()
+            #self.__clear()
             self.__candidate.movenext()
             self.__display()
 
     def __prev(self):
         ''' 前候補 '''
         if not self.__candidate.isempty():
-            self.__clear()
+            #self.__clear()
             self.__candidate.moveprev()
             self.__display()
 
@@ -290,17 +284,22 @@ class InputHandler(tff.DefaultHandler):
             else:
                 context.write(c)
         elif c == 0x0e: # C-n
-            if not self.__word.isempty():
+            if not self.__candidate.isempty():
+                if self.__context.isempty():
+                    self.__context.reset()
+                self.__next()
+            elif not self.__word.isempty():
+                if self.__context.isempty():
+                    self.__context.reset()
                 self.__next()
             elif not self.__context.isempty():
-                self.__reset()
-            elif not self.__candidate.isempty():
-                self.__next()
+                self.__context.reset()
             else:
                 context.write(c)
 
         elif c == 0x10: # C-p
             if self.__iscooking():
+                self.__clear()
                 self.__prev()
             else:
                 context.write(c)
@@ -321,13 +320,16 @@ class InputHandler(tff.DefaultHandler):
                 context.write(c)
             elif self.__mode.iszen():
                 context.write(eisuudb.to_zenkaku_cp(c))
+            elif not self.__candidate.isempty():
+                if self.__context.isempty():
+                    self.__context.reset()
+                self.__next()
             elif not self.__word.isempty():
+                if self.__context.isempty():
+                    self.__context.reset()
                 self.__next()
             elif not self.__context.isempty():
-                self.__reset()
-                context.write(c)
-            elif not self.__candidate.isempty():
-                self.__next()
+                self.__context.reset()
             else:
                 context.write(c)
 
