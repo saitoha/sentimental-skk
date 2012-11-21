@@ -42,6 +42,7 @@ Usage
     -t TERM, --term=TERM        override TERM environment variable
     -l LANG, --lang=LANG        override LANG environment variable
     -o ENC, --outenc=ENC        set output encoding
+    -u, --use-titlebar          use title bar manipulation feature
 
 Dependency
 ----------

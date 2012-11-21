@@ -41,7 +41,6 @@ def _get_answerback(stdin, stdout):
         termios.tcsetattr(stdin_fileno, termios.TCSANOW, backup)
 
 
-
 def _getpos(stdin, stdout):
     import os, termios, select
     
@@ -57,7 +56,7 @@ def _getpos(stdin, stdout):
         stdout.write("\x1b[6n")
         stdout.flush()
         
-        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 0.5)
+        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 0.2)
         if rfd:
             data = os.read(stdin_fileno, 1024)
             assert data[:2] == '\x1b['
@@ -84,7 +83,7 @@ def _get_da2(stdin, stdout):
         stdout.write("\x1b[>0c")
         stdout.flush()
         
-        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 0.5)
+        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 0.2)
         if rfd:
             data = os.read(stdin_fileno, 1024)
             assert data[:2] == '\x1b['
@@ -115,6 +114,10 @@ def main():
 
     parser.add_option('-o', '--outenc', dest='enc',
                       help='set output encoding')
+
+    parser.add_option('-u', '--use-titlebar', dest='titlebar',
+                      action="store_true", default=False,
+                      help='use title bar manipulation feature')
 
     (options, args) = parser.parse_args()
 
@@ -197,7 +200,8 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     row, col = tty.fitsize()
     screen = canossa.Screen(row, col, y, x, is_cjk)
 
-    use_title = True
+    use_title = options.titlebar
+
     if not "xterm" in term:
         use_title = False
 
