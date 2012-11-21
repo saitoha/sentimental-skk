@@ -6,7 +6,7 @@ What is this?
 
     This program provides Simple Kana Kanji conversion (SKK) input method service to your terminal.
     It depends on Canossa(https://github.com/saitoha/canossa), which is an off-screen terminal emulation service,
-    Canossa makes application enables to restore specified screen region on demand!!
+    Canossa makes application enable to restore specified screen region on demand!!
     So this SKK service can provide cool popup feature.
 
 .. image:: http://zuse.jp/misc/canossa.png 
