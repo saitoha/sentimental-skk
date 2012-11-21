@@ -18,14 +18,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
+_enabled = True
 _mode = u'@'
 _message = u''
 _original = u''
 
 def get():
-    if _mode:
-        return u'%s   [%s] %s' % (_original, _mode, _message)
-    return u'%s   %s' % (_original, _message)
+    if _enabled:
+        if _mode:
+            return u'%s   [%s] %s' % (_original, _mode, _message)
+        return u'%s   %s' % (_original, _message)
+
+def setenabled(value):
+    global _enabled
+    _enabled = value
 
 def setmode(value):
     global _mode

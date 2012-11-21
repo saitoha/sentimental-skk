@@ -172,12 +172,6 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     row, col = tty.fitsize()
     screen = canossa.Screen(row, col, y, x, is_cjk)
 
-    canossahandler = canossa.OutputHandler(screen, visibility=False)
-
-    inputhandler = skk.InputHandler(screen, sys.stdout, termenc, is_cjk)
-
-    outputhandler = skk.OutputHandler()
-
     use_title = True
     if not "xterm" in term:
         use_title = False
@@ -188,6 +182,15 @@ along with this program. If not, see http://www.gnu.org/licenses/.
             use_title = False
     except:
         pass
+
+    import skk.title
+    skk.title.setenabled(use_title)
+
+    canossahandler = canossa.OutputHandler(screen, visibility=False)
+
+    inputhandler = skk.InputHandler(screen, sys.stdout, termenc, is_cjk)
+
+    outputhandler = skk.OutputHandler()
 
     if use_title:
         multiplexer = tff.FilterMultiplexer(canossahandler, outputhandler)
