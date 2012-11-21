@@ -26,14 +26,14 @@ def _getpos(stdin, stdout):
     backup = termios.tcgetattr(stdin_fileno)
     new = termios.tcgetattr(stdin_fileno)
     new[3] &= ~(termios.ECHO | termios.ICANON)
-    new[6][termios.VMIN] = 1
+    new[6][termios.VMIN] = 6
     new[6][termios.VTIME] = 0
     termios.tcsetattr(stdin_fileno, termios.TCSANOW, new)
     try:
         stdout.write("\x1b[6n")
         stdout.flush()
         
-        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 2)
+        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 0.5)
         if rfd:
             data = os.read(stdin_fileno, 1024)
             assert data[:2] == '\x1b['
@@ -53,14 +53,14 @@ def _get_da2(stdin, stdout):
     backup = termios.tcgetattr(stdin_fileno)
     new = termios.tcgetattr(stdin_fileno)
     new[3] &= ~(termios.ECHO | termios.ICANON)
-    new[6][termios.VMIN] = 1
+    new[6][termios.VMIN] = 3
     new[6][termios.VTIME] = 0
     termios.tcsetattr(stdin_fileno, termios.TCSANOW, new)
     try:
         stdout.write("\x1b[>0c")
         stdout.flush()
         
-        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 2)
+        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 0.5)
         if rfd:
             data = os.read(stdin_fileno, 1024)
             assert data[:2] == '\x1b['
