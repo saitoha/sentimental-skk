@@ -20,33 +20,29 @@
 
 import curses
 
-curses.setupterm()
+try:
+    curses.setupterm()
+    sc = curses.tigetstr('sc')
+    rc = curses.tigetstr('rc')
+    civis = curses.tigetstr('civis')
+    cvvis = curses.tigetstr('cvvis')
+    sgr0 = curses.tigetstr('sgr0')
+    setab = curses.tigetstr('setab')
+    setaf = curses.tigetstr('setaf')
+except:
+    pass
 
-sc = curses.tigetstr('sc')
 if sc is None:
     sc = u'\x1b7'
-
-rc = curses.tigetstr('rc')
 if rc is None:
     rc = u'\x1b8'
-
-civis = curses.tigetstr('civis')
 if civis is None:
     civis = u'\x1b[?25l'
- 
-cvvis = curses.tigetstr('cvvis')
 if cvvis is None:
     cvvis = u'\x1b[?25h'
-
-sgr0 = curses.tigetstr('sgr0')
 if sgr0 is None:
     sgr0 = u'\x1b[0;10m'
-
-setab = curses.tigetstr('setab')
 if setab is None:
     setab = u'\x1b[4%p1%dm'
-
-setaf = curses.tigetstr('setaf')
 if setaf is None:
     setaf = u'\x1b[3%p1%dm'
-
