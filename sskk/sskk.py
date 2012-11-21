@@ -44,6 +44,31 @@ def _getpos(stdin, stdout):
     finally:
         termios.tcsetattr(stdin_fileno, termios.TCSANOW, backup)
 
+
+def _get_da2(stdin, stdout):
+    import os, termios, select
+    
+    stdin_fileno = stdin.fileno()
+    vdisable = os.fpathconf(stdin_fileno, 'PC_VDISABLE')
+    backup = termios.tcgetattr(stdin_fileno)
+    new = termios.tcgetattr(stdin_fileno)
+    new[3] &= ~(termios.ECHO | termios.ICANON)
+    new[6][termios.VMIN] = 1
+    new[6][termios.VTIME] = 0
+    termios.tcsetattr(stdin_fileno, termios.TCSANOW, new)
+    try:
+        stdout.write("\x1b[>0c")
+        stdout.flush()
+        
+        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 2)
+        if rfd:
+            data = os.read(stdin_fileno, 1024)
+            assert data[:2] == '\x1b['
+            assert data[-1] == 'c'
+            return data[2:-1].split(';')
+    finally:
+        termios.tcsetattr(stdin_fileno, termios.TCSANOW, backup)
+
 def main():
     import sys, os, optparse, select
     import tff
@@ -130,20 +155,45 @@ along with this program. If not, see http://www.gnu.org/licenses/.
             'Invalid TERM environment is detected: "%s"' % termenc)
 
     # make skk setting
+    sys.stdout.write("\x1b7")
     y, x = _getpos(sys.stdin, sys.stdout)
+    sys.stdout.write("ω")
+    y2, x2 = _getpos(sys.stdin, sys.stdout)
+    size = x2 - x
+    sys.stdout.write("\x1b8")
+    sys.stdout.write("\x1b7")
+    sys.stdout.write(" " * size)
+    sys.stdout.write("\x1b8")
+    if size == 2:
+        is_cjk = True 
+    else:
+        is_cjk = False 
     tty = tff.DefaultPTY(term, lang, command, sys.stdin)
     row, col = tty.fitsize()
-    screen = canossa.Screen(row, col, y, x)
+    screen = canossa.Screen(row, col, y, x, is_cjk)
 
     canossahandler = canossa.OutputHandler(screen, visibility=False)
 
-    inputhandler = skk.InputHandler(screen, sys.stdout, termenc)
+    inputhandler = skk.InputHandler(screen, sys.stdout, termenc, is_cjk)
 
     outputhandler = skk.OutputHandler()
-    if "xterm" in term:
+
+    use_title = True
+    if not "xterm" in term:
+        use_title = False
+
+    try:
+        da2 = _get_da2(sys.stdin, sys.stdout)
+        if len(da2) == 3 and da2[0] == '>32' and len(da2[1]) == 3: # Tera Term
+            use_title = False
+    except:
+        pass
+
+    if use_title:
         multiplexer = tff.FilterMultiplexer(canossahandler, outputhandler)
     else:
         multiplexer = tff.FilterMultiplexer(canossahandler, tff.DefaultHandler())
+
     session = tff.Session(tty)
     session.start(termenc=termenc,
                   stdin=sys.stdin,
