@@ -18,6 +18,30 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
+def _get_answerback(stdin, stdout):
+    import os, termios, select
+    
+    stdin_fileno = stdin.fileno()
+    vdisable = os.fpathconf(stdin_fileno, 'PC_VDISABLE')
+    backup = termios.tcgetattr(stdin_fileno)
+    new = termios.tcgetattr(stdin_fileno)
+    new[3] &= ~(termios.ECHO | termios.ICANON)
+    new[6][termios.VMIN] = 5 
+    new[6][termios.VTIME] = 1
+    termios.tcsetattr(stdin_fileno, termios.TCSANOW, new)
+    try:
+        stdout.write("\x05")
+        stdout.flush()
+        
+        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 0.05)
+        if rfd:
+            data = os.read(stdin_fileno, 1024)
+            return data
+    finally:
+        termios.tcsetattr(stdin_fileno, termios.TCSANOW, backup)
+
+
+
 def _getpos(stdin, stdout):
     import os, termios, select
     
@@ -168,6 +192,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         is_cjk = True 
     else:
         is_cjk = False 
+
     tty = tff.DefaultPTY(term, lang, command, sys.stdin)
     row, col = tty.fitsize()
     screen = canossa.Screen(row, col, y, x, is_cjk)
@@ -178,7 +203,10 @@ along with this program. If not, see http://www.gnu.org/licenses/.
 
     try:
         da2 = _get_da2(sys.stdin, sys.stdout)
-        if len(da2) == 3 and da2[0] == '>32' and len(da2[1]) == 3: # Tera Term
+        anserback = _get_answerback(sys.stdin, sys.stdout)
+        if answerback and answerback == "PuTTY":
+            use_title = False
+        elif len(da2) == 3 and da2[0] == '>32' and len(da2[1]) == 3: # Tera Term
             use_title = False
         elif len(da2) == 3 and da2[0] == '>65' and len(da2[1]) == 3: # RLogin 
             use_title = False
