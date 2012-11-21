@@ -26,8 +26,8 @@ def _getpos(stdin, stdout):
     backup = termios.tcgetattr(stdin_fileno)
     new = termios.tcgetattr(stdin_fileno)
     new[3] &= ~(termios.ECHO | termios.ICANON)
-    new[6][termios.VMIN] = 6
-    new[6][termios.VTIME] = 0
+    new[6][termios.VMIN] = 10 
+    new[6][termios.VTIME] = 1
     termios.tcsetattr(stdin_fileno, termios.TCSANOW, new)
     try:
         stdout.write("\x1b[6n")
@@ -53,8 +53,8 @@ def _get_da2(stdin, stdout):
     backup = termios.tcgetattr(stdin_fileno)
     new = termios.tcgetattr(stdin_fileno)
     new[3] &= ~(termios.ECHO | termios.ICANON)
-    new[6][termios.VMIN] = 3
-    new[6][termios.VTIME] = 0
+    new[6][termios.VMIN] = 20 
+    new[6][termios.VTIME] = 1
     termios.tcsetattr(stdin_fileno, termios.TCSANOW, new)
     try:
         stdout.write("\x1b[>0c")
