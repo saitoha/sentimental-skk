@@ -26,10 +26,11 @@ import terminfo
 import kanadb, eisuudb, dictionary
 import mode, candidate, context, word
 
+import codecs
 
 # マーク
-_SKK_MARK_COOK = u'▽'
-_SKK_MARK_SELECT = u'▼'
+_SKK_MARK_COOK = u'▽ '
+_SKK_MARK_SELECT = u'▼ '
 _SKK_MARK_OKURI = u'*'
 _SKK_MARK_OPEN = u'【'
 _SKK_MARK_CLOSE = u'】'
@@ -40,15 +41,19 @@ _SKK_MARK_CLOSE = u'】'
 #
 class InputHandler(tff.DefaultHandler):
 
-    def __init__(self, screen, stdout, termenc):
+    def __init__(self, screen, stdout, termenc, is_cjk=False):
         self.__screen = screen
-        self.__stdout = stdout
+        self.__stdout = codecs.getwriter(termenc)(stdout)
         self.__termenc = termenc
         self.__context = context.CharacterContext()
         self.__mode = mode.ModeManager()
         self.__word = word.WordBuffer()
-        self.__candidate = candidate.CandidateManager(screen)
+        self.__candidate = candidate.CandidateManager(screen, is_cjk)
         self.__counter = 0
+        if is_cjk:
+            self._wcswidth = wcwidth.wcswidth_cjk
+        else:
+            self._wcswidth = wcwidth.wcswidth
 
     def __reset(self):
         self.__clear()
@@ -60,20 +65,20 @@ class InputHandler(tff.DefaultHandler):
         self.__refleshtitle()
 
     def __clear(self):
-        candidate_length = wcwidth.wcswidth(_SKK_MARK_SELECT)
+        candidate_length = self._wcswidth(_SKK_MARK_SELECT)
         candidate_length += self.__candidate.getwidth()
-        cooking_length = wcwidth.wcswidth(_SKK_MARK_COOK)
+        cooking_length = self._wcswidth(_SKK_MARK_COOK)
         cooking_length += self.__word.length()
-        cooking_length += wcwidth.wcswidth(_SKK_MARK_OKURI)
-        cooking_length += wcwidth.wcswidth(self.__context.getbuffer())
-        length = max(candidate_length, cooking_length)
+        cooking_length += self._wcswidth(_SKK_MARK_OKURI)
+        cooking_length += self._wcswidth(self.__context.getbuffer())
+        length = max(candidate_length, cooking_length) + 4
         x = self.__screen.cursor.col
         y = self.__screen.cursor.row
         self.__screen.drawrect(x, y, length, 1)
         self.__write(u"\x1b[%d;%dH\x1b[?25h" % (y + 1, x + 1))
 
     def __write(self, s):
-        self.__stdout.write(s.encode(self.__termenc))
+        self.__stdout.write(s)
         self.__stdout.flush()
 
     def __settitle(self, value):
@@ -99,8 +104,11 @@ class InputHandler(tff.DefaultHandler):
                 self.__settitle(u'%s %s' % (face, result))
 
             result = _SKK_MARK_SELECT + result
-            seq = self.__candidate.getselections()
-            self.__write(u'\x1b7\x1b[1;4;32;44m%s\x1b[m\x1b8\x1b[?25l%s' % (result, seq))
+            x = self.__screen.cursor.col
+            y = self.__screen.cursor.row
+            self.__write(u'\x1b[1;4;32;44m%s\x1b[m\x1b[?25l\x1b[%d;%dH' % (result, y + 1, x + 1))
+
+            self.__candidate.draw(self.__stdout)
         elif not self.__word.isempty() or not self.__context.isempty():
             if self.__word.isempty():
                 s1 = u''
@@ -109,7 +117,9 @@ class InputHandler(tff.DefaultHandler):
             else:
                 s1 = _SKK_MARK_COOK + self.__word.get()
             s2 = self.__context.getbuffer() 
-            self.__write(u'\x1b7\x1b[1;4;31m%s\x1b[33m%s\x1b[m\x1b8\x1b[?25l' % (s1, s2))
+            x = self.__screen.cursor.col
+            y = self.__screen.cursor.row
+            self.__write(u'\x1b[1;4;31m%s\x1b[33m%s\x1b[m\x1b[?25l\x1b[%d;%dH' % (s1, s2, y + 1, x + 1))
         else:
             pass
 
@@ -174,7 +184,7 @@ class InputHandler(tff.DefaultHandler):
 
         face = self.__getface()
         self.__settitle(u'%s %s - %s' % (face, key, buf))
-        if not result is None:
+        if result:
             self.__candidate.assign(key, result, okuri)
             self.__clear()
             self.__display()
@@ -184,7 +194,7 @@ class InputHandler(tff.DefaultHandler):
         # かな読みだけを候補とする
         if self.__mode.iskata():
             key = kanadb.to_kata(key)
-        self.__candidate.assign(key, [], okuri)
+        self.__candidate.assign(key, None, okuri)
 
         return True
 
@@ -197,7 +207,6 @@ class InputHandler(tff.DefaultHandler):
         else:
             word, remarks = self.__candidate.getcurrent(kakutei=True)
         self.__settitle(u'＼(^o^)／')
-        ''' 再変換 '''
         self.__clear()
         self.__word.reset()
         self.__context.reset()
@@ -283,6 +292,7 @@ class InputHandler(tff.DefaultHandler):
                 self.__next()
             else:
                 context.write(c)
+
         elif c == 0x0e: # C-n
             if not self.__candidate.isempty():
                 if self.__context.isempty():
@@ -392,7 +402,9 @@ class InputHandler(tff.DefaultHandler):
                             # 変換中であれば、現在の候補をバックアップしておく
                             backup, remarks = self.__candidate.getcurrent(kakutei=True)
                             # バックアップがあるとき、変換候補をリセット
+                            #self.__clear()
                             self.__candidate.clear()
+                            self.__clear()
 
                             # 現在の候補を確定
                             context.writestring(backup)

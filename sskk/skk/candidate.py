@@ -42,14 +42,22 @@ class CandidateManager():
     width = 10
     height = 5
 
-    def __init__(self, screen):
+    def __init__(self, screen, is_cjk=False):
+        if is_cjk:
+            self._wcswidth = wcwidth.wcswidth_cjk
+        else:
+            self._wcswidth = wcwidth.wcswidth
         self.__screen = screen
         self.reset()
 
-    def assign(self, key, value=[], okuri=u''):
+
+    def assign(self, key, value=None, okuri=u''):
         self.__index = 0
         self.__key = key
-        self.__list = value
+        if value:
+            self.__list = value.split(u"/")
+        else:
+            self.__list = [] 
         self.__okuri = okuri
 
     def reset(self):
@@ -93,11 +101,11 @@ class CandidateManager():
         if self.isempty():
             return 0
         result, remarks = self.getcurrent()
-        main_length = wcwidth.wcswidth(result)
+        main_length = self._wcswidth(result)
         if len(self.__okuri) == 0:
             return main_length
         else:
-            return main_length + wcwidth.wcswidth(self.__okuri)
+            return main_length + self._wcswidth(self.__okuri)
 
     def movenext(self):
         length = len(self.__list) # 候補数
@@ -114,9 +122,15 @@ class CandidateManager():
             if self.__index < self.__scrollpos:
                 self.__scrollpos = self.__index
 
+    def __truncate_str(self, s, length):
+        if self._wcswidth(s) > length:
+            return s[:length] + u"..."
+        return s
+
     def __getdisplayinfo(self, vdirection):
-        width = self.width
-        l = self.__list
+        width = 0
+        l = [self.__truncate_str(s, 20) for s in self.__list]
+
         if len(l) > 5:
             l = l[self.__scrollpos:self.__scrollpos + 5]
             pos = self.__index - self.__scrollpos
@@ -124,9 +138,9 @@ class CandidateManager():
             pos = self.__index
 
         for value in l:
-            width = max(width, wcwidth.wcswidth(value) + 6)
+            width = max(width, self._wcswidth(value) + 6)
 
-        width = max(self.width, width)
+        #width = max(self.width, width)
         self.width = width
         self.height = min(5, len(l))
         if self.__screen.cursor.col + width > self.__screen.width:
@@ -143,38 +157,39 @@ class CandidateManager():
             vdirection = _POPUP_NORMALDIR 
         return vdirection
 
-    def getselections(self):
+    def draw(self, s):
+        self.erase()
         if self.__index >= len(self.__list):
-            if self.__show == True:
-                self.erase()
             return u''
         vdirection = self.__getdirection()
         l, pos, width, offset = self.__getdisplayinfo(self.__movedir)
-        s = StringIO()
+        y = self.__screen.cursor.row
+        x = self.__screen.cursor.col
+
         if vdirection:
-            s.write(u'\x1b[B')
+            top = y + 1
         else:
-            s.write(u'\x1b[%dA' % self.height)
+            top = y - self.height
+
         if offset > 0:
-            s.write(u'\x1b[%dD' % offset)
-        for i, value in enumerate(l):
-            s.write(u'\x1b[41m')
-            if i == pos:
-                s.write(u'\x1b[42m')
-            s.write(u' ' * width + u'\x1b[%dD' % width)
-            if i == pos:
-                s.write(u'\x1b[1;42m')
-            s.write(value + u'\x1b[%dD' % wcwidth.wcswidth(value))
-            if i == pos:
-                s.write(u'\x1b[41m')
-            s.write(u'\x1b[B')
-            s.write(u'\x1b[m')
-        if vdirection:
-            s.write(u'\x1b[%dA' % (self.height + 1))
+            left = x - offset
         else:
-            pass
+            left = x
+
+        for i, value in enumerate(l):
+            if i == pos: # 選択行
+                s.write(u'\x1b[0;1;37;42m')
+            else: # 非選択行
+                s.write(u'\x1b[0;1;37;41m')
+            s.write(u'\x1b[%d;%dH' % (top + 1 + i, left + 1))
+            s.write(u' ' * width)
+            if i == pos: s.write(u'\x1b[1;42m')
+            s.write(u'\x1b[%d;%dH' % (top + 1 + i, left + 1))
+            s.write(value)
+            if i == pos: s.write(u'\x1b[41m')
+            s.write(u'\x1b[m')
+        s.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
         self.__show = True
-        return s.getvalue()
 
     def erase(self):
         if self.__screen.cursor.col + self.width >= self.__screen.width:
@@ -190,9 +205,12 @@ class CandidateManager():
             y = screen.cursor.row - self.height
         w = self.width + 2
         h = self.height
-        sys.stdout.write("\x1b7")
+        #sys.stdout.write("\x1b7")
         screen.drawrect(x, y, w, h)
-        sys.stdout.write("\x1b8")
+        #sys.stdout.write("\x1b8")
+        x = self.__screen.cursor.col
+        y = self.__screen.cursor.row
+        sys.stdout.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
         self.__show = False
          
     def clear(self):

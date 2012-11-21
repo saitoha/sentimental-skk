@@ -37,9 +37,9 @@ def _load_dictionary():
         okuri = g.group(2)
         value = g.group(3)
         if okuri:
-            _okuridb[key + okuri] = value.split(u'/')
+            _okuridb[key + okuri] = value
         else:
-            _tangodb[key] = value.split(u'/')
+            _tangodb[key] = value 
 
 def gettango(key):
     if _tangodb.has_key(key):
