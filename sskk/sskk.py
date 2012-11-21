@@ -180,6 +180,8 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         da2 = _get_da2(sys.stdin, sys.stdout)
         if len(da2) == 3 and da2[0] == '>32' and len(da2[1]) == 3: # Tera Term
             use_title = False
+        elif len(da2) == 3 and da2[0] == '>65' and len(da2[1]) == 3: # RLogin 
+            use_title = False
     except:
         pass
 
