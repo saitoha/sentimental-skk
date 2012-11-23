@@ -47,6 +47,7 @@ class InputHandler(tff.DefaultHandler):
     _y = 0
     _lastclick = 0
     _mousedown = False
+    _mousedrag = False
 
     def __init__(self,
                  screen,
