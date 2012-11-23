@@ -120,7 +120,7 @@ class InputHandler(tff.DefaultHandler):
             result = _SKK_MARK_SELECT + result
             x = self.__screen.cursor.col
             y = self.__screen.cursor.row
-            self.__write(u'\x1b[1;4;32;44m%s\x1b[m\x1b[?25l\x1b[%d;%dH' % (result, y + 1, x + 1))
+            self.__write(u'\x1b[1;4;31m%s\x1b[m\x1b[?25l\x1b[%d;%dH' % (result, y + 1, x + 1))
 
             self.__candidate.draw(self.__stdout)
         elif not self.__word.isempty() or not self.__context.isempty():
@@ -497,7 +497,10 @@ class InputHandler(tff.DefaultHandler):
     def onmouseclick(self, context, x, y):
         candidate = self.__candidate
         if candidate.includes(x, y):
-            self.__candidate.click(x, y)
+            if candidate.position_is_selected(y):
+                self.__kakutei(context)
+            else:
+                self.__candidate.click(x, y)
             self.__display()
         else:
             self.__restore()
@@ -590,7 +593,17 @@ class InputHandler(tff.DefaultHandler):
         return None
 
     def __dispatch_mouse(self, context, code, x, y):
-        if code & 0x3 == 0x3: # mouse up
+
+        if code & 32: # mouse move
+            if self._mousedrag:
+                self.onmousedragmove(context, x, y)
+            elif self._mousedown:
+                self._mousedrag = True
+                self.onmousedragstart(context, x, y)
+            else:
+                self.onmousemove(context, x, y)
+
+        elif code & 0x3 == 0x3: # mouse up
             self._mousedown = False
             if self._mousedrag:
                 self._mousedrag = False
@@ -605,15 +618,7 @@ class InputHandler(tff.DefaultHandler):
             else:
                 self.onmouseup(context, x, y)
 
-        elif code >= 32: # mouse move
-            if self._mousedrag:
-                self.onmousedragmove(context, x, y)
-            elif self._mousedown:
-                self._mousedrag = True
-                self.onmousedragstart(context, x, y)
-            else:
-                self.onmousemove(context, x, y)
-        elif code >= 64: # mouse scroll
+        elif code & 64: # mouse scroll
             if code & 0x1:
                 self.onmousescrollup(context, x, y)
             else:

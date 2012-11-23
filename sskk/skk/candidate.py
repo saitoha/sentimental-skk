@@ -143,6 +143,10 @@ class CandidateManager():
             if self.__index < self.__scrollpos:
                 self.__scrollpos = self.__index
 
+    def position_is_selected(self, y):
+        n = y - self.top
+        return self.__scrollpos + n == self.__index
+
     def click(self, x, y):
         n = y - self.top
         while self.__scrollpos + n < self.__index:
