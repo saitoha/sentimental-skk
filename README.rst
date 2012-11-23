@@ -43,6 +43,7 @@ Usage
     -l LANG, --lang=LANG        override LANG environment variable
     -o ENC, --outenc=ENC        set output encoding
     -u, --use-titlebar          use title bar manipulation feature
+    -m, --use-mouse             use mouse features (click or mousemove selection/scroll selection/drag&drop popup)
 
 Dependency
 ----------

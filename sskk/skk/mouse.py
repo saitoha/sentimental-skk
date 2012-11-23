@@ -36,9 +36,9 @@ class MouseMode():
         if self.protocol == 0:
             s.write(u"\x1b[?1000l")
         else:
-            s.writestring(u"\x1b[?%dl" % self.protocol)
+            s.write(u"\x1b[?%dl" % self.protocol)
             if self.encoding != 0:
-                s.writestring(u"\x1b[?%dl" % self.encoding)
+                s.write(u"\x1b[?%dl" % self.encoding)
 
 
 def test():
