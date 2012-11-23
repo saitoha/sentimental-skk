@@ -505,6 +505,12 @@ class InputHandler(tff.DefaultHandler):
     def onmouseup(self, context, x, y):
         pass
 
+    def onmousemove(self, context, x, y):
+        candidate = self.__candidate
+        if candidate.isshown() and candidate.includes(x, y):
+            candidate.click(x, y)
+            self.__display()
+
     def onmousedragmove(self, context, x, y):
         if self.__dragstart_pos:
             origin_x, origin_y = self.__dragstart_pos
