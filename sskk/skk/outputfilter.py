@@ -51,23 +51,11 @@ class OutputHandler(tff.DefaultHandler):
         self.__mouse_mode = mouse_mode
 
     def handle_start(self, context):
-        if self.__use_mouse:
-            context.writestring(u"\x1b[?1000h")
-            context.writestring(u"\x1b[?1002h")
-            context.writestring(u"\x1b[?1003h")
-            context.writestring(u"\x1b[?1015h")
-            context.writestring(u"\x1b[?1006h")
         self.__super.handle_start(context)
 
     def handle_end(self, context):
         if self.__use_title:
             context.writestring(u'\x1b]0;／^o^＼\x07')
-        if self.__use_mouse:
-            context.writestring(u"\x1b[?1006l")
-            context.writestring(u"\x1b[?1015l")
-            context.writestring(u"\x1b[?1003l")
-            context.writestring(u"\x1b[?1002l")
-            context.writestring(u"\x1b[?1000l")
         self.__super.handle_end(context)
 
     def handle_esc(self, context, intermediate, final):
@@ -152,7 +140,8 @@ class OutputHandler(tff.DefaultHandler):
                         s = title.get()
                         if s:
                             value = num + [0x3b] + [ord(x) for x in s]
-                            context.writestring(u"\x1b]%s\x1b\\" % u"".join([unichr(c) for c in value]))
+                            new_title = u"".join([unichr(c) for c in value])
+                            context.writestring(u"\x1b]%s\x1b\\" % new_title)
         return False
 
 

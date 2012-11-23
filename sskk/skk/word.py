@@ -28,9 +28,15 @@ class WordBuffer():
 
     __main = None
     __mode = _SKK_WORD_NONE
+    _wcswidth = None
 
-    def __init__(self):
+    def __init__(self, is_cjk=False):
         self.reset()
+        self._is_cjk = is_cjk
+        if is_cjk:
+            self._wcswidth = wcwidth.wcswidth_cjk
+        else:
+            self._wcswidth = wcwidth.wcswidth
 
     def reset(self):
         self.__mode = _SKK_WORD_NONE 
@@ -79,9 +85,9 @@ class WordBuffer():
         if self.__mode == _SKK_WORD_NONE:
             return 0
         elif self.__mode == _SKK_WORD_MAIN:
-            return wcwidth.wcswidth(self.__main)
+            return self._wcswidth(self.__main)
         else:
             assert self.__mode == _SKK_WORD_OKURI
-            return wcwidth.wcswidth(self.__main)
+            return self._wcswidth(self.__main)
 
 

@@ -53,15 +53,15 @@ class InputHandler(tff.DefaultHandler):
                  screen,
                  stdout,
                  termenc,
-                 is_cjk=False,
-                 mouse_mode=None):
+                 is_cjk,
+                 mouse_mode):
         self.__screen = screen
         self.__stdout = codecs.getwriter(termenc)(stdout)
         self.__termenc = termenc
         self.__context = context.CharacterContext()
         self.__mode = mode.ModeManager()
-        self.__word = word.WordBuffer()
-        self.__candidate = candidate.CandidateManager(screen, is_cjk)
+        self.__word = word.WordBuffer(is_cjk)
+        self.__candidate = candidate.CandidateManager(screen, is_cjk, mouse_mode)
         self.__counter = 0
         self.__mouse_mode = mouse_mode
         if is_cjk:
@@ -258,7 +258,11 @@ class InputHandler(tff.DefaultHandler):
             self.__display()
 
     def handle_char(self, context, c):
+        
         if not self.__mouse_state is None:
+            # xterm のX10/normal mouse encodingが互換じゃないので
+            # TFFだけではちゃんと補足できない。
+            # なので、CSI M
             self.__mouse_state.append(c - 32)
             if len(self.__mouse_state) == 3:
                 code, x, y = self.__mouse_state

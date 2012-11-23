@@ -46,3 +46,4 @@ if setab is None:
     setab = u'\x1b[4%p1%dm'
 if setaf is None:
     setaf = u'\x1b[3%p1%dm'
+

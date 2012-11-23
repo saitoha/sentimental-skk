@@ -20,14 +20,11 @@
 
 import sys
 import wcwidth
-try:
-    from CStringIO import StringIO
-except:
-    from StringIO import StringIO
 
-_POPUP_NORMALDIR = True
-_POPUP_REVERSEDIR = False
+_POPUP_DIR_NORMAL = True
+_POPUP_DIR_REVERSE = False
 _POPUP_HEIGHT = 10
+
 ################################################################################
 #
 # CandidateManager
@@ -35,7 +32,7 @@ _POPUP_HEIGHT = 10
 class CandidateManager():
 
     __list = None
-    __movedir = _POPUP_NORMALDIR
+    __movedir = _POPUP_DIR_NORMAL
     __scrollpos = 0
     __show = False 
 
@@ -46,14 +43,14 @@ class CandidateManager():
     offset_left = 0
     offset_top = 0
 
-    def __init__(self, screen, is_cjk=False):
+    def __init__(self, screen, is_cjk=False, mouse_mode=None):
         if is_cjk:
             self._wcswidth = wcwidth.wcswidth_cjk
         else:
             self._wcswidth = wcwidth.wcswidth
         self.__screen = screen
+        self.__mouse_mode = mouse_mode
         self.reset()
-
 
     def assign(self, key, value=None, okuri=u''):
         self.__index = 0
@@ -69,9 +66,11 @@ class CandidateManager():
         self.__list = None
         self.__okuri = None
         self.__key = None
-        self.__movedir = _POPUP_NORMALDIR
+        self.__movedir = _POPUP_DIR_NORMAL
         self.width = 8
         self.height = 0
+        self.left = None
+        self.top = None
         self.offset_left = 0
         self.offset_top = 0
         self.__scrollpos = 0
@@ -132,14 +131,14 @@ class CandidateManager():
     def movenext(self):
         length = len(self.__list) # 候補数
         if self.__index < length:
-            self.__movedir = _POPUP_NORMALDIR
+            self.__movedir = _POPUP_DIR_NORMAL
             self.__index += 1
             if self.__index - _POPUP_HEIGHT + 1 > self.__scrollpos:
                 self.__scrollpos = self.__index - _POPUP_HEIGHT + 1 
 
     def moveprev(self):
         if self.__index > 0:
-            self.__movedir = _POPUP_REVERSEDIR
+            self.__movedir = _POPUP_DIR_REVERSE
             self.__index -= 1
             if self.__index < self.__scrollpos:
                 self.__scrollpos = self.__index
@@ -194,9 +193,9 @@ class CandidateManager():
     def __getdirection(self, row):
         screen = self.__screen
         if row * 2 > screen.height:
-            vdirection = _POPUP_REVERSEDIR
+            vdirection = _POPUP_DIR_REVERSE
         else:            
-            vdirection = _POPUP_NORMALDIR 
+            vdirection = _POPUP_DIR_NORMAL 
         return vdirection
 
     def set_offset(self, s, offset_x, offset_y):
@@ -221,7 +220,7 @@ class CandidateManager():
                             self.height)
         elif self.offset_left > offset_x:
             screen.drawrect(s,
-                            self.left + self.offset_left + self.width - (self.offset_left - offset_x),
+                            self.left + self.width + offset_x,
                             self.top + self.offset_top,
                             self.offset_left - offset_x,
                             self.height)
@@ -235,7 +234,7 @@ class CandidateManager():
         elif self.offset_top > offset_y:
             screen.drawrect(s,
                             self.left + self.offset_left,
-                            self.top + self.offset_top + self.height - (self.offset_top - offset_y),
+                            self.top + self.height + offset_y,
                             self.width,
                             self.offset_top - offset_y)
 
@@ -264,6 +263,8 @@ class CandidateManager():
                                        top,
                                        self.left + self.width - (left + width),
                                        height)
+        else:
+            self.__mouse_mode.set_on(s)
         self.left = left 
         self.top = top 
         self.width = width
@@ -305,5 +306,6 @@ class CandidateManager():
          
     def clear(self, s):
         self.erase(s)
+        self.__mouse_mode.set_off(s)
         self.reset()
 
