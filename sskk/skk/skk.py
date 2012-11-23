@@ -56,7 +56,7 @@ class InputHandler(tff.DefaultHandler):
                  is_cjk,
                  mouse_mode):
         self.__screen = screen
-        self.__stdout = codecs.getwriter(termenc)(stdout)
+        self.__stdout = codecs.getwriter(termenc)(stdout, errors='ignore')
         self.__termenc = termenc
         self.__context = context.CharacterContext()
         self.__mode = mode.ModeManager()
