@@ -71,82 +71,88 @@ class OutputHandler(tff.DefaultHandler):
         self.__super.handle_end(context)
 
     def handle_esc(self, context, intermediate, final):
-        if final == 0x63 and len(intermediate) == 0:
-            self.__mouse_mode.protocol = 0
-            self.__mouse_mode.encoding = 0
-        # TODO DECTSR support
+        if self.__use_mouse:
+            if final == 0x63 and len(intermediate) == 0:
+                self.__mouse_mode.protocol = 0
+                self.__mouse_mode.encoding = 0
+            # TODO DECTSR support
         return False
 
     def handle_csi(self, context, parameter, intermediate, final):
-        if len(parameter) > 0:
-            if parameter[0] == 0x3f and len(intermediate) == 0:
-                params = _parse_params(parameter[1:])
-                if final == 0x68: # 'h'
-                    modes = []
-                    for param in params:
-                        if param == 1000:
-                            self.__mouse_mode.protocol = 1000 
-                        elif param == 1001:
-                            self.__mouse_mode.protocol = 1001 
-                        elif param == 1002:
-                            self.__mouse_mode.protocol = 1002 
-                        elif param == 1003:
-                            self.__mouse_mode.protocol = 1003 
-                        elif param == 1005:
-                            self.__mouse_mode.encoding = 1005 
-                        elif param == 1015:
-                            self.__mouse_mode.encoding = 1015 
-                        elif param == 1006:
-                            self.__mouse_mode.encoding = 1006 
-                        else:
-                            modes.append(str(param))
-                    if len(modes) > 0:
-                        context.writestring("\x1b[?%sh" % ";".join(modes))
-                    return True
-                elif final == 0x6c: # 'l'
-                    modes = []
-                    for param in params:
-                        if param == 1000:
-                            self.__mouse_mode.protocol = 0
-                        elif param == 1001:
-                            self.__mouse_mode.protocol = 0
-                        elif param == 1002:
-                            self.__mouse_mode.protocol = 0
-                        elif param == 1003:
-                            self.__mouse_mode.protocol = 0
-                        elif param == 1005:
-                            self.__mouse_mode.encoding = 0
-                        elif param == 1015:
-                            self.__mouse_mode.encoding = 0
-                        elif param == 1006:
-                            self.__mouse_mode.encoding = 0
-                        else:
-                            modes.append(str(param))
-                    if len(modes) > 0:
-                        context.writestring("\x1b[?%sl" % ";".join(modes))
-                    return True
+        if self.__use_mouse:
+            if len(parameter) > 0:
+                if parameter[0] == 0x3f and len(intermediate) == 0:
+                    params = _parse_params(parameter[1:])
+                    if final == 0x68: # 'h'
+                        modes = []
+                        for param in params:
+                            if param == 1000:
+                                self.__mouse_mode.protocol = 1000 
+                            elif param == 1001:
+                                self.__mouse_mode.protocol = 1001 
+                            elif param == 1002:
+                                self.__mouse_mode.protocol = 1002 
+                            elif param == 1003:
+                                self.__mouse_mode.protocol = 1003 
+                            elif param == 1005:
+                                self.__mouse_mode.encoding = 1005 
+                            elif param == 1015:
+                                self.__mouse_mode.encoding = 1015 
+                            elif param == 1006:
+                                self.__mouse_mode.encoding = 1006 
+                            else:
+                                modes.append(str(param))
+                        if len(modes) > 0:
+                            context.writestring("\x1b[?%sh" % ";".join(modes))
+                        return True
+                    elif final == 0x6c: # 'l'
+                        modes = []
+                        for param in params:
+                            if param == 1000:
+                                self.__mouse_mode.protocol = 0
+                            elif param == 1001:
+                                self.__mouse_mode.protocol = 0
+                            elif param == 1002:
+                                self.__mouse_mode.protocol = 0
+                            elif param == 1003:
+                                self.__mouse_mode.protocol = 0
+                            elif param == 1005:
+                                self.__mouse_mode.encoding = 0
+                            elif param == 1015:
+                                self.__mouse_mode.encoding = 0
+                            elif param == 1006:
+                                self.__mouse_mode.encoding = 0
+                            else:
+                                modes.append(str(param))
+                        if len(modes) > 0:
+                            context.writestring("\x1b[?%sl" % ";".join(modes))
+                        return True
         return False
 
     def handle_control_string(self, context, prefix, value):
-        if prefix == 0x5d: # ']'
-            try:
-                pos = value.index(0x3b)
-            except ValueError:
-                return 
-            if pos == -1:
-                return
-            elif pos == 0:
-                num = [0]
-            else:
+        if self.__use_title:
+            if prefix == 0x5d: # ']'
                 try:
-                    num = value[:pos]
-                except:
-                    num = None 
-            if not num is None:
-                if num == [0x30] or num == [0x32]:
-                    arg = value[pos + 1:]
-                    title.setoriginal(u''.join([unichr(x) for x in arg]))
-                    value = num + [0x3b] + [ord(x) for x in title.get()]
+                    pos = value.index(0x3b)
+                except ValueError:
+                    return 
+                if pos == -1:
+                    return
+                elif pos == 0:
+                    num = [0]
+                else:
+                    try:
+                        num = value[:pos]
+                    except:
+                        num = None 
+                if not num is None:
+                    if num == [0x30] or num == [0x32]:
+                        arg = value[pos + 1:]
+                        title.setoriginal(u''.join([unichr(x) for x in arg]))
+                        s = title.get()
+                        if s:
+                            value = num + [0x3b] + [ord(x) for x in s]
+                            context.writestring(u"\x1b]%s\x1b\\" % u"".join([unichr(c) for c in value]))
         return False
 
 
