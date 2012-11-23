@@ -25,4 +25,34 @@ class MouseMode():
     protocol = 0
     encoding = 0
 
+    def set_on(self, s):
+        s.write(u"\x1b[?1000h")
+        s.write(u"\x1b[?1002h")
+        s.write(u"\x1b[?1003h")
+        s.write(u"\x1b[?1015h")
+        s.write(u"\x1b[?1006h")
+
+    def set_off(self, s):
+        if self.protocol == 0:
+            s.write(u"\x1b[?1000l")
+        else:
+            s.writestring(u"\x1b[?%dl" % self.protocol)
+            if self.encoding != 0:
+                s.writestring(u"\x1b[?%dl" % self.encoding)
+
+
+def test():
+    import StringIO
+    s = StringIO.StringIO()
+    mouse_mode = MouseMode()
+    mouse_mode.set_on(s)
+    print s.getvalue().replace("\x1b", "<ESC>")
+    s.truncate(0)
+    mouse_mode.set_on(s)
+    print s.getvalue().replace("\x1b", "<ESC>")
+    s.truncate(0)
+
+if __name__ == "__main__":
+    print "MouseMode test."
+    test()
 
