@@ -27,6 +27,7 @@ import kanadb, eisuudb, dictionary
 import mode, candidate, context, word
 
 import codecs
+import time
 
 # マーク
 _SKK_MARK_COOK = u'▽ '
@@ -41,7 +42,18 @@ _SKK_MARK_CLOSE = u'】'
 #
 class InputHandler(tff.DefaultHandler):
 
-    def __init__(self, screen, stdout, termenc, is_cjk=False):
+    __mouse_state = None
+    _x = 0
+    _y = 0
+    _lastclick = 0
+    _mousedown = False
+
+    def __init__(self,
+                 screen,
+                 stdout,
+                 termenc,
+                 is_cjk=False,
+                 mouse_mode=None):
         self.__screen = screen
         self.__stdout = codecs.getwriter(termenc)(stdout)
         self.__termenc = termenc
@@ -50,6 +62,7 @@ class InputHandler(tff.DefaultHandler):
         self.__word = word.WordBuffer()
         self.__candidate = candidate.CandidateManager(screen, is_cjk)
         self.__counter = 0
+        self.__mouse_mode = mouse_mode
         if is_cjk:
             self._wcswidth = wcwidth.wcswidth_cjk
         else:
@@ -59,7 +72,7 @@ class InputHandler(tff.DefaultHandler):
         self.__clear()
         self.__context.reset()
         if not self.__candidate.isempty():
-            self.__candidate.clear()
+            self.__candidate.clear(self.__stdout)
         self.__mode.endeisuu()
         self.__word.reset() 
         self.__refleshtitle()
@@ -74,7 +87,7 @@ class InputHandler(tff.DefaultHandler):
         length = max(candidate_length, cooking_length) + 4
         x = self.__screen.cursor.col
         y = self.__screen.cursor.row
-        self.__screen.drawrect(x, y, length, 1)
+        self.__screen.drawrect(self.__stdout, x, y, length, 1)
         self.__write(u"\x1b[%d;%dH\x1b[?25h" % (y + 1, x + 1))
 
     def __write(self, s):
@@ -210,7 +223,7 @@ class InputHandler(tff.DefaultHandler):
         self.__clear()
         self.__word.reset()
         self.__context.reset()
-        self.__candidate.clear()
+        self.__candidate.clear(self.__stdout)
         context.writestring(word)
 
     def __restore(self):
@@ -218,7 +231,7 @@ class InputHandler(tff.DefaultHandler):
         self.__clear()
         self.__word.reset()
         self.__word.append(self.__candidate.getyomi())
-        self.__candidate.clear()
+        self.__candidate.clear(self.__stdout)
         self.__display()
 
     def __next(self):
@@ -244,7 +257,18 @@ class InputHandler(tff.DefaultHandler):
             self.__display()
 
     def handle_char(self, context, c):
-        if c == 0x0a: # LF C-j
+        if not self.__mouse_state is None:
+            self.__mouse_state.append(c - 32)
+            if len(self.__mouse_state) == 3:
+                code, x, y = self.__mouse_state
+                self.__mouse_state = None
+                if self.__candidate.isshown():
+                    self.__dispatch_mouse(context, code, x - 1, y - 1) 
+                if self.__mouse_mode.protocol != 0:
+                    params = (code + 32, x + 32, y + 32)
+                    context.writestring("\x1b[M%c%c%c" % params)
+            return True 
+        elif c == 0x0a: # LF C-j
             if self.__mode.isdirect():
                 self.__mode.toggle()
                 self.__refleshtitle()
@@ -258,7 +282,7 @@ class InputHandler(tff.DefaultHandler):
             else:
                 context.write(c)
 
-        elif c == 0x07: # BEL
+        elif c == 0x07: # BEL C-g
             if self.__candidate.isempty():
                 self.__reset()
             else:
@@ -403,7 +427,7 @@ class InputHandler(tff.DefaultHandler):
                             backup, remarks = self.__candidate.getcurrent(kakutei=True)
                             # バックアップがあるとき、変換候補をリセット
                             #self.__clear()
-                            self.__candidate.clear()
+                            self.__candidate.clear(self.__stdout)
                             self.__clear()
 
                             # 現在の候補を確定
@@ -418,7 +442,8 @@ class InputHandler(tff.DefaultHandler):
 
                         # 先行する入力があるか
                         elif self.__word.isempty() or len(self.__word.get()) == 0:
-                            # 先行する入力が無いとき、単語バッファを編集マーク('▽')とする
+                            # 先行する入力が無いとき、
+                            # 単語バッファを編集マーク('▽')とする
                             self.__word.startedit()
                             # cが母音か
                             if self.__context.isfinal():
@@ -441,7 +466,7 @@ class InputHandler(tff.DefaultHandler):
                             result, remarks = self.__candidate.getcurrent(kakutei=True)
                             self.__word.reset() 
                             #self.__clear()
-                            self.__candidate.clear()
+                            self.__candidate.clear(self.__stdout)
                             context.writestring(result)
                             if self.__context.isfinal():
                                 s = self.__context.drain()
@@ -463,4 +488,174 @@ class InputHandler(tff.DefaultHandler):
                     self.__display()
 
         return True # handled
+
+    def onmouseclick(self, context, x, y):
+        candidate = self.__candidate
+        if candidate.includes(x, y):
+            self.__candidate.click(x, y)
+            self.__display()
+        else:
+            self.__restore()
+
+    def onmouseup(self, context, x, y):
+        pass
+
+    def onmousedragmove(self, context, x, y):
+        if self.__dragstart_pos:
+            origin_x, origin_y = self.__dragstart_pos
+            offset_x = x - origin_x
+            offset_y = y - origin_y
+            candidate = self.__candidate
+            candidate.set_offset(self.__stdout, offset_x, offset_y)
+            self.__display()
+
+    def onmousedragstart(self, context, x, y):
+        if self.__candidate.includes(x, y):
+            self.__dragstart_pos = (x, y)
+
+    def onmousedragend(self, context, x, y):
+        if self.__dragstart_pos:
+            self.__dragstart_pos = None
+            self.__candidate.erase(self.__stdout)
+            self.__candidate.offset_left = 0 
+            self.__candidate.offset_top = 0 
+            self.__display()
+
+    def onmousedoubleclick(self, context, x, y):
+        self.__kakutei(context)
+
+    def onmousescrolldown(self, context, x, y):
+        self.__candidate.movenext()
+        self.__display()
+
+    def onmousescrollup(self, context, x, y):
+        self.__candidate.moveprev()
+        self.__display()
+
+    def _decode_mouse(self, context, parameter, intermediate, final):
+        if len(parameter) == 0:
+            if final == 0x4d: # M
+                return 1000, None, None, None, None
+            return None
+        elif parameter[0] == 0x3c:
+            if final == 0x4d: # M
+                p = ''.join([chr(c) for c in parameter[1:]])
+                try:
+                    params = [int(c) for c in p.split(";")]
+                    if len(params) != 3:
+                        return  False
+                    code, x, y = params
+                    x -= 1
+                    y -= 1
+                except ValueError:
+                    return False
+                return 1006, False, code, x, y 
+            elif final == 0x6d: # m
+                p = ''.join([chr(c) for c in parameter[1:]])
+                try:
+                    params = [int(c) for c in p.split(";")]
+                    if len(params) != 3:
+                        return  False
+                    code, x, y = params
+                    x -= 1
+                    y -= 1
+                except ValueError:
+                    return None
+                return 1006, True, code, x, y 
+        elif 0x30 <= parameter[0] and parameter[0] <= 0x39:
+            if final == 0x4d: # M
+                p = ''.join([chr(c) for c in parameter])
+                try:
+                    params = [int(c) for c in p.split(";")]
+                    if len(params) != 3:
+                        return  False
+                    code, x, y = params
+                    code -= 32
+                    x -= 1
+                    y -= 1
+                except ValueError:
+                    return False
+                return 1015, False, code, x, y 
+        return None
+
+    def __dispatch_mouse(self, context, code, x, y):
+        if code & 0x3 == 0x3: # mouse up
+            self._mousedown = False
+            if self._mousedrag:
+                self._mousedrag = False
+                self.onmousedragend(context, x, y)
+            elif x == self._x and y == self._y:
+                now = time.time()
+                if now - self._lastclick < 0.1:
+                    self.onmousedoubleclick(context, x, y)
+                else:
+                    self.onmouseclick(context, x, y)
+                self._lastclick = now
+            else:
+                self.onmouseup(context, x, y)
+
+        elif code >= 32: # mouse move
+            if self._mousedrag:
+                self.onmousedragmove(context, x, y)
+            elif self._mousedown:
+                self._mousedrag = True
+                self.onmousedragstart(context, x, y)
+            else:
+                self.onmousemove(context, x, y)
+        elif code >= 64: # mouse scroll
+            if code & 0x1:
+                self.onmousescrollup(context, x, y)
+            else:
+                self.onmousescrolldown(context, x, y)
+        else: # mouse down
+            self._x = x
+            self._y = y
+            self._mousedown = True
+            self._mousedrag = False
+
+    def handle_csi(self, context, parameter, intermediate, final):
+
+        mouse_info = self._decode_mouse(context, parameter, intermediate, final)
+        if mouse_info:
+            mode, mouseup, code, x, y = mouse_info 
+            if mode == 1000:
+                self.__mouse_state = [] 
+                return True
+            elif self.__candidate.isshown():
+                if mouseup:
+                    code |= 0x3
+                self.__dispatch_mouse(context, code, x, y) 
+                return True
+            if self.__mouse_mode.protocol == 1006:
+                if mode == 1006: 
+                    return False
+                elif mode == 1015:
+                    params = (code + 32, x, y)
+                    context.writestring("\x1b[%d;%d;%dM" % params)
+                    return True
+                elif mode == 1000:
+                    params = (Min(0x7e, code) + 32, x + 32, y + 32)
+                    context.writestring("\x1b[M%c%c%c" % params)
+                    return True
+                return True
+            if self.__mouse_mode.protocol == 1015:
+                if mode == 1015: 
+                    return False
+                elif mode == 1006:
+                    params = (code + 32, x, y)
+                    if mouseup:
+                        context.writestring("\x1b[%d;%d;%dm" % params)
+                    else:
+                        context.writestring("\x1b[%d;%d;%dM" % params)
+                    return True
+                elif mode == 1000:
+                    params = (Min(0x7e, code) + 32, x + 32, y + 32)
+                    context.writestring("\x1b[M%c%c%c" % params)
+                    return True
+            else:
+                return True
+            return True
+
+        return False 
+
 

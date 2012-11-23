@@ -96,7 +96,6 @@ def main():
     import sys, os, optparse, select
     import tff
     import skk
-    import canossa
 
     # parse options and arguments
     usage = 'usage: %prog [options] [command | - ]'
@@ -118,6 +117,10 @@ def main():
     parser.add_option('-u', '--use-titlebar', dest='titlebar',
                       action="store_true", default=False,
                       help='use title bar manipulation feature')
+
+    parser.add_option('-m', '--use-mouse', dest='mouse',
+                      action="store_true", default=False,
+                      help='use mouse selection feature')
 
     (options, args) = parser.parse_args()
 
@@ -198,16 +201,16 @@ along with this program. If not, see http://www.gnu.org/licenses/.
 
     tty = tff.DefaultPTY(term, lang, command, sys.stdin)
     row, col = tty.fitsize()
-    screen = canossa.Screen(row, col, y, x, is_cjk)
 
     use_title = options.titlebar
+    use_mouse = options.mouse
 
     if not "xterm" in term:
         use_title = False
 
     try:
         da2 = _get_da2(sys.stdin, sys.stdout)
-        anserback = _get_answerback(sys.stdin, sys.stdout)
+        answerback = _get_answerback(sys.stdin, sys.stdout)
         if answerback and answerback == "PuTTY":
             use_title = False
         elif len(da2) == 3 and da2[0] == '>32' and len(da2[1]) == 3: # Tera Term
@@ -218,18 +221,24 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         pass
 
     import skk.title
+    import skk.mouse
+    from canossa import create
     skk.title.setenabled(use_title)
 
-    canossahandler = canossa.OutputHandler(screen, visibility=False)
+    mouse_mode = skk.mouse.MouseMode()
+    canossa = create(row=row, col=col, y=y, x=x, is_cjk=is_cjk, visibility=False)
 
-    inputhandler = skk.InputHandler(screen, sys.stdout, termenc, is_cjk)
+    inputhandler = skk.InputHandler(screen=canossa.screen,
+                                    stdout=sys.stdout,
+                                    termenc=termenc,
+                                    is_cjk=is_cjk,
+                                    mouse_mode=mouse_mode)
 
-    outputhandler = skk.OutputHandler()
+    outputhandler = skk.OutputHandler(use_title=use_title,
+                                      use_mouse=use_mouse,
+                                      mouse_mode=mouse_mode)
 
-    if use_title:
-        multiplexer = tff.FilterMultiplexer(canossahandler, outputhandler)
-    else:
-        multiplexer = tff.FilterMultiplexer(canossahandler, tff.DefaultHandler())
+    multiplexer = tff.FilterMultiplexer(canossa, outputhandler)
 
     session = tff.Session(tty)
     session.start(termenc=termenc,
@@ -237,7 +246,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                   stdout=sys.stdout,
                   inputhandler=inputhandler,
                   outputhandler=multiplexer)
-
+        
 ''' main '''
 if __name__ == '__main__':    
     main()
