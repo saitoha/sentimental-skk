@@ -61,7 +61,7 @@ def _get_fallback_dict_path():
 
 def _load():
     dict_list = os.listdir(dictdir)
-    if len(dict_list) == 0 and False:
+    if len(dict_list) == 0:
         _load_dict(_get_fallback_dict_path())
     else:
         for f in dict_list:
