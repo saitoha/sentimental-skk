@@ -23,7 +23,10 @@ import wcwidth
 
 _POPUP_DIR_NORMAL = True
 _POPUP_DIR_REVERSE = False
-_POPUP_HEIGHT = 10
+_POPUP_HEIGHT_MAX = 80
+
+_SKK_MARK_SELECT = u'▼ '
+
 
 ################################################################################
 #
@@ -35,11 +38,14 @@ class CandidateManager():
     __movedir = _POPUP_DIR_NORMAL
     __scrollpos = 0
     __show = False 
+    __mouse_mode = None 
+
+    _prevwidth = 0
 
     left = None
     top = None
     width = 10
-    height = _POPUP_HEIGHT 
+    height = _POPUP_HEIGHT_MAX
     offset_left = 0
     offset_top = 0
 
@@ -48,7 +54,7 @@ class CandidateManager():
             self._wcswidth = wcwidth.wcswidth_cjk
         else:
             self._wcswidth = wcwidth.wcswidth
-        self.__screen = screen
+        self._screen = screen
         self.__mouse_mode = mouse_mode
         self.reset()
 
@@ -91,6 +97,7 @@ class CandidateManager():
             value = self.__key
         else:
             value = self.__list[self.__index]
+            # 確定した候補を前にもってくる
             if kakutei:
                 self.__list.insert(0, self.__list.pop(self.__index))
 
@@ -109,11 +116,10 @@ class CandidateManager():
         if self.isempty():
             return 0
         result, remarks = self.getcurrent()
-        main_length = self._wcswidth(result)
+        main_length = self._wcswidth(_SKK_MARK_SELECT) + self._wcswidth(result)
         if len(self.__okuri) == 0:
             return main_length
-        else:
-            return main_length + self._wcswidth(self.__okuri)
+        return main_length + self._wcswidth(self.__okuri)
 
     def includes(self, x, y):
         if not self.isshown():
@@ -128,13 +134,18 @@ class CandidateManager():
             return False
         return True
 
+    def safe_movenext(self):
+        length = len(self.__list) # 候補数
+        if self.__index < length - 1:
+            self.movenext()
+
     def movenext(self):
         length = len(self.__list) # 候補数
         if self.__index < length:
             self.__movedir = _POPUP_DIR_NORMAL
             self.__index += 1
-            if self.__index - _POPUP_HEIGHT + 1 > self.__scrollpos:
-                self.__scrollpos = self.__index - _POPUP_HEIGHT + 1 
+            if self.__index - self.height + 1 > self.__scrollpos:
+                self.__scrollpos = self.__index - self.height + 1 
 
     def moveprev(self):
         if self.__index > 0:
@@ -163,8 +174,18 @@ class CandidateManager():
         width = 0
         l = [self.__truncate_str(s, 20) for s in self.__list]
 
-        if len(l) > _POPUP_HEIGHT:
-            l = l[self.__scrollpos:self.__scrollpos + _POPUP_HEIGHT]
+        y, x = self._screen.getyx()
+
+        direction = self._getdirection(y)
+        if direction == _POPUP_DIR_NORMAL:
+            height = self._screen.height - 1 - y 
+        else:
+            height = y 
+
+        height = min(height, _POPUP_HEIGHT_MAX)
+
+        if len(l) > height:
+            l = l[self.__scrollpos:self.__scrollpos + height]
             pos = self.__index - self.__scrollpos
         else:
             pos = self.__index
@@ -173,16 +194,14 @@ class CandidateManager():
             width = max(width, self._wcswidth(value) + 6)
 
         #width = max(self.width, width)
-        height = min(_POPUP_HEIGHT, len(l))
-        if self.__screen.cursor.col + width > self.__screen.width:
-            offset = self.__screen.cursor.col + width - self.__screen.width + 1
+        height = min(height, len(l))
+
+        if x + width > self._screen.width:
+            offset = x + width - self._screen.width + 1
         else:
             offset = 0
 
-        y = self.__screen.cursor.row
-        x = self.__screen.cursor.col
-
-        if self.__getdirection(y):
+        if direction == _POPUP_DIR_NORMAL:
             top = y + 1
         else:
             top = y - height
@@ -194,8 +213,8 @@ class CandidateManager():
 
         return l, pos, left, top, width, height
 
-    def __getdirection(self, row):
-        screen = self.__screen
+    def _getdirection(self, row):
+        screen = self._screen
         if row * 2 > screen.height:
             vdirection = _POPUP_DIR_REVERSE
         else:            
@@ -203,15 +222,16 @@ class CandidateManager():
         return vdirection
 
     def set_offset(self, s, offset_x, offset_y):
-        screen = self.__screen
+        screen = self._screen
         if self.left + offset_x < 0:
             offset_x = 0 - self.left
         elif self.left + self.width + offset_x > screen.width:
-            offset_x = self.__screen.width - self.left - self.width
+            offset_x = self._screen.width - self.left - self.width
         if self.top + offset_y < 0:
             offset_y = 0 - self.top
         elif self.top + self.height + offset_y > screen.height:
-            offset_y = self.__screen.height - self.top - self.height
+            offset_y = self._screen.height - self.top - self.height
+
         if self.offset_left == offset_x:
             if self.offset_top == offset_y:
                 return
@@ -244,30 +264,36 @@ class CandidateManager():
 
         self.offset_left = offset_x
         self.offset_top = offset_y 
-        y = self.__screen.cursor.row
-        x = self.__screen.cursor.col
+        y, x = self._screen.getyx()
         s.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
 
 
     def draw(self, s):
+        result, remarks = self.getcurrent()
+        result = _SKK_MARK_SELECT + result
+
         if self.__index >= len(self.__list):
             self.erase(s)
-            return u''
+            s.write(u'\x1b[1;4;31m%s\x1b[m\x1b[?25l' % result)
+            return 
+
+        y, x = self._screen.getyx()
+        s.write(u'\x1b[%d;%dH\x1b[1;4;31m%s\x1b[m\x1b[?25l' % (y + 1, x + 1, result))
+
+        cur_width = self._wcswidth(result) 
+        if self.isshown():
+            if self._prevwidth > cur_width:
+                s.write(u" " * (self._prevwidth - cur_width))
+        self._prevwidth = cur_width
+
         l, pos, left, top, width, height = self.__getdisplayinfo(self.__movedir)
 
         if not self.left is None:
             if self.left < left:
-                self.__screen.drawrect(s,left,
-                                       top,
-                                       self.left - left,
-                                       height)
+                self._screen.drawrect(s,left, top, self.left - left, height)
             if self.left + self.width > left + width:
-                self.__screen.drawrect(s,
-                                       left + width,
-                                       top,
-                                       self.left + self.width - (left + width),
-                                       height)
-        else:
+                self._screen.drawrect(s, left + width, top, self.left + self.width - (left + width), height)
+        elif not self.__mouse_mode is None:
             self.__mouse_mode.set_on(s)
         self.left = left 
         self.top = top 
@@ -290,26 +316,27 @@ class CandidateManager():
             if i == pos: s.write(u'\x1b[41m')
             s.write(u'\x1b[m')
 
-        y = self.__screen.cursor.row
-        x = self.__screen.cursor.col
         s.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
         self.__show = True
 
     def erase(self, s):
-        if not self.left is None: 
-            self.__screen.drawrect(sys.stdout,
-                                   self.left + self.offset_left,
-                                   self.top + self.offset_top,
-                                   self.width,
-                                   self.height)
-
-        x = self.__screen.cursor.col
-        y = self.__screen.cursor.row
+        y, x = self._screen.getyx()
         s.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
-        self.__show = False
+        s.write(u" " * self._prevwidth)
+
+        if self.isshown(): 
+            self.__show = False
+            self._screen.drawrect(sys.stdout,
+                                  self.left + self.offset_left,
+                                  self.top + self.offset_top,
+                                  self.width,
+                                  self.height)
+
+        s.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
          
     def clear(self, s):
         self.erase(s)
-        self.__mouse_mode.set_off(s)
+        if not self.__mouse_mode is None:
+            self.__mouse_mode.set_off(s)
         self.reset()
 

@@ -26,7 +26,7 @@ _SKK_WORD_OKURI = 2
 
 class WordBuffer():
 
-    __main = None
+    __main = u""
     __mode = _SKK_WORD_NONE
     _wcswidth = None
 
@@ -40,14 +40,14 @@ class WordBuffer():
 
     def reset(self):
         self.__mode = _SKK_WORD_NONE 
-        self.__main = u''
+        self.__main = u""
 
     def isempty(self):
         return self.__mode == _SKK_WORD_NONE 
     
     def get(self):
         if self.__mode == _SKK_WORD_NONE:
-            return u'' 
+            return u""
         elif self.__mode == _SKK_WORD_MAIN:
             return self.__main
         else:
@@ -59,8 +59,6 @@ class WordBuffer():
             self.startedit()
         if self.__mode == _SKK_WORD_MAIN:
             self.__main += value 
-        else:
-            raise Exception("Cannot append: %s * %s" % (self.__main, value))
 
     def back(self):
         if self.__mode == _SKK_WORD_MAIN:
@@ -78,7 +76,7 @@ class WordBuffer():
     def startokuri(self):
         self.__mode = _SKK_WORD_OKURI
 
-    def is_okuri(self):
+    def has_okuri(self):
         return self.__mode == _SKK_WORD_OKURI
 
     def length(self):

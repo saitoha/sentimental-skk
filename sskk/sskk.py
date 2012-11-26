@@ -33,10 +33,12 @@ def _get_answerback(stdin, stdout):
         stdout.write("\x05")
         stdout.flush()
         
-        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 0.05)
+        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 0.1)
         if rfd:
             data = os.read(stdin_fileno, 1024)
             return data
+    except:
+        return ""
     finally:
         termios.tcsetattr(stdin_fileno, termios.TCSANOW, backup)
 
@@ -210,13 +212,14 @@ along with this program. If not, see http://www.gnu.org/licenses/.
 
     try:
         da2 = _get_da2(sys.stdin, sys.stdout)
-        answerback = _get_answerback(sys.stdin, sys.stdout)
-        if answerback and answerback == "PuTTY":
-            use_title = False
-        elif len(da2) == 3 and da2[0] == '>32' and len(da2[1]) == 3: # Tera Term
+        if len(da2) == 3 and da2[0] == '>32' and len(da2[1]) == 3: # Tera Term
             use_title = False
         elif len(da2) == 3 and da2[0] == '>65' and len(da2[1]) == 3: # RLogin 
             use_title = False
+        else:
+            answerback = _get_answerback(sys.stdin, sys.stdout)
+            if answerback and answerback == "PuTTY":
+                use_title = False
     except:
         pass
 
@@ -225,17 +228,21 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     from canossa import create
     skk.title.setenabled(use_title)
 
-    mouse_mode = skk.mouse.MouseMode()
+    if use_mouse:
+        mouse_mode = skk.mouse.MouseMode()
+    else:
+        mouse_mode = None
+
     canossa = create(row=row, col=col, y=y, x=x, is_cjk=is_cjk, visibility=False)
 
     inputhandler = skk.InputHandler(screen=canossa.screen,
                                     stdout=sys.stdout,
                                     termenc=termenc,
                                     is_cjk=is_cjk,
+                                    use_title=use_title,
                                     mouse_mode=mouse_mode)
 
     outputhandler = skk.OutputHandler(use_title=use_title,
-                                      use_mouse=use_mouse,
                                       mouse_mode=mouse_mode)
 
     multiplexer = tff.FilterMultiplexer(canossa, outputhandler)
