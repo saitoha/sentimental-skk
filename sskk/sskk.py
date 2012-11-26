@@ -44,7 +44,7 @@ def _get_answerback(stdin, stdout):
 
 
 def _getpos(stdin, stdout):
-    import os, termios, select
+    import os, termios, select, re
     
     stdin_fileno = stdin.fileno()
     vdisable = os.fpathconf(stdin_fileno, 'PC_VDISABLE')
@@ -55,17 +55,18 @@ def _getpos(stdin, stdout):
     new[6][termios.VTIME] = 1
     termios.tcsetattr(stdin_fileno, termios.TCSANOW, new)
     try:
-        stdout.write("\x1b[6n")
-        stdout.flush()
-        
-        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 0.2)
-        if rfd:
-            data = os.read(stdin_fileno, 1024)
-            assert data[:2] == '\x1b['
-            assert data[-1] == 'R'
-            pos = [int(n) - 1 for n in data[2:-1].split(';')]
-            assert len(pos) == 2
-            return pos
+        for i in xrange(0, 3):
+            stdout.write("\x1b[6n")
+            stdout.flush()
+            p = re.compile('\x1b\[([0-9]+);([0-9])+R')
+            rfd, wfd, xfd = select.select([stdin_fileno], [], [], 0.1)
+            if rfd:
+                data = os.read(stdin_fileno, 1024)
+                g = p.match(data)
+                if g is None:
+                    continue
+                pos = (int(g.group(1)) - 1, int(g.group(2)) - 1)
+                return pos
     finally:
         termios.tcsetattr(stdin_fileno, termios.TCSANOW, backup)
 
@@ -189,7 +190,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     # make skk setting
     sys.stdout.write("\x1b7")
     y, x = _getpos(sys.stdin, sys.stdout)
-    sys.stdout.write("ω")
+    sys.stdout.write("▽")
     y2, x2 = _getpos(sys.stdin, sys.stdout)
     size = x2 - x
     sys.stdout.write("\x1b8")
