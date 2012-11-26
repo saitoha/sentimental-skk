@@ -20,18 +20,31 @@
 
 import os, thread, inspect, re
 
+rcdir = os.path.join(os.getenv("HOME"), ".sskk")
+dictdir = os.path.join(rcdir, "dict")
+if not os.path.exists(dictdir):
+    os.makedirs(dictdir)
+
 _tangodb = {}
 _okuridb = {}
 
-def _load_dictionary():
-    filename = inspect.getfile(inspect.currentframe())
-    dirpath = os.path.abspath(os.path.dirname(inspect.getfile(inspect.currentframe())))
+_encoding = 0
+
+def _decode_line(line):
+    global _encoding
+    try:
+        return unicode(line, [u'eucjp', u'utf-8]'][_encoding])
+    except:
+        _encoding = 1 - _encoding
+        return unicode(line, [u'eucjp', u'utf-8]'][_encoding])
+
+def _load_dict(filename):
     p = re.compile('^(.+?)([a-z])? /(.+)/')
     
-    for line in open(dirpath + '/SKK-JISYO.L'):
+    for line in open(filename):
         if line[1] == ';':
             continue
-        line = unicode(line, u'eucjp')
+        line = _decode_line(line)
         g = p.match(line)
         key = g.group(1)
         okuri = g.group(2)
@@ -40,6 +53,20 @@ def _load_dictionary():
             _okuridb[key + okuri] = value
         else:
             _tangodb[key] = value 
+
+def _get_fallback_dict_path():
+    filename = inspect.getfile(inspect.currentframe())
+    dirpath = os.path.abspath(os.path.dirname(inspect.getfile(inspect.currentframe())))
+    return os.path.join(dirpath, 'SKK-JISYO.L')
+
+def _load():
+    dict_list = os.listdir(dictdir)
+    if len(dict_list) == 0 and False:
+        _load_dict(_get_fallback_dict_path())
+    else:
+        for f in dict_list:
+            _load_dict(os.path.join(dictdir, f))
+
 
 def gettango(key):
     if _tangodb.has_key(key):
@@ -51,5 +78,5 @@ def getokuri(key):
         return _okuridb[key]
     return None
 
-thread.start_new_thread(_load_dictionary, ())
+thread.start_new_thread(_load, ())
 
