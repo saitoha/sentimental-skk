@@ -41,13 +41,9 @@ def _parse_params(params, minimum=0, offset=0, minarg=1, maxarg=255):
 #
 class OutputHandler(tff.DefaultHandler):
 
-    def __init__(self,
-                 use_title=False,
-                 use_mouse=False,
-                 mouse_mode=None):
+    def __init__(self, use_title=False, mouse_mode=None):
         self.__super = super(OutputHandler, self)
         self.__use_title = use_title
-        self.__use_mouse = use_mouse
         self.__mouse_mode = mouse_mode
 
     def handle_start(self, context):
@@ -59,7 +55,7 @@ class OutputHandler(tff.DefaultHandler):
         self.__super.handle_end(context)
 
     def handle_esc(self, context, intermediate, final):
-        if self.__use_mouse:
+        if not self.__mouse_mode is None:
             if final == 0x63 and len(intermediate) == 0:
                 self.__mouse_mode.protocol = 0
                 self.__mouse_mode.encoding = 0
@@ -67,7 +63,7 @@ class OutputHandler(tff.DefaultHandler):
         return False
 
     def handle_csi(self, context, parameter, intermediate, final):
-        if self.__use_mouse:
+        if not self.__mouse_mode is None:
             if len(parameter) > 0:
                 if parameter[0] == 0x3f and len(intermediate) == 0:
                     params = _parse_params(parameter[1:])
@@ -76,12 +72,16 @@ class OutputHandler(tff.DefaultHandler):
                         for param in params:
                             if param == 1000:
                                 self.__mouse_mode.protocol = 1000 
+                                modes.append(str(param))
                             elif param == 1001:
                                 self.__mouse_mode.protocol = 1001 
+                                modes.append(str(param))
                             elif param == 1002:
                                 self.__mouse_mode.protocol = 1002 
+                                modes.append(str(param))
                             elif param == 1003:
                                 self.__mouse_mode.protocol = 1003 
+                                modes.append(str(param))
                             elif param == 1005:
                                 self.__mouse_mode.encoding = 1005 
                             elif param == 1015:
@@ -98,12 +98,16 @@ class OutputHandler(tff.DefaultHandler):
                         for param in params:
                             if param == 1000:
                                 self.__mouse_mode.protocol = 0
+                                modes.append(str(param))
                             elif param == 1001:
                                 self.__mouse_mode.protocol = 0
+                                modes.append(str(param))
                             elif param == 1002:
                                 self.__mouse_mode.protocol = 0
+                                modes.append(str(param))
                             elif param == 1003:
                                 self.__mouse_mode.protocol = 0
+                                modes.append(str(param))
                             elif param == 1005:
                                 self.__mouse_mode.encoding = 0
                             elif param == 1015:
