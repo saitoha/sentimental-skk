@@ -23,7 +23,7 @@ import wcwidth
 
 _POPUP_DIR_NORMAL = True
 _POPUP_DIR_REVERSE = False
-_POPUP_HEIGHT_MAX = 80
+_POPUP_HEIGHT_MAX = 24
 
 _SKK_MARK_SELECT = u'▼ '
 
@@ -170,15 +170,15 @@ class CandidateManager():
             return s[:length] + u"..."
         return s
 
-    def __getdisplayinfo(self, vdirection):
+    def __getdisplayinfo(self):
         width = 0
         l = [self.__truncate_str(s, 20) for s in self.__list]
 
         y, x = self._screen.getyx()
 
-        direction = self._getdirection(y)
-        if direction == _POPUP_DIR_NORMAL:
-            height = self._screen.height - 1 - y 
+        vdirection = self._getdirection(y)
+        if vdirection == _POPUP_DIR_NORMAL:
+            height = self._screen.height - (y + 1) 
         else:
             height = y 
 
@@ -201,7 +201,7 @@ class CandidateManager():
         else:
             offset = 0
 
-        if direction == _POPUP_DIR_NORMAL:
+        if vdirection == _POPUP_DIR_NORMAL:
             top = y + 1
         else:
             top = y - height
@@ -286,15 +286,16 @@ class CandidateManager():
                 s.write(u" " * (self._prevwidth - cur_width))
         self._prevwidth = cur_width
 
-        l, pos, left, top, width, height = self.__getdisplayinfo(self.__movedir)
+        l, pos, left, top, width, height = self.__getdisplayinfo()
 
         if not self.left is None:
             if self.left < left:
-                self._screen.drawrect(s,left, top, self.left - left, height)
+                self._screen.drawrect(s, self.left, top, left - self.left, height)
             if self.left + self.width > left + width:
                 self._screen.drawrect(s, left + width, top, self.left + self.width - (left + width), height)
         elif not self.__mouse_mode is None:
             self.__mouse_mode.set_on(s)
+            
         self.left = left 
         self.top = top 
         self.width = width
