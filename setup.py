@@ -24,7 +24,7 @@ setup(name                  = 'sentimental-skk',
       packages              = find_packages(exclude=[]),
       zip_safe              = False,
       include_package_data  = True,
-      install_requires      = ['tff ==0.0.10, <0.1.0', 'canossa ==0.0.11'],
+      install_requires      = ['tff ==0.0.13, <0.1.0', 'canossa ==0.0.12'],
       entry_points          = """
                               [console_scripts]
                               sskk = sskk:main
