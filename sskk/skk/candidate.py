@@ -18,7 +18,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
-import sys
 import wcwidth
 
 _POPUP_DIR_NORMAL = True
@@ -323,7 +322,7 @@ class CandidateManager():
 
         if self.isshown(): 
             self.__show = False
-            self._screen.copyrect(sys.stdout,
+            self._screen.copyrect(s,
                                   self.left + self.offset_left,
                                   self.top + self.offset_top,
                                   self.width,
