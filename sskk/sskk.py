@@ -247,14 +247,15 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                                       mouse_mode=mouse_mode)
 
     multiplexer = tff.FilterMultiplexer(canossa, outputhandler)
-
+ 
     session = tff.Session(tty)
     session.start(termenc=termenc,
                   stdin=sys.stdin,
                   stdout=sys.stdout,
                   inputhandler=inputhandler,
                   outputhandler=multiplexer)
-        
+ 
+       
 ''' main '''
 if __name__ == '__main__':    
     main()

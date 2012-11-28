@@ -56,7 +56,7 @@ class OutputHandler(tff.DefaultHandler):
 
     def handle_esc(self, context, intermediate, final):
         if not self.__mouse_mode is None:
-            if final == 0x63 and len(intermediate) == 0:
+            if final == 0x63 and len(intermediate) == 0: # RIS
                 self.__mouse_mode.protocol = 0
                 self.__mouse_mode.encoding = 0
             # TODO DECTSR support

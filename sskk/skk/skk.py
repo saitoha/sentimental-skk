@@ -310,7 +310,7 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
         length += self._wcswidth(_SKK_MARK_OKURI)
         length += self._wcswidth(self._charbuf.getbuffer())
         y, x = self._screen.getyx()
-        self._screen.drawrect(self._output, x, y, length, 1)
+        self._screen.copyrect(self._output, x, y, length, 1)
         self._output.write(u"\x1b[%d;%dH\x1b[?25h" % (y + 1, x + 1))
 
     def __draincharacters(self):

@@ -27,7 +27,6 @@ _POPUP_HEIGHT_MAX = 24
 
 _SKK_MARK_SELECT = u'▼ '
 
-
 ################################################################################
 #
 # CandidateManager
@@ -237,26 +236,26 @@ class CandidateManager():
                 return
 
         if self.offset_left < offset_x:
-            screen.drawrect(s,
+            screen.copyrect(s,
                             self.left + self.offset_left,
                             self.top + self.offset_top,
                             offset_x - self.offset_left,
                             self.height)
         elif self.offset_left > offset_x:
-            screen.drawrect(s,
+            screen.copyrect(s,
                             self.left + self.width + offset_x,
                             self.top + self.offset_top,
                             self.offset_left - offset_x,
                             self.height)
 
         if self.offset_top < offset_y:
-            screen.drawrect(s,
+            screen.copyrect(s,
                             self.left + self.offset_left,
                             self.top + self.offset_top,
                             self.width,
                             offset_y - self.offset_top)
         elif self.offset_top > offset_y:
-            screen.drawrect(s,
+            screen.copyrect(s,
                             self.left + self.offset_left,
                             self.top + self.height + offset_y,
                             self.width,
@@ -264,9 +263,6 @@ class CandidateManager():
 
         self.offset_left = offset_x
         self.offset_top = offset_y 
-        y, x = self._screen.getyx()
-        s.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
-
 
     def draw(self, s):
         result, remarks = self.getcurrent()
@@ -290,9 +286,9 @@ class CandidateManager():
 
         if not self.left is None:
             if self.left < left:
-                self._screen.drawrect(s, self.left, top, left - self.left, height)
+                self._screen.copyrect(s, self.left, top, left - self.left, height)
             if self.left + self.width > left + width:
-                self._screen.drawrect(s, left + width, top, self.left + self.width - (left + width), height)
+                self._screen.copyrect(s, left + width, top, self.left + self.width - (left + width), height)
         elif not self.__mouse_mode is None:
             self.__mouse_mode.set_on(s)
             
@@ -327,7 +323,7 @@ class CandidateManager():
 
         if self.isshown(): 
             self.__show = False
-            self._screen.drawrect(sys.stdout,
+            self._screen.copyrect(sys.stdout,
                                   self.left + self.offset_left,
                                   self.top + self.offset_top,
                                   self.width,

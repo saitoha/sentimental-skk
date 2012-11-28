@@ -21,6 +21,17 @@
 
 
 class MouseMode():
+    """
+    >>> import StringIO
+    >>> s = StringIO.StringIO()
+    >>> mouse_mode = MouseMode()
+    >>> mouse_mode.set_on(s)
+    >>> print s.getvalue().replace("\x1b", "<ESC>")
+    >>> s.truncate(0)
+    >>> mouse_mode.set_on(s)
+    >>> print s.getvalue().replace("\x1b", "<ESC>")
+    >>> s.truncate(0)
+    """
 
     protocol = 0
     encoding = 0
@@ -42,17 +53,9 @@ class MouseMode():
 
 
 def test():
-    import StringIO
-    s = StringIO.StringIO()
-    mouse_mode = MouseMode()
-    mouse_mode.set_on(s)
-    print s.getvalue().replace("\x1b", "<ESC>")
-    s.truncate(0)
-    mouse_mode.set_on(s)
-    print s.getvalue().replace("\x1b", "<ESC>")
-    s.truncate(0)
+    import doctest
+    doctest.testmod()
 
 if __name__ == "__main__":
-    print "MouseMode test."
     test()
 
