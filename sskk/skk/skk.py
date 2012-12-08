@@ -21,7 +21,6 @@
 import tff
 
 import title
-import wcwidth
 import terminfo
 import kanadb, eisuudb, dictionary
 import mode, candidate, context, word
@@ -36,6 +35,7 @@ except:
 
 # マーク
 _SKK_MARK_COOK = u'▽ '
+_SKK_MARK_SELECT = u'▼ '
 _SKK_MARK_OKURI = u'*'
 _SKK_MARK_OPEN = u'【'
 _SKK_MARK_CLOSE = u'】'
@@ -79,7 +79,30 @@ class MouseDecodingTrait():
     def set_mousemode(self, mouse_mode):
         self.__mouse_mode = mouse_mode
 
-    def handle_csi_impl(self, context, parameter, intermediate, final):
+    def _handle_amb_report(self, context, parameter, intermediate, final):
+        ''' '''
+        if len(intermediate) == 0:
+            if final == 0x57: # W
+                if parameter == [0x32]:
+                    self._termprop.set_amb_as_double()                    
+                elif parameter == [0x31] or parameter == []:
+                    self.onambstatechanged(1)                    
+                return True
+        return False
+
+    def _handle_focus(self, context, parameter, intermediate, final):
+        ''' '''
+        if len(intermediate) == 0:
+            if len(parameter) == 0:
+                if final == 0x49: # I
+                    self.onfocusin()                    
+                    return True
+                elif final == 0x4f: # O
+                    self.onfocusout()                    
+                    return True
+        return False
+
+    def _handle_mouse(self, context, parameter, intermediate, final):
         ''' '''
         if self.__mouse_mode is None:
             return False
@@ -127,6 +150,12 @@ class MouseDecodingTrait():
             # TODO: logging
             pass
         return False 
+
+    def onfocusin(self):
+        pass
+
+    def onfocusout(self):
+        self._restore()
 
     def onmouseclick(self, context, x, y):
         candidate = self._candidate
@@ -278,20 +307,18 @@ class MouseDecodingTrait():
 class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
 
     _stack = None
+    _prev_length = 0
 
-    def __init__(self, screen, stdout, termenc, is_cjk, use_title, mouse_mode):
+    def __init__(self, screen, stdout, termenc, termprop, use_title, mouse_mode):
         self._screen = screen
         self._output = codecs.getwriter(termenc)(StringIO(), errors='ignore')
         self.__stdout = stdout
         self.__termenc = termenc
         self._charbuf = context.CharacterContext()
         self.__mode = mode.ModeManager()
-        self._wordbuf = word.WordBuffer(is_cjk)
-        self._candidate = candidate.CandidateManager(screen, is_cjk, mouse_mode)
-        if is_cjk:
-            self._wcswidth = wcwidth.wcswidth_cjk
-        else:
-            self._wcswidth = wcwidth.wcswidth
+        self._wordbuf = word.WordBuffer(termprop)
+        self._candidate = candidate.CandidateManager(screen, termprop, mouse_mode)
+        self._wcswidth = termprop.wcswidth
         self.set_titlemode(use_title)
         self.set_mousemode(mouse_mode)
         self._stack = []
@@ -305,10 +332,11 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
         self._charbuf.reset()
 
     def __clear(self):
-        length = self._wcswidth(_SKK_MARK_COOK)
-        length += self._wordbuf.length()
-        length += self._wcswidth(_SKK_MARK_OKURI)
-        length += self._wcswidth(self._charbuf.getbuffer())
+        #length = self._wcswidth(_SKK_MARK_COOK)
+        #length += self._wordbuf.length()
+        #length += self._wcswidth(_SKK_MARK_OKURI)
+        #length += self._wcswidth(self._charbuf.getbuffer())
+        length = self._prev_length
         y, x = self._screen.getyx()
         self._screen.copyrect(self._output, x, y, length, 1)
         self._output.write(u"\x1b[%d;%dH\x1b[?25h" % (y + 1, x + 1))
@@ -361,8 +389,12 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
         return True
 
     def __okuri_henkan(self):
+        self.__clear()
         buf = self._charbuf.getbuffer()[0]
         okuri = self.__draincharacters()
+        if buf == 'n':
+            self._wordbuf.append(u"ん")
+            return
         key = self._wordbuf.get()
 
         if self.__mode.iskata():
@@ -374,7 +406,6 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
 
         if result:
             self._candidate.assign(key, result, okuri)
-            self.__clear()
             self._wordbuf.reset() 
             return True
 
@@ -404,9 +435,11 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
         ''' 再変換 '''
         self.__clear()
         self._wordbuf.reset()
+        self._wordbuf.startedit()
         self._wordbuf.append(self._candidate.getyomi())
         self._candidate.clear(self._output)
 
+        
     def __next(self):
         ''' 次候補 '''
         if self._candidate.isempty():
@@ -525,6 +558,19 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
                 self._wordbuf.reset()
             else:
                 context.write(c)
+
+        elif c == 0x1b: # ESC 
+            if self.__iscooking():
+                if not self._candidate.isempty():
+                    self._candidate.clear(self._output)
+                else:
+                    self.__clear()
+                self._kakutei(context)
+                self.__mode.endeisuu()
+                self._wordbuf.reset() 
+                self._charbuf.reset()
+                self.__mode.reset()
+            context.write(c)
 
         elif c == 0x20: # SP 
             if self.__mode.ishan():
@@ -665,7 +711,11 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
 
     # override
     def handle_csi(self, context, parameter, intermediate, final):
-        if self.handle_csi_impl(context, parameter, intermediate, final):
+        if self._handle_mouse(context, parameter, intermediate, final):
+            return True
+        if self._handle_focus(context, parameter, intermediate, final):
+            return True
+        if self._handle_amb_report(context, parameter, intermediate, final):
             return True
         if not self._candidate.isempty():
             return True
@@ -678,8 +728,19 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
     # override
     def handle_draw(self, context):
         if not self._candidate.isempty():
-            #self._output.write(u"\x1b[1;4;31m%s" % u"".join(self._stack))
             self._candidate.draw(self._output)
+            result, remarks = self._candidate.getcurrent()
+            result = _SKK_MARK_SELECT + result
+
+            y, x = self._screen.getyx()
+            self._output.write(u'\x1b[%d;%dH\x1b[1;4;31m%s\x1b[m\x1b[?25l' % (y + 1, x + 1, result))
+
+            cur_width = self._wcswidth(result) 
+            if self._candidate.isshown():
+                if self._prev_length > cur_width:
+                    self._output.write(u" " * (self._prev_length - cur_width))
+            self._prev_length = cur_width
+
         elif not self._wordbuf.isempty() or not self._charbuf.isempty():
             if self._wordbuf.isempty():
                 s1 = u''
@@ -688,9 +749,12 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
             else:
                 s1 = _SKK_MARK_COOK + self._wordbuf.get()
             s2 = self._charbuf.getbuffer() 
+            self._prev_length = self._wcswidth(s1) + self._wcswidth(s2)
             y, x = self._screen.getyx()
             #self._output.write(u"\x1b[1;4;31m%s" % u"".join(self._stack))
             self._output.write(u'\x1b[1;4;31m%s\x1b[33m%s\x1b[m\x1b[?25l\x1b[%d;%dH' % (s1, s2, y + 1, x + 1))
-        context.puts(self._output.getvalue())
-        self._output.truncate(0)
+        buf = self._output.getvalue()
+        if len(buf) > 0:
+            context.puts(buf)
+            self._output.truncate(0)
 
