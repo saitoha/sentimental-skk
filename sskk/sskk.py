@@ -22,7 +22,6 @@
 def main():
     import sys, os, optparse, select
     import tff
-    import skk
 
     # parse options and arguments
     usage = 'usage: %prog [options] [command | - ]'
@@ -126,13 +125,13 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     if not termprop.has_mb_title:
         use_title = False
 
-    import skk.title
-    import skk.mouse
+    import title
+    import mouse
     import canossa as cano
-    skk.title.setenabled(use_title)
+    title.setenabled(use_title)
 
     if use_mouse:
-        mouse_mode = skk.mouse.MouseMode()
+        mouse_mode = mouse.MouseMode()
     else:
         mouse_mode = None
 
@@ -200,16 +199,18 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         def handle_resize(self, context, row, col):
             self._queue.put((5, context, row, col))
 
+    from input import InputHandler
+    from output import OutputHandler
 
-    inputhandler = skk.InputHandler(screen=canossa.screen,
-                                    stdout=sys.stdout,
-                                    termenc=termenc,
-                                    termprop=termprop,
-                                    use_title=use_title,
-                                    mouse_mode=mouse_mode)
+    inputhandler = InputHandler(screen=canossa.screen,
+                                stdout=sys.stdout,
+                                termenc=termenc,
+                                termprop=termprop,
+                                use_title=use_title,
+                                mouse_mode=mouse_mode)
 
-    outputhandler = skk.OutputHandler(use_title=use_title,
-                                      mouse_mode=mouse_mode)
+    outputhandler = OutputHandler(use_title=use_title,
+                                  mouse_mode=mouse_mode)
 
     multiplexer = tff.FilterMultiplexer(canossa, outputhandler)
  
