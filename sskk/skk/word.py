@@ -18,8 +18,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
-import wcwidth 
-
 _SKK_WORD_NONE  = 0
 _SKK_WORD_MAIN  = 1
 _SKK_WORD_OKURI = 2
@@ -30,13 +28,9 @@ class WordBuffer():
     __mode = _SKK_WORD_NONE
     _wcswidth = None
 
-    def __init__(self, is_cjk=False):
+    def __init__(self, termprop):
         self.reset()
-        self._is_cjk = is_cjk
-        if is_cjk:
-            self._wcswidth = wcwidth.wcswidth_cjk
-        else:
-            self._wcswidth = wcwidth.wcswidth
+        self._wcswidth = termprop.wcswidth
 
     def reset(self):
         self.__mode = _SKK_WORD_NONE 
@@ -57,7 +51,9 @@ class WordBuffer():
     def append(self, value):
         if self.__mode == _SKK_WORD_NONE:
             self.startedit()
-        if self.__mode == _SKK_WORD_MAIN:
+        elif self.__mode == _SKK_WORD_MAIN:
+            self.__main += value 
+        else: # self.__mode == _SKK_WORD_OKURI:
             self.__main += value 
 
     def back(self):

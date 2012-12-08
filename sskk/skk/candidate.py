@@ -18,8 +18,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
-import wcwidth
-
 _POPUP_DIR_NORMAL = True
 _POPUP_DIR_REVERSE = False
 _POPUP_HEIGHT_MAX = 24
@@ -47,11 +45,8 @@ class CandidateManager():
     offset_left = 0
     offset_top = 0
 
-    def __init__(self, screen, is_cjk=False, mouse_mode=None):
-        if is_cjk:
-            self._wcswidth = wcwidth.wcswidth_cjk
-        else:
-            self._wcswidth = wcwidth.wcswidth
+    def __init__(self, screen, termprop, mouse_mode=None):
+        self._wcswidth = termprop.wcswidth
         self._screen = screen
         self.__mouse_mode = mouse_mode
         self.reset()
@@ -264,23 +259,10 @@ class CandidateManager():
         self.offset_top = offset_y 
 
     def draw(self, s):
-        result, remarks = self.getcurrent()
-        result = _SKK_MARK_SELECT + result
 
         if self.__index >= len(self.__list):
             self.erase(s)
-            s.write(u'\x1b[1;4;31m%s\x1b[m\x1b[?25l' % result)
             return 
-
-        y, x = self._screen.getyx()
-        s.write(u'\x1b[%d;%dH\x1b[1;4;31m%s\x1b[m\x1b[?25l' % (y + 1, x + 1, result))
-
-        cur_width = self._wcswidth(result) 
-        if self.isshown():
-            if self._prevwidth > cur_width:
-                s.write(u" " * (self._prevwidth - cur_width))
-        self._prevwidth = cur_width
-
         l, pos, left, top, width, height = self.__getdisplayinfo()
 
         if not self.left is None:
@@ -312,8 +294,10 @@ class CandidateManager():
             if i == pos: s.write(u'\x1b[41m')
             s.write(u'\x1b[m')
 
+        y, x = self._screen.getyx()
         s.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
         self.__show = True
+        return
 
     def erase(self, s):
         y, x = self._screen.getyx()

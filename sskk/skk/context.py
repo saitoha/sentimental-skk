@@ -52,6 +52,9 @@ class CharacterContext:
     def isfinal(self):
         return self.context.has_key(romanrule.SKK_ROMAN_VALUE)
 
+    def hasnext(self):
+        return self.context.has_key(romanrule.SKK_ROMAN_NEXT)
+
     def drain(self):
         if self.context.has_key(romanrule.SKK_ROMAN_VALUE):
             s = self.context[romanrule.SKK_ROMAN_VALUE]

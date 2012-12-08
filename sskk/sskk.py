@@ -18,82 +18,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
-def _get_answerback(stdin, stdout):
-    import os, termios, select
-    
-    stdin_fileno = stdin.fileno()
-    vdisable = os.fpathconf(stdin_fileno, 'PC_VDISABLE')
-    backup = termios.tcgetattr(stdin_fileno)
-    new = termios.tcgetattr(stdin_fileno)
-    new[3] &= ~(termios.ECHO | termios.ICANON)
-    new[6][termios.VMIN] = 5 
-    new[6][termios.VTIME] = 1
-    termios.tcsetattr(stdin_fileno, termios.TCSANOW, new)
-    try:
-        stdout.write("\x05")
-        stdout.flush()
-        
-        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 0.1)
-        if rfd:
-            data = os.read(stdin_fileno, 1024)
-            return data
-    except:
-        return ""
-    finally:
-        termios.tcsetattr(stdin_fileno, termios.TCSANOW, backup)
-
-
-def _getpos(stdin, stdout):
-    import os, termios, select, re
-    
-    stdin_fileno = stdin.fileno()
-    vdisable = os.fpathconf(stdin_fileno, 'PC_VDISABLE')
-    backup = termios.tcgetattr(stdin_fileno)
-    new = termios.tcgetattr(stdin_fileno)
-    new[3] &= ~(termios.ECHO | termios.ICANON)
-    new[6][termios.VMIN] = 10 
-    new[6][termios.VTIME] = 1
-    termios.tcsetattr(stdin_fileno, termios.TCSANOW, new)
-    try:
-        for i in xrange(0, 3):
-            stdout.write("\x1b[6n")
-            stdout.flush()
-            p = re.compile('\x1b\[([0-9]+);([0-9])+R')
-            rfd, wfd, xfd = select.select([stdin_fileno], [], [], 0.1)
-            if rfd:
-                data = os.read(stdin_fileno, 1024)
-                g = p.match(data)
-                if g is None:
-                    continue
-                pos = (int(g.group(1)) - 1, int(g.group(2)) - 1)
-                return pos
-    finally:
-        termios.tcsetattr(stdin_fileno, termios.TCSANOW, backup)
-
-
-def _get_da2(stdin, stdout):
-    import os, termios, select
-    
-    stdin_fileno = stdin.fileno()
-    vdisable = os.fpathconf(stdin_fileno, 'PC_VDISABLE')
-    backup = termios.tcgetattr(stdin_fileno)
-    new = termios.tcgetattr(stdin_fileno)
-    new[3] &= ~(termios.ECHO | termios.ICANON)
-    new[6][termios.VMIN] = 20 
-    new[6][termios.VTIME] = 1
-    termios.tcsetattr(stdin_fileno, termios.TCSANOW, new)
-    try:
-        stdout.write("\x1b[>0c")
-        stdout.flush()
-        
-        rfd, wfd, xfd = select.select([stdin_fileno], [], [], 0.2)
-        if rfd:
-            data = os.read(stdin_fileno, 1024)
-            assert data[:2] == '\x1b['
-            assert data[-1] == 'c'
-            return data[2:-1].split(';')
-    finally:
-        termios.tcsetattr(stdin_fileno, termios.TCSANOW, backup)
 
 def main():
     import sys, os, optparse, select
@@ -187,20 +111,8 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         raise Exception(
             'Invalid TERM environment is detected: "%s"' % termenc)
 
-    # make skk setting
-    sys.stdout.write("\x1b7")
-    y, x = _getpos(sys.stdin, sys.stdout)
-    sys.stdout.write("▽")
-    y2, x2 = _getpos(sys.stdin, sys.stdout)
-    size = x2 - x
-    sys.stdout.write("\x1b8")
-    sys.stdout.write("\x1b7")
-    sys.stdout.write(" " * size)
-    sys.stdout.write("\x1b8")
-    if size == 2:
-        is_cjk = True 
-    else:
-        is_cjk = False 
+    from termprop import Termprop
+    termprop = Termprop()
 
     tty = tff.DefaultPTY(term, lang, command, sys.stdin)
     row, col = tty.fitsize()
@@ -211,22 +123,12 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     if not "xterm" in term:
         use_title = False
 
-    try:
-        da2 = _get_da2(sys.stdin, sys.stdout)
-        if len(da2) == 3 and da2[0] == '>32' and len(da2[1]) == 3: # Tera Term
-            use_title = False
-        elif len(da2) == 3 and da2[0] == '>65' and len(da2[1]) == 3: # RLogin 
-            use_title = False
-        else:
-            answerback = _get_answerback(sys.stdin, sys.stdout)
-            if answerback and answerback == "PuTTY":
-                use_title = False
-    except:
-        pass
+    if not termprop.has_mb_title:
+        use_title = False
 
     import skk.title
     import skk.mouse
-    from canossa import create
+    import canossa as cano
     skk.title.setenabled(use_title)
 
     if use_mouse:
@@ -234,12 +136,75 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     else:
         mouse_mode = None
 
-    canossa = create(row=row, col=col, y=y, x=x, is_cjk=is_cjk, visibility=False)
+    if termprop.has_cpr:
+        y, x = termprop.getyx()
+    else:
+        sys.stdout.write("\x1b[1;1H\x1bJ")
+        x, y = 1, 1
+
+    canossa = cano.create(row=row,
+                          col=col,
+                          y=y - 1,
+                          x=x - 1,
+                          termenc=termenc,
+                          termprop=termprop,
+                          visibility=False)
+
+    import threading, time, Queue
+    class AsyncHandler(tff.DefaultHandler):
+
+        def __init__(self, target):
+            self._target = target
+            self._queue = Queue.Queue(-1)
+            self._flag = True
+            def worker():
+                while self._flag:
+                    if not self._queue.empty():
+                        task = self._queue.get()
+                        ev_type = task[0]
+                        if ev_type == 1:
+                            target.handle_csi(task[1], task[2], task[3], task[4])
+                        elif ev_type == 2:
+                            target.handle_esc(task[1], task[2], task[3])
+                        elif ev_type == 3:
+                            target.handle_char(task[1], task[2])
+                        elif ev_type == 4:
+                            target.handle_draw(task[1])
+                        elif ev_type == 5:
+                            target.handle_resize(task[1], task[2], task[3])
+                        self._queue.task_done()
+                    else:
+                        time.sleep(0.1)
+            self._worker = threading.Thread(target=worker)
+            self._worker.start()
+
+        def __del__(self):
+            self._flag = False
+            self._worker.join()
+
+        def handle_csi(self, context, parameter, intermediate, final):
+            self._queue.put((1, context, parameter, intermediate, final))
+            return True 
+
+        def handle_esc(self, context, intermediate, final):
+            self._queue.put((2, context, intermediate, final))
+            return True
+
+        def handle_char(self, context, c):
+            self._queue.put((3, context, c))
+            return True 
+
+        def handle_draw(self, context):
+            self._queue.put((4, context))
+
+        def handle_resize(self, context, row, col):
+            self._queue.put((5, context, row, col))
+
 
     inputhandler = skk.InputHandler(screen=canossa.screen,
                                     stdout=sys.stdout,
                                     termenc=termenc,
-                                    is_cjk=is_cjk,
+                                    termprop=termprop,
                                     use_title=use_title,
                                     mouse_mode=mouse_mode)
 

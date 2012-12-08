@@ -87,12 +87,12 @@ def _maketree(rule):
         if key == 0x6e: # 'n'
             for code in [ord(c) for c in list('bcdfghjkmprstvwxz')]: 
                 value[code] = { SKK_ROMAN_VALUE: rule['nn'],
-                                SKK_ROMAN_NEXT: context[code],
+                                SKK_ROMAN_NEXT: tree[code],
                                 SKK_ROMAN_BUFFER: 'nn' }
         else:
             if not value.has_key(SKK_ROMAN_VALUE):
                 value[key] = { SKK_ROMAN_VALUE: rule['xtu'],
-                               SKK_ROMAN_NEXT: context[key],
+                               SKK_ROMAN_NEXT: tree[key],
                                SKK_ROMAN_BUFFER: chr(key) + chr(key) }
     tree[SKK_ROMAN_BUFFER] = '' 
     tree[SKK_ROMAN_PREV] = tree 

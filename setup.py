@@ -3,10 +3,15 @@
 from setuptools import setup, find_packages
 from sskk import __version__, __license__, __author__
 
+import inspect, os
+
+filename = inspect.getfile(inspect.currentframe())
+dirpath = os.path.abspath(os.path.dirname(inspect.getfile(inspect.currentframe())))
+
 setup(name                  = 'sentimental-skk',
       version               = __version__,
       description           = '三 ┏( ^o^)┛ ＜ Japanese Input Method SKK (Simple Kana to Kanji conversion) on your terminal',
-      long_description      = open("README.rst").read(),
+      long_description      = open(dirpath + "/README.rst").read(),
       py_modules            = ['sskk'],
       eager_resources       = ['sskk/skk/SKK-JISYO.L'],
       classifiers           = ['Development Status :: 4 - Beta',
@@ -24,7 +29,11 @@ setup(name                  = 'sentimental-skk',
       packages              = find_packages(exclude=[]),
       zip_safe              = False,
       include_package_data  = True,
-      install_requires      = ['tff ==0.0.14, <0.1.0', 'canossa ==0.0.13'],
+#      install_requires      = ['tff ==0.0.14, <0.1.0',
+#                               'canossa ==0.0.14',
+#                               'termprop==0.0.1'
+#                               ],
+      install_requires      = [],
       entry_points          = """
                               [console_scripts]
                               sskk = sskk:main
