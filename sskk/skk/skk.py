@@ -21,7 +21,6 @@
 import tff
 
 import title
-import terminfo
 import kanadb, eisuudb, dictionary
 import mode, candidate, context, word
 
