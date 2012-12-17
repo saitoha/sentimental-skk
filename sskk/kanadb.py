@@ -49,7 +49,7 @@ def _loaddb():
         _to_hankata[kata] = hankata
 
 def to_kata(s):
-    ''' convert Japanese Hiragana String into Katakana '''
+    ''' convert Japanese Hiragana String to Katakana '''
     def conv(c):
         if _to_kata.has_key(c):
             return _to_kata[c]
@@ -57,7 +57,7 @@ def to_kata(s):
     return ''.join([conv(c) for c in s])
 
 def to_hira(s):
-    ''' convert Japanese Katakana String into Hiragana '''
+    ''' convert Japanese Katakana String to Hiragana '''
     def conv(c):
         if _to_hira.has_key(c):
             return _to_hira[c]
@@ -65,7 +65,7 @@ def to_hira(s):
     return ''.join([conv(c) for c in s])
 
 def to_hankata(s):
-    ''' convert Japanese Kana String into Half-Width-Katakana '''
+    ''' convert Japanese Kana String to Half-Width-Katakana '''
     def conv(c):
         if _to_hankata.has_key(c):
             return _to_hankata[c]

@@ -46,7 +46,7 @@ class CandidateManager():
     offset_top = 0
 
     def __init__(self, screen, termprop, mouse_mode=None):
-        self._wcswidth = termprop.wcswidth
+        self._termprop = termprop
         self._screen = screen
         self.__mouse_mode = mouse_mode
         self.reset()
@@ -109,10 +109,11 @@ class CandidateManager():
         if self.isempty():
             return 0
         result, remarks = self.getcurrent()
-        main_length = self._wcswidth(_SKK_MARK_SELECT) + self._wcswidth(result)
+        termprop = self._termprop
+        main_length = termprop.wcswidth(_SKK_MARK_SELECT) + termprop.wcswidth(result)
         if len(self.__okuri) == 0:
             return main_length
-        return main_length + self._wcswidth(self.__okuri)
+        return main_length + termprop.wcswidth(self.__okuri)
 
     def includes(self, x, y):
         if not self.isshown():
@@ -159,7 +160,7 @@ class CandidateManager():
             self.movenext()
 
     def __truncate_str(self, s, length):
-        if self._wcswidth(s) > length:
+        if self._termprop.wcswidth(s) > length:
             return s[:length] + u"..."
         return s
 
@@ -184,7 +185,7 @@ class CandidateManager():
             pos = self.__index
 
         for value in l:
-            width = max(width, self._wcswidth(value) + 6)
+            width = max(width, self._termprop.wcswidth(value) + 6)
 
         #width = max(self.width, width)
         height = min(height, len(l))

@@ -45,7 +45,7 @@ def _loaddb():
         _han_to_zen_cp[ord(han)] = ord(zen)
  
 def to_zenkaku(s):
-    ''' convert ascii string into Japanese Zenkaku string '''
+    ''' convert ascii string to Japanese Zenkaku string '''
     def conv(c):
         if _han_to_zen.has_key(c):
             return _han_to_zen[c]
@@ -53,7 +53,7 @@ def to_zenkaku(s):
     return ''.join([conv(c) for c in s])
 
 def to_zenkaku_cp(code):
-    ''' convert some ascii code points into Japanese Zenkaku code points '''
+    ''' convert some ascii code points to Japanese Zenkaku code points '''
     if _han_to_zen_cp.has_key(code):
         return _han_to_zen_cp[code]
     return code

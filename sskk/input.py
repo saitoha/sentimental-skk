@@ -54,7 +54,7 @@ class TitleTrait():
 
     def _refleshtitle(self):
         if self._use_title:
-            self._output.write(u'\x1b]0;%s\x1b\\' % title.get())
+            self._output.write(u'\x1b]2;%s\x1b\\' % title.get())
 
     def settitle(self, value):
         face = self._getface()
@@ -317,28 +317,17 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
         self.__mode = mode.ModeManager()
         self._wordbuf = word.WordBuffer(termprop)
         self._candidate = candidate.CandidateManager(screen, termprop, mouse_mode)
-        self._wcswidth = termprop.wcswidth
+        self._termprop = termprop
         self.set_titlemode(use_title)
         self.set_mousemode(mouse_mode)
         self._stack = []
 
     def __reset(self):
-        self.__clear()
         if not self._candidate.isempty():
             self._candidate.clear(self._output)
         self.__mode.endeisuu()
         self._wordbuf.reset() 
         self._charbuf.reset()
-
-    def __clear(self):
-        #length = self._wcswidth(_SKK_MARK_COOK)
-        #length += self._wordbuf.length()
-        #length += self._wcswidth(_SKK_MARK_OKURI)
-        #length += self._wcswidth(self._charbuf.getbuffer())
-        length = self._prev_length
-        y, x = self._screen.getyx()
-        self._screen.copyrect(self._output, x, y, length, 1)
-        self._output.write(u"\x1b[%d;%dH\x1b[?25h" % (y + 1, x + 1))
 
     def __draincharacters(self):
         s = self._charbuf.getbuffer()
@@ -379,7 +368,6 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
         if result: 
             self.settitle(key)
             self._candidate.assign(key, result)
-            self.__clear()
             return True
 
         # かな読みだけを候補とする
@@ -388,7 +376,6 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
         return True
 
     def __okuri_henkan(self):
-        self.__clear()
         buf = self._charbuf.getbuffer()[0]
         okuri = self.__draincharacters()
         if buf == 'n':
@@ -424,7 +411,6 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
         else:
             word, remarks = self._candidate.getcurrent(kakutei=True)
         self.onkakutei()
-        self.__clear()
         self._wordbuf.reset()
         self._charbuf.reset()
         self._candidate.clear(self._output)
@@ -432,7 +418,6 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
 
     def _restore(self):
         ''' 再変換 '''
-        self.__clear()
         self._wordbuf.reset()
         self._wordbuf.startedit()
         self._wordbuf.append(self._candidate.getyomi())
@@ -462,7 +447,6 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
     def __prev(self):
         ''' 前候補 '''
         if not self._candidate.isempty():
-            #self.__clear()
             self._candidate.moveprev()
 
         result, remarks = self._candidate.getcurrent()
@@ -506,11 +490,9 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
                 elif self._wordbuf.isempty():
                     context.write(c)
                 else:
-                    self.__clear()
                     self.__mode.endeisuu()
                     self._wordbuf.back()
             else:
-                self.__clear()
                 self._charbuf.back()
 
         elif c == 0x09: # TAB
@@ -560,15 +542,9 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
 
         elif c == 0x1b: # ESC 
             if self.__iscooking():
-                if not self._candidate.isempty():
-                    self._candidate.clear(self._output)
-                else:
-                    self.__clear()
                 self._kakutei(context)
-                self.__mode.endeisuu()
-                self._wordbuf.reset() 
-                self._charbuf.reset()
                 self.__mode.reset()
+                self.__reset()
             context.write(c)
 
         elif c == 0x20: # SP 
@@ -674,7 +650,7 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
                 else:
                     # 先行する入力があるとき、送り仮名マーク('*')をつける
                     self._wordbuf.startokuri()
-                    # cが母音か
+                    # キャラクタバッファが終了状態か 
                     if self._charbuf.isfinal():
                         # 送り仮名変換
                         self.__okuri_henkan()
@@ -734,10 +710,14 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
             y, x = self._screen.getyx()
             self._output.write(u'\x1b[%d;%dH\x1b[1;4;31m%s\x1b[m\x1b[?25l' % (y + 1, x + 1, result))
 
-            cur_width = self._wcswidth(result) 
+            cur_width = self._termprop.wcswidth(result) 
             if self._candidate.isshown():
                 if self._prev_length > cur_width:
-                    self._output.write(u" " * (self._prev_length - cur_width))
+                    length = self._prev_length - cur_width
+                    y, x = self._screen.getyx()
+                    self._screen.copyrect(self._output, x + cur_width, y, length, 1)
+                    self._output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
+                    #self._output.write(u" " * (self._prev_length - cur_width))
             self._prev_length = cur_width
 
         elif not self._wordbuf.isempty() or not self._charbuf.isempty():
@@ -748,10 +728,24 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
             else:
                 s1 = _SKK_MARK_COOK + self._wordbuf.get()
             s2 = self._charbuf.getbuffer() 
-            self._prev_length = self._wcswidth(s1) + self._wcswidth(s2)
+            termprop = self._termprop
+            cur_width = termprop.wcswidth(s1) + termprop.wcswidth(s2)
+            if self._prev_length > cur_width:
+                length = self._prev_length - cur_width
+                y, x = self._screen.getyx()
+                self._screen.copyrect(self._output, x + cur_width, y, length, 1)
+                self._output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
+            self._prev_length = cur_width 
             y, x = self._screen.getyx()
             #self._output.write(u"\x1b[1;4;31m%s" % u"".join(self._stack))
             self._output.write(u'\x1b[1;4;31m%s\x1b[33m%s\x1b[m\x1b[?25l\x1b[%d;%dH' % (s1, s2, y + 1, x + 1))
+        else:
+            length = self._prev_length
+            if length > 0:
+                y, x = self._screen.getyx()
+                self._screen.copyrect(self._output, x, y, length, 1)
+                self._output.write(u"\x1b[%d;%dH\x1b[?25h" % (y + 1, x + 1))
+                self._prev_length = 0 
         buf = self._output.getvalue()
         if len(buf) > 0:
             context.puts(buf)

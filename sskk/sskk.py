@@ -110,6 +110,10 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         raise Exception(
             'Invalid TERM environment is detected: "%s"' % termenc)
 
+    sys.stdout.write("\x1b[22;0t")
+    sys.stdout.write("\x1b[22;0t")
+    sys.stdout.flush()
+
     from termprop import Termprop
     termprop = Termprop()
 
@@ -128,6 +132,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     import title
     import mouse
     import canossa as cano
+
     title.setenabled(use_title)
 
     if use_mouse:
@@ -149,78 +154,35 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                           termprop=termprop,
                           visibility=False)
 
-    import threading, time, Queue
-    class AsyncHandler(tff.DefaultHandler):
-
-        def __init__(self, target):
-            self._target = target
-            self._queue = Queue.Queue(-1)
-            self._flag = True
-            def worker():
-                while self._flag:
-                    if not self._queue.empty():
-                        task = self._queue.get()
-                        ev_type = task[0]
-                        if ev_type == 1:
-                            target.handle_csi(task[1], task[2], task[3], task[4])
-                        elif ev_type == 2:
-                            target.handle_esc(task[1], task[2], task[3])
-                        elif ev_type == 3:
-                            target.handle_char(task[1], task[2])
-                        elif ev_type == 4:
-                            target.handle_draw(task[1])
-                        elif ev_type == 5:
-                            target.handle_resize(task[1], task[2], task[3])
-                        self._queue.task_done()
-                    else:
-                        time.sleep(0.1)
-            self._worker = threading.Thread(target=worker)
-            self._worker.start()
-
-        def __del__(self):
-            self._flag = False
-            self._worker.join()
-
-        def handle_csi(self, context, parameter, intermediate, final):
-            self._queue.put((1, context, parameter, intermediate, final))
-            return True 
-
-        def handle_esc(self, context, intermediate, final):
-            self._queue.put((2, context, intermediate, final))
-            return True
-
-        def handle_char(self, context, c):
-            self._queue.put((3, context, c))
-            return True 
-
-        def handle_draw(self, context):
-            self._queue.put((4, context))
-
-        def handle_resize(self, context, row, col):
-            self._queue.put((5, context, row, col))
-
     from input import InputHandler
     from output import OutputHandler
 
-    inputhandler = InputHandler(screen=canossa.screen,
-                                stdout=sys.stdout,
-                                termenc=termenc,
-                                termprop=termprop,
-                                use_title=use_title,
-                                mouse_mode=mouse_mode)
 
-    outputhandler = OutputHandler(use_title=use_title,
-                                  mouse_mode=mouse_mode)
+    sys.stdout.flush()
+    sys.stdout.write("\x1b[23;0t")
 
-    multiplexer = tff.FilterMultiplexer(canossa, outputhandler)
- 
-    session = tff.Session(tty)
-    session.start(termenc=termenc,
-                  stdin=sys.stdin,
-                  stdout=sys.stdout,
-                  inputhandler=inputhandler,
-                  outputhandler=multiplexer)
- 
+    try:
+        inputhandler = InputHandler(screen=canossa.screen,
+                                    stdout=sys.stdout,
+                                    termenc=termenc,
+                                    termprop=termprop,
+                                    use_title=use_title,
+                                    mouse_mode=mouse_mode)
+
+        outputhandler = OutputHandler(use_title=use_title,
+                                      mouse_mode=mouse_mode)
+
+        multiplexer = tff.FilterMultiplexer(canossa, outputhandler)
+
+        session = tff.Session(tty)
+        session.start(termenc=termenc,
+                      stdin=sys.stdin,
+                      stdout=sys.stdout,
+                      inputhandler=inputhandler,
+                      outputhandler=multiplexer)
+    finally: 
+        sys.stdout.flush()
+        sys.stdout.write("\x1b[23;0t")
        
 ''' main '''
 if __name__ == '__main__':    
