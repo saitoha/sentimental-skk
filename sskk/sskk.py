@@ -154,6 +154,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                           termprop=termprop,
                           visibility=False)
 
+    from mode import InputMode
     from input import InputHandler
     from output import OutputHandler
 
@@ -162,15 +163,18 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     sys.stdout.write("\x1b[23;0t")
 
     try:
+        inputmode = InputMode(tty)
         inputhandler = InputHandler(screen=canossa.screen,
                                     stdout=sys.stdout,
                                     termenc=termenc,
                                     termprop=termprop,
                                     use_title=use_title,
-                                    mouse_mode=mouse_mode)
+                                    mouse_mode=mouse_mode,
+                                    inputmode=inputmode)
 
         outputhandler = OutputHandler(use_title=use_title,
-                                      mouse_mode=mouse_mode)
+                                      mouse_mode=mouse_mode,
+                                      inputmode=inputmode)
 
         multiplexer = tff.FilterMultiplexer(canossa, outputhandler)
 

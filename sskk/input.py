@@ -22,7 +22,7 @@ import tff
 
 import title
 import kanadb, eisuudb, dictionary
-import mode, candidate, context, word
+import candidate, context, word
 
 import codecs
 import time
@@ -308,13 +308,11 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
     _stack = None
     _prev_length = 0
 
-    def __init__(self, screen, stdout, termenc, termprop, use_title, mouse_mode):
+    def __init__(self, screen, stdout, termenc, termprop, use_title, mouse_mode, inputmode):
         self._screen = screen
         self._output = codecs.getwriter(termenc)(StringIO(), errors='ignore')
-        self.__stdout = stdout
-        self.__termenc = termenc
         self._charbuf = context.CharacterContext()
-        self.__mode = mode.ModeManager()
+        self._inputmode = inputmode
         self._wordbuf = word.WordBuffer(termprop)
         self._candidate = candidate.CandidateManager(screen, termprop, mouse_mode)
         self._termprop = termprop
@@ -325,7 +323,7 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
     def __reset(self):
         if not self._candidate.isempty():
             self._candidate.clear(self._output)
-        self.__mode.endeisuu()
+        self._inputmode.endeisuu()
         self._wordbuf.reset() 
         self._charbuf.reset()
 
@@ -346,21 +344,24 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
         return False
 
     def __convert_kana(self, value):
-        if self.__mode.ishira():
+        if self._inputmode.ishira():
             return kanadb.to_kata(value)
         else:
-            assert self.__mode.iskata()
+            assert self._inputmode.iskata()
             return kanadb.to_hira(value)
 
     def __toggle_kana(self):
         self._charbuf.toggle()
-        self.__mode.toggle()
+        if self._inputmode.ishira():
+            self._inputmode.startkata()
+        elif self._inputmode.iskata():
+            self._inputmode.starthira()
         self.__reset()
 
     def __tango_henkan(self):
         key = self._wordbuf.get()
 
-        if self.__mode.iskata():
+        if self._inputmode.iskata():
             key = kanadb.to_hira(key)
 
         result = dictionary.gettango(key)
@@ -383,7 +384,7 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
             return
         key = self._wordbuf.get()
 
-        if self.__mode.iskata():
+        if self._inputmode.iskata():
             key = kanadb.to_hira(key)
 
         result = dictionary.getokuri(key + buf)
@@ -396,7 +397,7 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
             return True
 
         # かな読みだけを候補とする
-        if self.__mode.iskata():
+        if self._inputmode.iskata():
             key = kanadb.to_kata(key)
         self._candidate.assign(key, None, okuri)
 
@@ -464,11 +465,14 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
             return True 
 
         elif c == 0x0a: # LF C-j
-            if self.__mode.isdirect():
-                self.__mode.toggle()
+            if self._inputmode.ishan():
+                self._inputmode.starthira()
+            elif self._inputmode.iszen():
+                self._inputmode.starthira()
+            elif self.__iscooking():
+                self._kakutei(context)
             else:
-                if self.__iscooking():
-                    self._kakutei(context)
+                pass
 
         elif c == 0x0d: # CR C-m
             if self.__iscooking():
@@ -490,7 +494,7 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
                 elif self._wordbuf.isempty():
                     context.write(c)
                 else:
-                    self.__mode.endeisuu()
+                    self._inputmode.endeisuu()
                     self._wordbuf.back()
             else:
                 self._charbuf.back()
@@ -541,16 +545,20 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
                 context.write(c)
 
         elif c == 0x1b: # ESC 
-            if self.__iscooking():
+            if self._candidate.isshown():
+                self._candidate.clear(self._output)
+            elif self.__iscooking():
                 self._kakutei(context)
-                self.__mode.reset()
                 self.__reset()
-            context.write(c)
+                self._inputmode.reset()
+                context.write(c)
+            else:
+                context.write(c)
 
         elif c == 0x20: # SP 
-            if self.__mode.ishan():
+            if self._inputmode.ishan():
                 context.write(c)
-            elif self.__mode.iszen():
+            elif self._inputmode.iszen():
                 context.write(eisuudb.to_zenkaku_cp(c))
             elif not self._candidate.isempty():
                 if self._charbuf.isempty():
@@ -567,7 +575,7 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
                 context.write(c)
 
         elif c < 0x20 or 0x7f < c:
-            if self.__mode.isdirect():
+            if self._inputmode.isdirect():
                 context.write(c)
             else:
                 self.__reset()
@@ -575,22 +583,22 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
 
         elif c == 0x78 and self._candidate.isshown(): # x
             self.__prev()
-        elif self.__mode.ishan():
+        elif self._inputmode.ishan():
             # 半角直接入力
             context.write(c)
-        elif self.__mode.iszen():
+        elif self._inputmode.iszen():
             # 全角直接入力
             context.write(eisuudb.to_zenkaku_cp(c))
-        elif self.__mode.iseisuu():
+        elif self._inputmode.iseisuu():
             # 英数変換モード
             self._wordbuf.append(unichr(c))
-        elif self.__mode.ishira() or self.__mode.iskata():
+        elif self._inputmode.ishira() or self._inputmode.iskata():
             # ひらがな変換モード・カタカナ変換モード
             if c == 0x2f and (self._charbuf.isempty() or self._charbuf.getbuffer() != u'z'): # /
                 if self.__iscooking():
                     self._wordbuf.append(unichr(c))
                 else:
-                    self.__mode.starteisuu()
+                    self._inputmode.starteisuu()
                     self._wordbuf.reset()
                     self._wordbuf.startedit()
             elif c == 0x71: # q
@@ -609,12 +617,12 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
             elif c == 0x4c: # L
                 if self.__iscooking():
                     self._kakutei(context)
-                self.__mode.startzen()
+                self._inputmode.startzen()
                 self.__reset()
             elif c == 0x6c: # l
                 if self.__iscooking():
                     self._kakutei(context)
-                self.__mode.reset()
+                self._inputmode.reset()
                 self.__reset()
             elif 0x41 <= c and c <= 0x5a: # A - Z
                 # 大文字のとき
@@ -626,10 +634,8 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
                     context.putu(result)
                     # 変換候補をリセット
                     self._candidate.clear(self._output)
-
                     self._wordbuf.reset()
                     self._wordbuf.startedit()
-
                     if self._charbuf.isfinal():
                         # cが母音のとき、文字バッファを吸い出し、
                         s = self._charbuf.drain()
@@ -671,13 +677,12 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
                     if self._wordbuf.isempty():
                         s = self._charbuf.drain()
                         context.putu(s)
-                    else:
+                    elif self._wordbuf.has_okuri():
                         # 送り仮名変換
-                        if self._wordbuf.has_okuri():
-                            self.__okuri_henkan()
-                        else:
-                            s = self._charbuf.drain()
-                            self._wordbuf.append(s)
+                        self.__okuri_henkan()
+                    else:
+                        s = self._charbuf.drain()
+                        self._wordbuf.append(s)
             else:
                 self.__reset()
                 context.write(c)
@@ -738,7 +743,7 @@ class InputHandler(tff.DefaultHandler, TitleTrait, MouseDecodingTrait):
             self._prev_length = cur_width 
             y, x = self._screen.getyx()
             #self._output.write(u"\x1b[1;4;31m%s" % u"".join(self._stack))
-            self._output.write(u'\x1b[1;4;31m%s\x1b[33m%s\x1b[m\x1b[?25l\x1b[%d;%dH' % (s1, s2, y + 1, x + 1))
+            self._output.write(u'\x1b[0;1;4;31m%s\x1b[33m%s\x1b[m\x1b[?25l\x1b[%d;%dH' % (s1, s2, y + 1, x + 1))
         else:
             length = self._prev_length
             if length > 0:

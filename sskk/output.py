@@ -42,10 +42,11 @@ def _parse_params(params, minimum=0, offset=0, minarg=1, maxarg=255):
 #
 class OutputHandler(tff.DefaultHandler):
 
-    def __init__(self, use_title=False, mouse_mode=None):
+    def __init__(self, use_title=False, mouse_mode=None, inputmode=None):
         self.__super = super(OutputHandler, self)
         self.__use_title = use_title
         self.__mouse_mode = mouse_mode
+        self._inputmode = inputmode
 
     def handle_start(self, context):
         self.__super.handle_start(context)
@@ -89,6 +90,9 @@ class OutputHandler(tff.DefaultHandler):
                                 self.__mouse_mode.encoding = 1015 
                             elif param == 1006:
                                 self.__mouse_mode.encoding = 1006 
+                            elif param == 8861:
+                                self._inputmode.event_enabled = True 
+                                modes.append(str(param))
                             else:
                                 modes.append(str(param))
                         if len(modes) > 0:
@@ -115,6 +119,9 @@ class OutputHandler(tff.DefaultHandler):
                                 self.__mouse_mode.encoding = 0
                             elif param == 1006:
                                 self.__mouse_mode.encoding = 0
+                            elif param == 8861:
+                                self._inputmode.event_enabled = False 
+                                modes.append(str(param))
                             else:
                                 modes.append(str(param))
                         if len(modes) > 0:

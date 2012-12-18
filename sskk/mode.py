@@ -54,7 +54,6 @@ sentimental-skkでは、1)の方式を採用します。
 '''
 
 # モード
-# メインモード3ビット、サブモード1ビットの構成です
 _SKK_MODE_HANKAKU      = 0
 _SKK_MODE_ZENKAKU      = 1
 _SKK_MODE_HIRAGANA     = 2
@@ -70,17 +69,23 @@ _SKK_MODE_MARK_MAP = {
     _SKK_SUBMODE_EISUU     : u'A',
     }
 
-class ModeManager():
+class InputMode():
     '''
     モードの管理をします。
-    インターフェースとかメソッドの命名はちょっと見直したほうがよさそうです。
     '''
+    __value = -1
 
-    def __init__(self):
+    event_enabled = False
+
+    def __init__(self, tty):
+        self._tty = tty 
         self.__setmode(_SKK_MODE_HANKAKU)
 
     def __setmode(self, mode):
-        self.__value = mode
+        if self.__value != mode:
+            self.__value = mode
+            if self.event_enabled:
+                self._tty.write("\x1b[%d~" % (8850 + self.__value))
         title.setmode(_SKK_MODE_MARK_MAP[min(mode, 4)])
 
     def isdirect(self):
@@ -99,8 +104,16 @@ class ModeManager():
         self.__setmode(self.__value & (_SKK_SUBMODE_EISUU - 1))
 
     def startzen(self):
-        ''' ひらがなモードかどうか '''
+        ''' 全角英数モードを開始 '''
         self.__setmode(_SKK_MODE_ZENKAKU)
+
+    def starthira(self):
+        ''' ひらがなモードを開始 '''
+        self.__setmode(_SKK_MODE_HIRAGANA)
+
+    def startkata(self):
+        ''' カタカナモードを開始 '''
+        self.__setmode(_SKK_MODE_KATAKANA)
 
     def ishira(self):
         ''' ひらがなモードかどうか '''
@@ -118,16 +131,5 @@ class ModeManager():
 
     def ishan(self):
         return self.__value == _SKK_MODE_HANKAKU
-
-    def toggle(self):
-        if self.__value == _SKK_MODE_HANKAKU:
-            self.__setmode(_SKK_MODE_HIRAGANA)
-        elif self.__value == _SKK_MODE_ZENKAKU:
-            self.__setmode(_SKK_MODE_HIRAGANA)
-        elif self.__value == _SKK_MODE_HIRAGANA:
-            self.__setmode(_SKK_MODE_KATAKANA)
-        else:
-            assert self.__value == _SKK_MODE_KATAKANA
-            self.__setmode(_SKK_MODE_HIRAGANA)
 
 

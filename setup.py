@@ -29,10 +29,6 @@ setup(name                  = 'sentimental-skk',
       packages              = find_packages(exclude=[]),
       zip_safe              = False,
       include_package_data  = True,
-#      install_requires      = ['tff ==0.0.14, <0.1.0',
-#                               'canossa ==0.0.14',
-#                               'termprop==0.0.1'
-#                               ],
       install_requires      = [],
       entry_points          = """
                               [console_scripts]
