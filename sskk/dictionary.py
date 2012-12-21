@@ -108,3 +108,10 @@ def getcomp(key):
 
 thread.start_new_thread(_load, ())
 
+def test():
+    import doctest
+    doctest.testmod()
+
+if __name__ == "__main__":
+    test()
+
