@@ -719,8 +719,8 @@ class IMouseModeImpl(IMouseMode):
             s.write(u"\x1b[?1004h")
             s.write(u"\x1b[?1015h")
             s.write(u"\x1b[?1006h")
-            s.write(u"\x1b[?30s\x1b[?30l") # hide scroll bar (rxvt)
-            s.write(u"\x1b[?7766s\x1b[?7766l") # hide scroll bar (MinTTY)
+            #s.write(u"\x1b[?30s\x1b[?30l") # hide scroll bar (rxvt)
+            #s.write(u"\x1b[?7766s\x1b[?7766l") # hide scroll bar (MinTTY)
         else:
             if self._protocol == 0:
                 s.write(u"\x1b[?1000l")
@@ -730,8 +730,8 @@ class IMouseModeImpl(IMouseMode):
                     s.write(u"\x1b[?%dl" % self._encoding)
             if self._focusmode == 0:
                 s.write(u"\x1b[?1004l")
-            s.write(u"\x1b[?30r") # restore scroll bar state (rxvt)
-            s.write(u"\x1b[?7766r") # restore scroll bar state (MinTTY)
+            #s.write(u"\x1b[?30r") # restore scroll bar state (rxvt)
+            #s.write(u"\x1b[?7766r") # restore scroll bar state (MinTTY)
 
     def getprotocol(self):
         return self._protocol

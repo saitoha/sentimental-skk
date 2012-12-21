@@ -20,12 +20,13 @@
 
 import dictionary
 import kanadb
+import re
 
 _SKK_WORD_NONE  = 0
 _SKK_WORD_MAIN  = 1
 _SKK_WORD_OKURI = 2
 
-_SKK_MARK_COOK = u'▽ '
+_SKK_MARK_COOK = u'▽'
 _SKK_MARK_OKURI = u'*'
 
 class WordBuffer():
@@ -39,6 +40,11 @@ class WordBuffer():
     def __init__(self, termprop):
         self.reset()
         self._wcswidth = termprop.wcswidth
+        if not termprop.is_cjk and termprop.da1 == "?62;9;" and re.match(">1;2[0-9]{3};0", termprop.da2):
+            self._cookmark = _SKK_MARK_COOK + u" "
+        else:
+            self._cookmark = _SKK_MARK_COOK
+
 
     def reset(self):
         self.__mode = _SKK_WORD_NONE 
@@ -107,6 +113,6 @@ class WordBuffer():
         if self.isempty():
             return u''
         elif self.has_okuri():
-            return _SKK_MARK_COOK + self.get() + _SKK_MARK_OKURI
-        return _SKK_MARK_COOK + self.get()
+            return self._cookmark + self.get() + _SKK_MARK_OKURI
+        return self._cookmark + self.get()
 

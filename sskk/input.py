@@ -25,7 +25,7 @@ import kanadb, eisuudb, dictionary
 import context, word
 from popup import Listbox, IListboxListener
 
-import codecs
+import codecs, re
 
 try:
     from cStringIO import StringIO
@@ -33,7 +33,7 @@ except:
     from StringIO import StringIO
 
 # マーク
-_SKK_MARK_SELECT = u'▼ '
+_SKK_MARK_SELECT = u'▼'
 _SKK_MARK_OPEN = u'【'
 _SKK_MARK_CLOSE = u'】'
 
@@ -101,6 +101,10 @@ class InputHandler(tff.DefaultHandler,
         self._termprop = termprop
         self.set_titlemode(use_title)
         self._stack = []
+        if not termprop.is_cjk and termprop.da1 == "?62;9;" and re.match(">1;2[0-9]{3};0", termprop.da2):
+            self._selectmark = _SKK_MARK_SELECT + u" "
+        else:
+            self._selectmark = _SKK_MARK_SELECT
 
     def __reset(self):
         self._popup.hide(self._output)
@@ -418,7 +422,8 @@ class InputHandler(tff.DefaultHandler,
         termprop = self._termprop
         if self._selected_text and not self._popup.isempty():
             self._popup.draw(self._output)
-            result = _SKK_MARK_SELECT + self._selected_text
+            self._termprop
+            result = self._selectmark + self._selected_text
 
             y, x = screen.getyx()
             self._output.write(u'\x1b[%d;%dH\x1b[1;4;31m%s\x1b[m\x1b[?25l' % (y + 1, x + 1, result))
