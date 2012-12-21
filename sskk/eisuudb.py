@@ -45,7 +45,17 @@ def _loaddb():
         _han_to_zen_cp[ord(han)] = ord(zen)
  
 def to_zenkaku(s):
-    ''' convert ascii string to Japanese Zenkaku string '''
+    """
+    convert ascii string to Japanese Zenkaku string
+
+    >>> _loaddb()
+    >>> to_zenkaku("0")
+    u'\uff10'
+    >>> to_zenkaku("a")
+    u'\uff41'
+    >>> to_zenkaku("ABC")
+    u'\uff21\uff22\uff23'
+    """
     def conv(c):
         if _han_to_zen.has_key(c):
             return _han_to_zen[c]
@@ -53,11 +63,26 @@ def to_zenkaku(s):
     return ''.join([conv(c) for c in s])
 
 def to_zenkaku_cp(code):
-    ''' convert some ascii code points to Japanese Zenkaku code points '''
+    """
+    convert some ascii code points to Japanese Zenkaku code points
+
+    >>> _loaddb()
+    >>> hex(to_zenkaku_cp(40))
+    '0xff08'
+    >>> hex(to_zenkaku_cp(84))
+    '0xff34'
+    """ 
     if _han_to_zen_cp.has_key(code):
         return _han_to_zen_cp[code]
     return code
 
 #thread.start_new_thread(_loaddb, ())
 _loaddb()
+
+def test():
+    import doctest
+    doctest.testmod()
+
+if __name__ == "__main__":
+    test()
 

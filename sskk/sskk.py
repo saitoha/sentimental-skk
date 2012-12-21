@@ -20,8 +20,9 @@
 
 
 def main():
-    import sys, os, optparse, select
+    import sys, os, optparse, codecs
     import tff
+    import __init__
 
     # parse options and arguments
     usage = 'usage: %prog [options] [command | - ]'
@@ -44,17 +45,16 @@ def main():
                       action="store_true", default=False,
                       help='use title bar manipulation feature')
 
-    parser.add_option('-m', '--use-mouse', dest='mouse',
-                      action="store_true", default=False,
-                      help='use mouse selection feature')
+#    parser.add_option('-m', '--use-mouse', dest='mouse',
+#                      action="store_true", default=False,
+#                      help='use mouse selection feature')
 
     (options, args) = parser.parse_args()
 
     if options.version:
-        import __init__
         print '''
 
-      ＼＾o＾＼ｴｯｽｶﾚｰﾀｰ
+      三 ┗( ^o^)┓  三 ┏( ^o^)┛
 
 sentimental-skk %s 
 Copyright (C) 2012 Hayaki Saito <user@zuse.jp>. 
@@ -72,6 +72,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see http://www.gnu.org/licenses/.
         ''' % __init__.__version__
+        return
+
+    if os.getenv("__SSKK_VERTION"):
+        print "\n＼SSKK process is already running！！！／\n"
+        print "       三 ┗( ^o^)┓  三 ┏( ^o^)┛\n"
         return
 
     # retrive starting command
@@ -110,18 +115,26 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         raise Exception(
             'Invalid TERM environment is detected: "%s"' % termenc)
 
-    sys.stdout.write("\x1b[22;0t")
-    sys.stdout.write("\x1b[22;0t")
-    sys.stdout.flush()
+    output = codecs.getwriter(termenc)(sys.stdout, errors='ignore')
+    output.write(u"\x1b[1;1H\x1b[J")
+    output.write(u"\x1b[5;5H")
+    output.write(u"      ＼ Sentimental-SKK %s ／\n" % __init__.__version__)
+    output.write(u"\x1b[7;5H")
+    output.write(u"       三 ┗( ^o^)┓  三 ┏( ^o^)┛\n")
+    output.write(u"\x1b[1;1H")
+    output.write(u"\x1b[22;0t")
+    output.write(u"\x1b[22;0t")
+    output.flush()
 
     from termprop import Termprop
     termprop = Termprop()
 
+    os.environ["__SSKK_VERTION"] = __init__.__version__
     tty = tff.DefaultPTY(term, lang, command, sys.stdin)
     row, col = tty.fitsize()
 
     use_title = options.titlebar
-    use_mouse = options.mouse
+#    use_mouse = options.mouse
 
     if not "xterm" in term:
         use_title = False
@@ -130,26 +143,12 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         use_title = False
 
     import title
-    import mouse
     import canossa as cano
+    import popup
 
     title.setenabled(use_title)
 
-    if use_mouse:
-        mouse_mode = mouse.MouseMode()
-    else:
-        mouse_mode = None
-
-    if termprop.has_cpr:
-        y, x = termprop.getyx()
-    else:
-        sys.stdout.write("\x1b[1;1H\x1bJ")
-        x, y = 1, 1
-
-    canossa = cano.create(row=row,
-                          col=col,
-                          y=y - 1,
-                          x=x - 1,
+    canossa = cano.create(row=row, col=col, y=0, x=0,
                           termenc=termenc,
                           termprop=termprop,
                           visibility=False)
@@ -158,23 +157,22 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     from input import InputHandler
     from output import OutputHandler
 
-
-    sys.stdout.flush()
-    sys.stdout.write("\x1b[23;0t")
+    output.flush()
+    output.write(u"\x1b[23;0t")
+    output.write(u"\x1b[1;1H\x1b[J")
 
     try:
         inputmode = InputMode(tty)
+        mode_handler = popup.ModeHandler(inputmode)
         inputhandler = InputHandler(screen=canossa.screen,
-                                    stdout=sys.stdout,
                                     termenc=termenc,
                                     termprop=termprop,
                                     use_title=use_title,
-                                    mouse_mode=mouse_mode,
+                                    mousemode=mode_handler,
                                     inputmode=inputmode)
 
         outputhandler = OutputHandler(use_title=use_title,
-                                      mouse_mode=mouse_mode,
-                                      inputmode=inputmode)
+                                      mode_handler=mode_handler)
 
         multiplexer = tff.FilterMultiplexer(canossa, outputhandler)
 
@@ -185,8 +183,8 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                       inputhandler=inputhandler,
                       outputhandler=multiplexer)
     finally: 
-        sys.stdout.flush()
-        sys.stdout.write("\x1b[23;0t")
+        output.flush()
+        output.write(u"\x1b[23;0t")
        
 ''' main '''
 if __name__ == '__main__':    

@@ -76,4 +76,11 @@ def to_hankata(s):
 _loaddb()
 #thread.start_new_thread(_loaddb, ())
 
+def test():
+    import doctest
+    doctest.testmod()
+
+if __name__ == "__main__":
+    test()
+
 
