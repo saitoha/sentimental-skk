@@ -8,6 +8,42 @@ import inspect, os
 filename = inspect.getfile(inspect.currentframe())
 dirpath = os.path.abspath(os.path.dirname(inspect.getfile(inspect.currentframe())))
 
+try:
+    import sskk.tff
+    import sskk.termprop
+    import sskk.canossa
+except:
+    print "Please do:\n git submodule update --init"
+    import sys
+    sys.exit(1)
+
+import sskk.mode as mode
+import sskk.popup as popup
+import sskk.input as input
+import sskk.output as output
+import sskk.mouse as mouse
+import sskk.romanrule as romanrule
+import sskk.kanadb as kanadb
+import sskk.eisuudb as eisuudb
+import sskk.dictionary as dictionary
+
+import doctest
+dirty = False
+for m in [mode,
+          popup,
+          input,
+          output,
+          mouse,
+          romanrule,
+          kanadb,
+          eisuudb,
+          dictionary]:
+    failure_count, test_count = doctest.testmod(m)
+    if failure_count > 0:
+        dirty = True
+if dirty:
+    raise Exception("test failed.")
+
 setup(name                  = 'sentimental-skk',
       version               = __version__,
       description           = '三 ┏( ^o^)┛ ＜ Japanese Input Method SKK (Simple Kana to Kanji conversion) on your terminal',

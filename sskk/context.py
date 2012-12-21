@@ -28,7 +28,7 @@ import romanrule
 class CharacterContext:
 
     def __init__(self):
-        # トライ木の生成
+        # makes try trees 
         self.__hira_tree = romanrule.makehiratree()
         self.__kata_tree = romanrule.makekatatree()
         self.hardreset()

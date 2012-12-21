@@ -27,8 +27,18 @@ if not os.path.exists(dictdir):
 
 _tangodb = {}
 _okuridb = {}
-
+_compdb = {}
 _encoding = 0
+
+def _register(key):
+    current = _compdb
+    for c in key:
+        if current.has_key(c):
+            current = current[c]
+        else:
+            new_current = {}
+            current[c] = new_current 
+            current = new_current
 
 def _decode_line(line):
     global _encoding
@@ -49,10 +59,11 @@ def _load_dict(filename):
         key = g.group(1)
         okuri = g.group(2)
         value = g.group(3)
+        _register(key)
         if okuri:
-            _okuridb[key + okuri] = value
+            _okuridb[key + okuri] = value.split("/")
         else:
-            _tangodb[key] = value 
+            _tangodb[key] = value.split("/")
 
 def _get_fallback_dict_path():
     filename = inspect.getfile(inspect.currentframe())
@@ -78,5 +89,29 @@ def getokuri(key):
         return _okuridb[key]
     return None
 
+def getcomp(key):
+    current = _compdb
+    for c in key:
+        if current.has_key(c):
+            current = current[c]
+        else:
+            return None
+    candidate = []
+    def expand(key, current):
+        if current == {}:
+            candidate.append(key)
+        else:
+            for c in current:
+                expand(key + c, current[c]) 
+    expand("", current)
+    return candidate 
+
 thread.start_new_thread(_load, ())
+
+def test():
+    import doctest
+    doctest.testmod()
+
+if __name__ == "__main__":
+    test()
 

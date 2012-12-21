@@ -18,32 +18,57 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
+import dictionary
+import kanadb
+import re
+
 _SKK_WORD_NONE  = 0
 _SKK_WORD_MAIN  = 1
 _SKK_WORD_OKURI = 2
+
+_SKK_MARK_COOK = u'▽'
+_SKK_MARK_OKURI = u'*'
 
 class WordBuffer():
 
     __main = u""
     __mode = _SKK_WORD_NONE
+    __comp = None
+    __comp_index = 0
     _wcswidth = None
 
     def __init__(self, termprop):
         self.reset()
         self._wcswidth = termprop.wcswidth
+        if not termprop.is_cjk and termprop.da1 == "?62;9;" and re.match(">1;[23][0-9]{3};0", termprop.da2):
+            self._cookmark = _SKK_MARK_COOK + u" "
+        else:
+            self._cookmark = _SKK_MARK_COOK
+
 
     def reset(self):
         self.__mode = _SKK_WORD_NONE 
         self.__main = u""
+        self.__comp = None 
+        self.__comp_index = 0
 
     def isempty(self):
         return self.__mode == _SKK_WORD_NONE 
-    
+
+    def complete(self):
+        if self.__comp:
+            self.__comp_index = (self.__comp_index + 1) % len(self.__comp)
+        else:
+            key = kanadb.to_hira(self.__main)
+            self.__comp = dictionary.getcomp(key)
+
     def get(self):
         if self.__mode == _SKK_WORD_NONE:
             return u""
         elif self.__mode == _SKK_WORD_MAIN:
-            return self.__main
+            if self.__comp:
+                return self.__main + self.__comp[self.__comp_index]
+            return self.__main 
         else:
             assert self.__mode == _SKK_WORD_OKURI
             return self.__main
@@ -84,4 +109,10 @@ class WordBuffer():
             assert self.__mode == _SKK_WORD_OKURI
             return self._wcswidth(self.__main)
 
+    def getbuffer(self):
+        if self.isempty():
+            return u''
+        elif self.has_okuri():
+            return self._cookmark + self.get() + _SKK_MARK_OKURI
+        return self._cookmark + self.get()
 

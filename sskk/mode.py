@@ -19,6 +19,7 @@
 # ***** END LICENSE BLOCK *****
 
 import title
+from popup import IModeListener
 
 '''
 
@@ -69,13 +70,36 @@ _SKK_MODE_MARK_MAP = {
     _SKK_SUBMODE_EISUU     : u'A',
     }
 
-class InputMode():
+
+class IModeListenerImpl(IModeListener):
+
+    _enabled = True
+    _has_event = False
+
+    def notifyenabled(self, n):
+        if n == 8861:
+            self._has_event = True
+        elif n == 8860:
+            self._enabled = True
+
+    def notifydisabled(self, n):
+        if n == 8861:
+            self._has_event = False
+        elif n == 8860:
+            self._enabled = False
+
+    def hasevent(self):
+        return self._has_event
+
+    def getenabled(self):
+        return self._enabled
+
+class InputMode(IModeListenerImpl):
     '''
     モードの管理をします。
     '''
     __value = -1
 
-    event_enabled = False
 
     def __init__(self, tty):
         self._tty = tty 
@@ -84,8 +108,11 @@ class InputMode():
     def __setmode(self, mode):
         if self.__value != mode:
             self.__value = mode
-            if self.event_enabled:
-                self._tty.write("\x1b[%d~" % (8850 + self.__value))
+            if self.hasevent():
+                if self.iseisuu():
+                    self._tty.write("\x1b[8854~")
+                else:
+                    self._tty.write("\x1b[%d~" % (8850 + self.__value))
         title.setmode(_SKK_MODE_MARK_MAP[min(mode, 4)])
 
     def isdirect(self):
@@ -101,7 +128,7 @@ class InputMode():
 
     def endeisuu(self):
         ''' 英数サブモードを終了 '''
-        self.__setmode(self.__value & (_SKK_SUBMODE_EISUU - 1))
+        self.__setmode(self.__value & ~_SKK_SUBMODE_EISUU)
 
     def startzen(self):
         ''' 全角英数モードを開始 '''

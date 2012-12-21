@@ -65,12 +65,13 @@ _kata_rule = {}
 for key, value in _hira_rule.items():
     _kata_rule[key] = kanadb.to_kata(value) 
 
-SKK_ROMAN_VALUE = 0
-SKK_ROMAN_NEXT = 1
-SKK_ROMAN_PREV = 2
+SKK_ROMAN_VALUE  = 0
+SKK_ROMAN_NEXT   = 1
+SKK_ROMAN_PREV   = 2
 SKK_ROMAN_BUFFER = 3
 
 def _maketree(rule):
+    """ makes try-tree """
     tree = {}
     for key, value in rule.items():
         buf = u''
@@ -106,4 +107,10 @@ def makekatatree():
     ''' make katakana input state tree '''
     return _maketree(_kata_rule)
 
+def test():
+    import doctest
+    doctest.testmod()
+
+if __name__ == "__main__":
+    test()
 
