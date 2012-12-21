@@ -24,6 +24,7 @@ import sskk.output as output
 import sskk.mouse as mouse
 import sskk.romanrule as romanrule
 import sskk.kanadb as kanadb
+import sskk.eisuudb as eisuudb
 import sskk.dictionary as dictionary
 
 import doctest
@@ -35,6 +36,7 @@ for m in [mode,
           mouse,
           romanrule,
           kanadb,
+          eisuudb,
           dictionary]:
     failure_count, test_count = doctest.testmod(m)
     if failure_count > 0:
