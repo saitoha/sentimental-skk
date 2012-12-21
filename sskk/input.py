@@ -101,7 +101,7 @@ class InputHandler(tff.DefaultHandler,
         self._termprop = termprop
         self.set_titlemode(use_title)
         self._stack = []
-        if not termprop.is_cjk and termprop.da1 == "?62;9;" and re.match(">1;2[0-9]{3};0", termprop.da2):
+        if not termprop.is_cjk and termprop.da1 == "?62;9;" and re.match(">1;[23][0-9]{3};0", termprop.da2):
             self._selectmark = _SKK_MARK_SELECT + u" "
         else:
             self._selectmark = _SKK_MARK_SELECT

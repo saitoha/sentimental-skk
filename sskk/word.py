@@ -40,7 +40,7 @@ class WordBuffer():
     def __init__(self, termprop):
         self.reset()
         self._wcswidth = termprop.wcswidth
-        if not termprop.is_cjk and termprop.da1 == "?62;9;" and re.match(">1;2[0-9]{3};0", termprop.da2):
+        if not termprop.is_cjk and termprop.da1 == "?62;9;" and re.match(">1;[23][0-9]{3};0", termprop.da2):
             self._cookmark = _SKK_MARK_COOK + u" "
         else:
             self._cookmark = _SKK_MARK_COOK
