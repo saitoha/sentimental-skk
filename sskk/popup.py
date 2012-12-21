@@ -209,7 +209,7 @@ class MouseDecoder(tff.DefaultHandler):
         # by TFF filter because it is not ECMA-48 compatible sequense,
         # so we make custome handler and check 3 bytes after CSI M.
         if not self._mouse_state is None:
-            if c > 0x20 and c < 0x7f:
+            if c >= 0x20 and c < 0x7f:
                 self._mouse_state.append(c - 0x20)
                 if len(self._mouse_state) == 3:
                     code, x, y = self._mouse_state
