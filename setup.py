@@ -21,7 +21,6 @@ import sskk.mode as mode
 import sskk.popup as popup
 import sskk.input as input
 import sskk.output as output
-import sskk.mouse as mouse
 import sskk.romanrule as romanrule
 import sskk.kanadb as kanadb
 import sskk.eisuudb as eisuudb
