@@ -656,6 +656,10 @@ class Listbox(tff.DefaultHandler,
         self._mouse_mode = mouse_mode
         self._output = output
 
+    def set_offset(self, left, top):
+        self._offset_left = left
+        self._offset_top = top
+
     """ tff.EventObserver override """
     def handle_char(self, context, c):
         if self.isshown():
@@ -678,6 +682,10 @@ class Listbox(tff.DefaultHandler,
                 self.moveprev()
             elif c == 0x1b: # ESC C-[ 
                 self.hide(self._output)
+            elif c == 0x02: # C-b 
+                return False
+            elif c == 0x06: # C-f 
+                return False
             elif c < 0x20: # other control chars 
                 self._listener.onsettled(context)
                 context.write(c)
@@ -688,20 +696,50 @@ class Listbox(tff.DefaultHandler,
                 return False
             elif c == 0x78: # x
                 self.moveprev()
-            elif 0x41 <= c and c <= 0x5a: # A - Z
+            elif 0x20 < c and c <= 0x7e:
                 self._listener.onsettled(context)
                 return False
-            elif 0x61 <= c and c <= 0x7a: # a - z
-                self._listener.onsettled(context)
-                return False
+            #elif 0x41 <= c and c <= 0x5a: # A - Z
+            #    self._listener.onsettled(context)
+            #    return False
+            #elif 0x61 <= c and c <= 0x7a: # a - z
+            #    self._listener.onsettled(context)
+            #    return False
             return True
         return False
 
     def handle_csi(self, context, parameter, intermediate, final):
         if self.isshown():
-            return self._mouse_decoder.handle_csi(context, parameter, intermediate, final)
+            if self._handle_csi_cursor(context, parameter, intermediate, final):
+                return True
+            if self._mouse_decoder.handle_csi(context, parameter, intermediate, final):
+                return True
         return False
 
+    def handle_ss3(self, context, final):
+        if self.isshown():
+            if self._handle_ss3_cursor(context, final):
+                return True
+        return False
+
+    def _handle_csi_cursor(self, context, parameter, intermediate, final):
+        if len(intermediate) == 0:
+            if final == 0x41: # A
+                self.moveprev()
+                return True
+            elif final == 0x42: # B
+                self.movenext()
+                return True
+        return False
+
+    def _handle_ss3_cursor(self, context, final):
+        if final == 0x41: # A
+            self.moveprev()
+            return True
+        elif final == 0x42: # B
+            self.movenext()
+            return True
+        return False
 
 class IMouseModeImpl(IMouseMode):
     """
@@ -799,6 +837,11 @@ class ModeHandler(tff.DefaultHandler, IMouseModeImpl):
         return False
 
     def handle_csi(self, context, parameter, intermediate, final):
+        if self._handle_mode(context, parameter, intermediate, final):
+            return True
+        return False
+
+    def _handle_mode(self, context, parameter, intermediate, final):
         if len(parameter) >= 5:
             if parameter[0] == 0x3f and len(intermediate) == 0:
                 params = _parse_params(parameter[1:])

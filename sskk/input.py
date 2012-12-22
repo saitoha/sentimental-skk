@@ -66,13 +66,18 @@ class TitleTrait():
 class IListboxListenerImpl(IListboxListener):
 
     def onselected(self, index, text, remarks):
-        self._selected_text = text + self._okuri
-        self._remarks = remarks
+        if self._rensetsu:
+            self._rensetsu[self._index][0] = text
+            self._selected_text = text
+            self._remarks = remarks
+        else: 
+            self._selected_text = text
+            self._remarks = remarks
         if self._use_title:
             if self._remarks:
-                self.settitle(u'%s - %s' % (self._selected_text, self._remarks))
+                self.settitle(u'%s - %s' % (text, remarks))
             else:
-                self.settitle(self._selected_text)
+                self.settitle(text)
 
     def onsettled(self, context):
         self._kakutei(context)
@@ -90,6 +95,8 @@ class InputHandler(tff.DefaultHandler,
     _anti_opt_flag = False 
     _selected_text = None 
     _okuri = ""
+    _bracket_left = _SKK_MARK_OPEN
+    _bracket_right = _SKK_MARK_CLOSE
 
     def __init__(self, screen, termenc, termprop, use_title, mousemode, inputmode):
         self._screen = screen
@@ -145,6 +152,25 @@ class InputHandler(tff.DefaultHandler,
             self._inputmode.starthira()
         self.__reset()
 
+    def _get_google(self, key):
+        import urllib, urllib2, json
+        try:
+            params = urllib.urlencode({ 'langpair' : 'ja-Hira|ja', 'text' : key.encode("UTF-8") })
+            self._rensetsu = json.loads(urllib2.urlopen('http://www.google.com/transliterate?', params).read())
+            self._index = 0
+
+            (primary, others) = self._rensetsu[self._index]
+
+            result = []
+            for word in others:
+                result.append(unicode(word))
+
+            for setsu in self._rensetsu:
+                setsu[0] = setsu[1][0]
+        except:
+            return []
+        return result
+
     def __tango_henkan(self):
         key = self._wordbuf.get()
 
@@ -153,19 +179,26 @@ class InputHandler(tff.DefaultHandler,
 
         result = dictionary.gettango(key)
 
-        self._okuri = ""
+        self._okuri = u""
+        self._rensetsu = None
 
         if not result: 
-            result = [key]
+            result = self._get_google(key)
+            if len(result) == 0:
+                result = [key]
 
         self.settitle(key)
         self._popup.assign(result)
         return True
 
     def __okuri_henkan(self):
-        buf = self._charbuf.getbuffer()[0]
-        self._okuri = self.__draincharacters()
+        buf = self._charbuf.getbuffer()
+        assert len(buf) > 0
+        okuri = self.__draincharacters()
         key = self._wordbuf.get()
+
+        self._okuri = u""
+        self._rensetsu = None
 
         if self._inputmode.iskata():
             key = kanadb.to_hira(key)
@@ -177,7 +210,11 @@ class InputHandler(tff.DefaultHandler,
         if not result:
             if self._inputmode.iskata():
                 key = kanadb.to_kata(key)
-            result = [key]
+            result = self._get_google(key)
+            if len(result) == 0:
+                result = [key]
+
+        self._okuri += okuri 
 
         self._popup.assign(result)
         self._wordbuf.reset() 
@@ -187,7 +224,13 @@ class InputHandler(tff.DefaultHandler,
     def _kakutei(self, context):
         ''' 確定 '''
         if self._selected_text:
-            word = self._selected_text 
+            word = u""
+            if self._rensetsu:
+                for i in xrange(0, len(self._rensetsu)):
+                    word += self._rensetsu[i][0]
+            else:
+                word = self._selected_text
+            word += self._okuri
             self._selected_text = None 
         else:
             s = self.__draincharacters()
@@ -307,6 +350,12 @@ class InputHandler(tff.DefaultHandler,
             else:
                 context.write(c)
 
+        elif c == 0x02: # C-b 
+            self._moveprevclause()
+
+        elif c == 0x06: # C-f 
+            self._movenextclause()
+
         elif c < 0x20 or 0x7f < c:
             if self._inputmode.isdirect():
                 context.write(c)
@@ -325,6 +374,8 @@ class InputHandler(tff.DefaultHandler,
             self._wordbuf.append(unichr(c))
         elif self._inputmode.ishira() or self._inputmode.iskata():
             # ひらがな変換モード・カタカナ変換モード
+            #if c > 0x20 and c < 0x2f:
+            #    self._kakutei(context)
             if c == 0x2f and (self._charbuf.isempty() or self._charbuf.getbuffer() != u'z'): # /
                 if self.__iscooking():
                     self._wordbuf.append(unichr(c))
@@ -352,6 +403,28 @@ class InputHandler(tff.DefaultHandler,
                     self._kakutei(context)
                 self._inputmode.reset()
                 self.__reset()
+            elif c == 0x2c or c == 0x2e or c == 0x3a or c == 0x3b or c == 0x5b or c == 0x5d: # , . ; : [ ]
+                self._charbuf.reset()
+                if self._popup.isempty():
+                    if not self._wordbuf.isempty():
+                        self.__tango_henkan()
+                        self._charbuf.put(c)
+                        s = self._charbuf.drain()
+                        self._okuri += s 
+                    elif self._charbuf.put(c):
+                        s = self._charbuf.drain()
+                        context.write(ord(s))
+                    else:
+                        s = unichr(c)
+                        context.write(c)
+                    #raise
+                else:
+                    self._kakutei(context)
+                    if self._charbuf.put(c):
+                        s = self._charbuf.drain()
+                        context.write(ord(s))
+                    else:
+                        context.write(c)
             elif 0x41 <= c and c <= 0x5a: # A - Z
                 # 大文字のとき
                 self._charbuf.put(c + 0x20) # 小文字に変換し、文字バッファに溜める
@@ -374,27 +447,31 @@ class InputHandler(tff.DefaultHandler,
                         # 送り仮名変換
                         self.__okuri_henkan()
 
-            #elif 0x61 <= c and c <= 0x7a: # a - z
-            elif self._charbuf.put(c):
-                self._anti_opt_flag = True
-                if self._charbuf.isfinal():
-                    if self._wordbuf.isempty():
-                        s = self._charbuf.drain()
-                        context.putu(s)
-                    elif self._wordbuf.has_okuri():
-                        # 送り仮名変換
-                        self.__okuri_henkan()
-                    else:
-                        s = self._charbuf.drain()
-                        self._wordbuf.append(s)
+            elif c == 0x2d or 0x61 <= c and c <= 0x7a: # a - z
+                if self._charbuf.put(c):
+                    self._anti_opt_flag = True
+                    if self._charbuf.isfinal():
+                        if self._wordbuf.isempty():
+                            s = self._charbuf.drain()
+                            context.putu(s)
+                        elif self._wordbuf.has_okuri():
+                            # 送り仮名変換
+                            self.__okuri_henkan()
+                        else:
+                            s = self._charbuf.drain()
+                            self._wordbuf.append(s)
             else:
-                self.__reset()
-                context.write(c)
+                if self.__iscooking():
+                    self._kakutei(context)
+                if self._charbuf.put(c):
+                    s = self._charbuf.drain()
+                    context.write(ord(s))
+                else:
+                    context.write(c)
 
         return True # handled
 
     def _handle_amb_report(self, context, parameter, intermediate, final):
-        ''' '''
         if len(intermediate) == 0:
             if final == 0x57: # W
                 if parameter == [0x32]:
@@ -404,9 +481,53 @@ class InputHandler(tff.DefaultHandler,
                 return True
         return False
 
+    def _get_candidates(self):
+        primary, others = self._rensetsu[self._index]
+        result = []
+        for word in others:
+            result.append(unicode(word))
+        return result
+
+    def _movenextclause(self):
+        if self._rensetsu:
+            self._index += 1
+            self._index = self._index % len(self._rensetsu)
+            result = self._get_candidates()
+            self._popup.hide(self._output)
+            self._popup.assign(result)
+
+    def _moveprevclause(self):
+        if self._rensetsu:
+            self._index -= 1
+            self._index = self._index % len(self._rensetsu)
+            result = self._get_candidates()
+            self._popup.hide(self._output)
+            self._popup.assign(result)
+
+    def _handle_csi_cursor(self, context, parameter, intermediate, final):
+        if len(intermediate) == 0:
+            if final == 0x43: # C
+                self._movenextclause()
+                return True
+            elif final == 0x44: # D
+                self._moveprevclause()
+                return True
+        return False
+
+    def _handle_ss3_cursor(self, context, final):
+        if final == 0x43: # C
+            self._movenextclause()
+            return True
+        elif final == 0x44: # D
+            self._moveprevclause()
+            return True
+        return False
+
     # override
     def handle_csi(self, context, parameter, intermediate, final):
         if self._popup.handle_csi(context, parameter, intermediate, final):
+            return True
+        if self._handle_csi_cursor(context, parameter, intermediate, final):
             return True
         if self._handle_amb_report(context, parameter, intermediate, final):
             return True
@@ -416,22 +537,50 @@ class InputHandler(tff.DefaultHandler,
             return True
         return False
 
+    def handle_ss3(self, context, final):
+        if self._popup.handle_ss3(context, final):
+            return True
+        if self._handle_ss3_cursor(context, final):
+            return True
+        return False
+
     # override
     def handle_draw(self, context):
         screen = self._screen
         termprop = self._termprop
         if self._selected_text and not self._popup.isempty():
-            self._popup.draw(self._output)
             self._termprop
             result = self._selectmark + self._selected_text
-
             y, x = screen.getyx()
-            self._output.write(u'\x1b[%d;%dH\x1b[1;4;31m%s\x1b[m\x1b[?25l' % (y + 1, x + 1, result))
+            cur_width = 0
+            self._output.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
+            #cur_width += termprop.wcswidth(self._bracket_left)
+            #self._output.write(u'\x1b[m' + self._bracket_left)
+            if self._rensetsu:
+                for i in xrange(0, len(self._rensetsu)):
+                    word = self._rensetsu[i][0]
+                    if i == self._index:
+                        self._popup.set_offset(cur_width, 0)
+                        self._output.write(u'\x1b[0;1;32m')
+                    else:
+                        self._output.write(u'\x1b[0;32m')
+                    cur_width += termprop.wcswidth(word)
+                    self._output.write(word)
+            else:
+                cur_width += termprop.wcswidth(result)
+                self._output.write(u'\x1b[1;4;31m' + result)
+            if self._okuri:
+                cur_width += termprop.wcswidth(self._okuri)
+                self._output.write(u'\x1b[m' + self._okuri)
+            #cur_width += termprop.wcswidth(self._bracket_right)
+            #self._output.write(u'\x1b[m' + self._bracket_right)
+            self._output.write(u'\x1b[?25l')
+            self._popup.draw(self._output)
+            self._output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
 
-            cur_width = termprop.wcswidth(result) 
+            #cur_width = termprop.wcswidth(result)
             if self._prev_length > cur_width:
                 length = self._prev_length - cur_width
-                y, x = screen.getyx()
                 screen.copyrect(self._output, x + cur_width, y, length, 1)
                 self._output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
             self._prev_length = cur_width
@@ -443,16 +592,23 @@ class InputHandler(tff.DefaultHandler,
                 self._anti_opt_flag = False
                 if len(word) == 0:
                     char = u''
-            cur_width = termprop.wcswidth(word + char)
             y, x = screen.getyx()
+            cur_width = 0
+            self._output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
+            #cur_width += termprop.wcswidth(self._bracket_left) 
+            #self._output.write(u'\x1b[m%s' % self._bracket_left)
+            cur_width += termprop.wcswidth(word) 
+            self._output.write(u'\x1b[0;1;4;31m' + word)
+            cur_width += termprop.wcswidth(char) 
+            self._output.write(u'\x1b[33m' + char)
+            #cur_width += termprop.wcswidth(self._bracket_right) 
+            #self._output.write(u'\x1b[m%s' % self._bracket_right)
+            self._output.write(u'\x1b[m\x1b[?25l\x1b[%d;%dH' % (y + 1, x + 1))
             if self._prev_length > cur_width:
                 length = self._prev_length - cur_width
                 screen.copyrect(self._output, x + cur_width, y, length, 1)
+                self._output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
             self._prev_length = cur_width 
-            self._output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
-            self._output.write(u'\x1b[0;1;4;31m%s' % word)
-            self._output.write(u'\x1b[33m%s' % char)
-            self._output.write(u'\x1b[m\x1b[?25l\x1b[%d;%dH' % (y + 1, x + 1))
         else:
             length = self._prev_length
             if length > 0:
