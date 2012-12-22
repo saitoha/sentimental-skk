@@ -66,7 +66,7 @@ setup(name                  = 'sentimental-skk',
       install_requires      = [],
       entry_points          = """
                               [console_scripts]
-                              sskk = sskk:main
+                              sskk = sskk.sskk:main
                               """
       )
 

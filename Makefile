@@ -12,7 +12,8 @@ install:
 	$(PYTHON) setup.py install
 
 uninstall:
-	yes | pip uninstall $(PACKAGE_NAME) 
+	yes | pip uninstall $(PACKAGE_NAME)
+	$(MAKE) uninstall
 	
 clean:
 	rm -rf dist/ build/ *.egg-info *.pyc **/*.pyc
