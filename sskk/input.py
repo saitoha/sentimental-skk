@@ -23,7 +23,7 @@ import tff
 import title
 import kanadb, eisuudb, dictionary
 import context, word
-from popup import Listbox, IListboxListener
+from canossa import Listbox, IListboxListener
 
 import codecs, re
 
@@ -120,6 +120,7 @@ class InputHandler(tff.DefaultHandler,
         self._okuri = u""
         self._rensetsu = None
         self._index = 0
+        self._anti_optimization_flag = False
 
     def __draincharacters(self):
         s = self._charbuf.getbuffer()
@@ -233,15 +234,14 @@ class InputHandler(tff.DefaultHandler,
                 word += self._rensetsu[i][0]
             word += self._okuri
             self._rensetsu = None
+            self._index = 0
+            self._okuri = u""
         else:
             s = self.__draincharacters()
             self._wordbuf.append(s)
             word = self._wordbuf.get()
         self.onkakutei()
-        self._inputmode.endeisuu()
-        self._wordbuf.reset()
-        self._charbuf.reset()
-        self._popup.hide(self._output)
+        self.__reset()
         context.putu(word)
 
     def __showpopup(self):
@@ -428,19 +428,17 @@ class InputHandler(tff.DefaultHandler,
                         context.write(c)
             elif 0x41 <= c and c <= 0x5a: # A - Z
                 # 大文字のとき
-                self._charbuf.put(c + 0x20) # 小文字に変換し、文字バッファに溜める
                 # 先行する入力があるか
                 if self._wordbuf.isempty() or len(self._wordbuf.get()) == 0:
-                    # 先行する入力が無いとき、
-                    # 単語バッファを編集マーク('▽')とする
+                    self._charbuf.put(c + 0x20) # 小文字に変換し、文字バッファに溜める
                     self._wordbuf.startedit()
-                    # cが母音か
                     if self._charbuf.isfinal():
-                        # cが母音のとき、文字バッファを吸い出し、
                         s = self._charbuf.drain()
-                        # 単語バッファに追加
                         self._wordbuf.append(s)
                 else:
+                    s = self.__draincharacters()
+                    self._wordbuf.append(s)
+                    self._charbuf.put(c + 0x20) # 小文字に変換し、文字バッファに溜める
                     # 先行する入力があるとき、送り仮名マーク('*')をつける
                     self._wordbuf.startokuri()
                     # キャラクタバッファが終了状態か 
