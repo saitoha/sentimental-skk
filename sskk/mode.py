@@ -19,7 +19,7 @@
 # ***** END LICENSE BLOCK *****
 
 import title
-from popup import IModeListener
+from canossa import IModeListener
 
 '''
 
