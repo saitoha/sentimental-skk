@@ -119,6 +119,7 @@ class InputHandler(tff.DefaultHandler,
         self._charbuf.reset()
         self._okuri = u""
         self._rensetsu = None
+        self._index = 0
 
     def __draincharacters(self):
         s = self._charbuf.getbuffer()
@@ -534,6 +535,11 @@ class InputHandler(tff.DefaultHandler,
         if not self._wordbuf.isempty():
             return True
         if not self._charbuf.isempty():
+            return True
+        return False
+
+    def handle_esc(self, context, intermediate, final):
+        if self._popup.handle_esc(context, intermediate, final):
             return True
         return False
 

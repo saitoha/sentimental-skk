@@ -21,7 +21,7 @@
 _POPUP_DIR_NORMAL = True
 _POPUP_DIR_REVERSE = False
 _POPUP_WIDTH_MAX = 20
-_POPUP_HEIGHT_MAX = 24
+_POPUP_HEIGHT_MAX = 12 
 
 _MOUSE_PROTOCOL_X10          = 9
 _MOUSE_PROTOCOL_NORMAL       = 1000
@@ -318,11 +318,23 @@ class MouseDecoder(tff.DefaultHandler):
 
 class IListboxImpl(IListbox):
 
-    _style_active   = { 'selected'  : u'\x1b[0;1;37;42m',
-                        'unselected': u'\x1b[0;1;37;41m' }
+    _style_active          = { 'selected'  : u'\x1b[0;1;37;42m',
+                               'unselected': u'\x1b[0;1;37;41m',
+                               'scrollbar' : u'\x1b[0;47m',
+                               'slider'    : u'\x1b[0;44m',
+                             }
 
-    _style_inactive = { 'selected'  : u'\x1b[0;1;37;41m',
-                        'unselected': u'\x1b[0;1;37;42m' }
+    _style_scrollbar_hover = { 'selected'  : u'\x1b[0;1;37;42m',
+                               'unselected': u'\x1b[0;1;37;41m',
+                               'scrollbar' : u'\x1b[0;47m',
+                               'slider'    : u'\x1b[0;45m',
+                             }
+
+    _style_inactive        = { 'selected'  : u'\x1b[0;1;37;41m',
+                               'unselected': u'\x1b[0;1;37;42m',
+                               'scrollbar' : u'',
+                               'slider'    : u'',
+                             }
 
     _style = _style_active
 
@@ -364,15 +376,19 @@ class IListboxImpl(IListbox):
             text, remarks = self._getcurrent()
             self._listener.onselected(self._index, text, remarks)
 
+    def _calculate_scrollbar_postion(self):
+        height = self._height
+        scroll_pos = self._scrollpos
+        all_length = len(self._list)
+        if height < all_length:
+            start_pos = round(1.0 * scroll_pos / all_length * height)
+            end_pos = start_pos + round(1.0 * height / all_length * height)
+            return start_pos, end_pos
+        return None
+
     def draw(self, s):
         if self._list:
             l, pos, left, top, width, height = self._getdisplayinfo()
-                
-            self._left = left 
-            self._top = top 
-            self._width = width
-            self._height = height
-
             if self._show:
                 if self._left < left:
                     self._screen.copyrect(s, self._left, top, left - self._left, height)
@@ -380,20 +396,41 @@ class IListboxImpl(IListbox):
                     self._screen.copyrect(s, left + width, top, self._left + self._width - (left + width), height)
             elif not self._mouse_mode is None:
                 self._mouse_mode.setenabled(self._output, True)
+                self._style = self._style_active
+                
+            self._left = left 
+            self._top = top 
+            self._width = width
+            self._height = height
 
             left += self._offset_left
             top += self._offset_top
 
             style_selected = self._style['selected']
             style_unselected = self._style['unselected']
+            style_scrollbar = self._style['scrollbar']
+            style_slider = self._style['slider']
 
+            scrollbar_info = self._calculate_scrollbar_postion()
+            if scrollbar_info:
+                start_pos, end_pos = scrollbar_info
             for i, value in enumerate(l):
                 if i == pos: # selected line 
                     s.write(style_selected)
                 else: # unselected lines 
                     s.write(style_unselected)
                 s.write(u'\x1b[%d;%dH' % (top + 1 + i, left + 1))
-                s.write(u' ' * width)
+                s.write(u' ' * (width - 1))
+                if scrollbar_info:
+                    if i >= start_pos and i < end_pos:
+                        s.write(style_slider)
+                    else:
+                        s.write(style_scrollbar)
+                s.write(u' ')
+                if i == pos: # selected line 
+                    s.write(style_selected)
+                else: # unselected lines 
+                    s.write(style_unselected)
                 if i == pos: s.write(u'\x1b[1m')
                 s.write(u'\x1b[%d;%dH' % (top + 1 + i, left + 1))
                 s.write(value)
@@ -503,7 +540,22 @@ class IFocusListenerImpl(IFocusListener):
     def onfocusout(self):
         self._style = self._style_inactive
 
+
+_HITTEST_NONE            = 0x0
+_HITTEST_BODY_SELECTED   = 0x1
+_HITTEST_BODY_UNSELECTED = 0x2
+_HITTEST_SLIDER_INNER    = 0x3
+_HITTEST_SLIDER_ABOVE    = 0x4
+_HITTEST_SLIDER_BELOW    = 0x5
+
+_DRAGMODE_MOVE   = 0x0
+_DRAGMODE_SCROLL = 0x1
+
 class IMouseListenerImpl(IMouseListener):
+
+    _dragmode = _DRAGMODE_MOVE
+    _scrollorigin = 0
+    _lasthittest = None 
 
     """ IMouseListener implementation """
 
@@ -511,25 +563,11 @@ class IMouseListenerImpl(IMouseListener):
         pass
 
     def onclick(self, context, x, y):
-        if self._includes(x, y):
-            if self._scrollpos + y - self._top == self._index:
-                self._listener.onsettled(context)
-            else:
-                x -= self._offset_left
-                y -= self._offset_top
-                n = y - self._top
-                while self._scrollpos + n < self._index:
-                    self.moveprev()
-                while self._scrollpos + n > self._index:
-                    self.movenext()
-        elif self.isshown():
-            self.hide(self._output)
-
-    def ondoubleclick(self, context, x, y):
-        self._listener.onsettled(context)
-
-    def onmousemove(self, context, x, y):
-        if self.isshown() and self._includes(x, y):
+        hittest = self._hittest(x, y)
+        self._lasthittest = hittest
+        if hittest == _HITTEST_BODY_SELECTED:
+            self._listener.onsettled(context)
+        elif hittest == _HITTEST_BODY_UNSELECTED:
             x -= self._offset_left
             y -= self._offset_top
             n = y - self._top
@@ -537,6 +575,52 @@ class IMouseListenerImpl(IMouseListener):
                 self.moveprev()
             while self._scrollpos + n > self._index:
                 self.movenext()
+        elif hittest == _HITTEST_SLIDER_ABOVE:
+            for i in xrange(0, self._height):
+                if self._index <= 0:
+                    break
+                self.moveprev()
+        elif hittest == _HITTEST_SLIDER_INNER:
+            pass
+        elif hittest == _HITTEST_SLIDER_BELOW:
+            for i in xrange(0, self._height):
+                if self._index >= len(self._list):
+                    break
+                self.movenext()
+        elif self.isshown():
+            self.hide(self._output)
+
+    def ondoubleclick(self, context, x, y):
+        hittest = self._lasthittest
+        if hittest == _HITTEST_BODY_SELECTED:
+            self._listener.onsettled(context)
+        elif hittest == _HITTEST_SLIDER_ABOVE:
+            for i in self._list:
+                if self._index <= 0:
+                    break
+                self.moveprev()
+        elif hittest == _HITTEST_SLIDER_BELOW:
+            for i in self._list:
+                if self._index >= len(self._list):
+                    break
+                self.movenext()
+
+    def onmousemove(self, context, x, y):
+        hittest = self._hittest(x, y)
+        if self.isshown():
+            if hittest == _HITTEST_BODY_UNSELECTED:
+                x -= self._offset_left
+                y -= self._offset_top
+                n = y - self._top
+                while self._scrollpos + n < self._index:
+                    self.moveprev()
+                while self._scrollpos + n > self._index:
+                    self.movenext()
+                self._style = self._style_active
+            elif hittest == _HITTEST_SLIDER_INNER:
+                self._style = self._style_scrollbar_hover
+            else:
+                self._style = self._style_active
 
     """ scroll """
     def onscrolldown(self, context, x, y):
@@ -547,51 +631,85 @@ class IMouseListenerImpl(IMouseListener):
 
     """ drag and drop """
     def ondragstart(self, s, x, y):
-        if self._includes(x, y):
+        hittest = self._hittest(x, y)
+        if hittest == _HITTEST_BODY_UNSELECTED or hittest == _HITTEST_BODY_SELECTED:
+            self._dragmode = _DRAGMODE_MOVE
             x -= self._offset_left
             y -= self._offset_top
+            self._dragpos = (x, y)
+        elif hittest == _HITTEST_SLIDER_INNER:
+            self._dragmode = _DRAGMODE_SCROLL
+            self._scrollorigin = self._scrollpos
             self._dragpos = (x, y)
 
     def ondragend(self, s, x, y):
         self._dragpos = None
+        self._dragmode = _DRAGMODE_MOVE
+        self._scrollorigin = 0
 
     def ondragmove(self, context, x, y):
         if self._dragpos:
-            origin_x, origin_y = self._dragpos
-            offset_x = x - origin_x
-            offset_y = y - origin_y
+            if self._dragmode == _DRAGMODE_MOVE:
+                origin_x, origin_y = self._dragpos
+                offset_x = x - origin_x
+                offset_y = y - origin_y
 
-            screen = self._screen
-            if self._left + offset_x < 0:
-                offset_x = 0 - self._left
-            elif self._left + self._width + offset_x > screen.width:
-                offset_x = screen.width - self._left - self._width
-            if self._top + offset_y < 0:
-                offset_y = 0 - self._top
-            elif self._top + self._height + offset_y > screen.height:
-                offset_y = screen.height - self._top - self._height
+                screen = self._screen
+                if self._left + offset_x < 0:
+                    offset_x = 0 - self._left
+                elif self._left + self._width + offset_x > screen.width:
+                    offset_x = screen.width - self._left - self._width
+                if self._top + offset_y < 0:
+                    offset_y = 0 - self._top
+                elif self._top + self._height + offset_y > screen.height:
+                    offset_y = screen.height - self._top - self._height
 
-            s = self._output
-            self._clearDeltaX(s, offset_x)
-            self._clearDeltaY(s, offset_y)
+                s = self._output
+                self._clearDeltaX(s, offset_x)
+                self._clearDeltaY(s, offset_y)
 
-            self._offset_left = offset_x
-            self._offset_top = offset_y 
+                self._offset_left = offset_x
+                self._offset_top = offset_y 
+            elif self._dragmode == _DRAGMODE_SCROLL:
+                all_length = len(self._list)
+                origin_x, origin_y = self._dragpos
+                offset_y = int(1.0 * (y - origin_y) / self._height * all_length)
+                #offset_y = y - origin_y
+                self._scrollpos = self._scrollorigin + offset_y
+                if self._scrollpos < 0:
+                    self._scrollpos = 0
+                elif self._scrollpos > all_length - self._height - 1:
+                    self._scrollpos = all_length - self._height - 1
+                if self._index < self._scrollpos:
+                    self._index = self._scrollpos
+                elif self._index > self._scrollpos + self._height - 1:
+                    self._index = self._scrollpos + self._height - 1
 
-    def _includes(self, x, y):
+    def _hittest(self, x, y):
         x -= self._offset_left
         y -= self._offset_top
         if not self.isshown():
-            return False
-        elif x < self._left:
-            return False
-        elif x >= self._left + self._width:
-            return False
-        elif y < self._top:
-            return False
-        elif y >= self._top + self._height:
-            return False
-        return True
+            return _HITTEST_NONE
+        if x < self._left:
+            return _HITTEST_NONE
+        if x >= self._left + self._width:
+            return _HITTEST_NONE
+        if y < self._top:
+            return _HITTEST_NONE
+        if y >= self._top + self._height:
+            return _HITTEST_NONE
+        if x == self._left + self._width - 1:
+            scrollbar_info = self._calculate_scrollbar_postion()
+            if not scrollbar_info is None:
+                start, end = scrollbar_info
+                if y - self._top < start:
+                    return _HITTEST_SLIDER_ABOVE
+                if y - self._top < end:
+                    return _HITTEST_SLIDER_INNER
+                return _HITTEST_SLIDER_BELOW
+        if self._scrollpos + y - self._top == self._index:
+            return _HITTEST_BODY_SELECTED
+        return _HITTEST_BODY_UNSELECTED
 
     def _clearDeltaX(self, s, offset_x):
         screen = self._screen
@@ -687,6 +805,11 @@ class Listbox(tff.DefaultHandler,
                 self.movenext()
             elif c == 0x0e: # C-n
                 self.movenext()
+            elif c == 0x16: # C-v
+                for i in xrange(0, self._height):
+                    if self._index >= len(self._list):
+                        break
+                    self.movenext()
             elif c == 0x10: # C-p
                 self.moveprev()
             elif c == 0x1b: # ESC C-[ 
@@ -722,6 +845,16 @@ class Listbox(tff.DefaultHandler,
             if self._handle_csi_cursor(context, parameter, intermediate, final):
                 return True
             if self._mouse_decoder.handle_csi(context, parameter, intermediate, final):
+                return True
+        return False
+
+    def handle_esc(self, context, intermediate, final):
+        if self.isshown():
+            if final == 0x76 and len(intermediate) == 0: # C-v
+                for i in xrange(0, self._height):
+                    if self._index <= 0:
+                        break
+                    self.moveprev()
                 return True
         return False
 
