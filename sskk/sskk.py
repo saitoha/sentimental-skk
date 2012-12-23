@@ -144,7 +144,6 @@ along with this program. If not, see http://www.gnu.org/licenses/.
 
     import title
     import canossa as cano
-    import popup
 
     title.setenabled(use_title)
 
@@ -163,7 +162,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
 
     try:
         inputmode = InputMode(tty)
-        mode_handler = popup.ModeHandler(inputmode)
+        mode_handler = cano.ModeHandler(inputmode)
         inputhandler = InputHandler(screen=canossa.screen,
                                     termenc=termenc,
                                     termprop=termprop,
