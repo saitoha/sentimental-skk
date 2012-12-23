@@ -202,7 +202,7 @@ class MouseDecoder(tff.DefaultHandler):
                             return True
                     else:
                         return True
-            except:
+            finally:
                 # TODO: logging
                 pass
 
@@ -281,7 +281,6 @@ class MouseDecoder(tff.DefaultHandler):
         return None
 
     def __dispatch_mouse(self, context, code, x, y):
-
         if code & 32: # mouse move
             if self._mousedrag:
                 self._popup.ondragmove(context, x, y)
@@ -368,6 +367,11 @@ class IListboxImpl(IListbox):
     def draw(self, s):
         if self._list:
             l, pos, left, top, width, height = self._getdisplayinfo()
+                
+            self._left = left 
+            self._top = top 
+            self._width = width
+            self._height = height
 
             if self._show:
                 if self._left < left:
@@ -376,11 +380,6 @@ class IListboxImpl(IListbox):
                     self._screen.copyrect(s, left + width, top, self._left + self._width - (left + width), height)
             elif not self._mouse_mode is None:
                 self._mouse_mode.setenabled(self._output, True)
-                
-            self._left = left 
-            self._top = top 
-            self._width = width
-            self._height = height
 
             left += self._offset_left
             top += self._offset_top
@@ -656,9 +655,19 @@ class Listbox(tff.DefaultHandler,
         self._mouse_mode = mouse_mode
         self._output = output
 
-    def set_offset(self, left, top):
-        self._offset_left = left
-        self._offset_top = top
+    def set_offset(self, offset_x, offset_y):
+
+        l, pos, left, top, width, height = self._getdisplayinfo()
+
+        screen = self._screen
+
+        if left + offset_x < 0:
+            offset_x = 0 - self._left
+        elif left + width + offset_x > screen.width - 1:
+            offset_x = screen.width - left - width
+
+        self._offset_left = offset_x
+        self._offset_top = offset_y
 
     """ tff.EventObserver override """
     def handle_char(self, context, c):
@@ -696,7 +705,7 @@ class Listbox(tff.DefaultHandler,
                 return False
             elif c == 0x78: # x
                 self.moveprev()
-            elif 0x20 < c and c <= 0x7e:
+            elif 0x40 < c and c <= 0x7e:
                 self._listener.onsettled(context)
                 return False
             #elif 0x41 <= c and c <= 0x5a: # A - Z
