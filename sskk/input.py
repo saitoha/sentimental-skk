@@ -552,44 +552,42 @@ class InputHandler(tff.DefaultHandler,
     def handle_draw(self, context):
         screen = self._screen
         termprop = self._termprop
-        if self._rensetsu and not self._popup.isempty():
-            self._termprop
-            result = self._selectmark + self._rensetsu[self._index][0]
+        output = self._output
+        rensetsu = self._rensetsu
+        if rensetsu and not self._popup.isempty():
+            result = self._selectmark + rensetsu[self._index][0]
             y, x = screen.getyx()
             cur_width = 0
-            self._output.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
-            #cur_width += termprop.wcswidth(self._bracket_left)
-            #self._output.write(u'\x1b[m' + self._bracket_left)
-            if self._rensetsu:
-                for i in xrange(0, len(self._rensetsu)):
-                    word = self._rensetsu[i][0]
-                    if i == self._index:
-                        if not self._popup.isshown():
-                            self._popup.set_offset(cur_width, 0)
-                        self._output.write(u'\x1b[0;1;4;31m')
-                    else:
-                        self._output.write(u'\x1b[0;32m')
-                    cur_width += termprop.wcswidth(word)
-                    self._output.write(word)
-            else:
-                cur_width += termprop.wcswidth(result)
-                self._output.write(u'\x1b[1;4;31m' + result)
+            for i in xrange(0, len(rensetsu)):
+                word = rensetsu[i][0]
+                if i == self._index:
+                    if not self._popup.isshown():
+                        self._popup.set_offset(cur_width, 0)
+                cur_width += termprop.wcswidth(word)
             if self._okuri:
                 cur_width += termprop.wcswidth(self._okuri)
-                self._output.write(u'\x1b[m' + self._okuri)
-            #cur_width += termprop.wcswidth(self._bracket_right)
-            #self._output.write(u'\x1b[m' + self._bracket_right)
-            self._popup.draw(self._output)
-            self._output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
-
-            #cur_width = termprop.wcswidth(result)
             if self._prev_length > cur_width:
                 length = self._prev_length - cur_width
-                try:
-                    screen.copyline(self._output, x + cur_width, y, length)
-                finally:
-                    pass
-                self._output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
+                if x + cur_width + length < screen.width:
+                    screen.copyline(output, x + cur_width, y, length)
+                else:
+                    screen.copyline(output, 0, y, screen.width)
+                    if y + 1 < screen.height:
+                        screen.copyline(output, 0, y + 1, screen.width)
+
+            output.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
+            for i in xrange(0, len(rensetsu)):
+                word = rensetsu[i][0]
+                if i == self._index:
+                    output.write(u'\x1b[0;1;4;31m')
+                else:
+                    output.write(u'\x1b[0;32m')
+                output.write(word)
+            if self._okuri:
+                output.write(u'\x1b[m' + self._okuri)
+            output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
+
+            self._popup.draw(output)
             self._prev_length = cur_width
 
         elif not self._wordbuf.isempty() or not self._charbuf.isempty():
@@ -601,41 +599,40 @@ class InputHandler(tff.DefaultHandler,
                     char = u''
             y, x = screen.getyx()
             cur_width = 0
-            self._output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
-            #cur_width += termprop.wcswidth(self._bracket_left) 
-            #self._output.write(u'\x1b[m%s' % self._bracket_left)
             cur_width += termprop.wcswidth(word) 
-            self._output.write(u'\x1b[0;1;4;31m' + word)
             cur_width += termprop.wcswidth(char) 
-            self._output.write(u'\x1b[33m' + char)
-            #cur_width += termprop.wcswidth(self._bracket_right) 
-            #self._output.write(u'\x1b[m%s' % self._bracket_right)
-            self._output.write(u'\x1b[m\x1b[%d;%dH' % (y + 1, x + 1))
             if self._prev_length > cur_width:
                 length = self._prev_length - cur_width
-                try:
-                    screen.copyline(self._output, x + cur_width, y, length)
-                finally:
-                    pass
-                self._output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
+                if x + cur_width + length < screen.width:
+                    screen.copyline(output, x + cur_width, y, length)
+                else:
+                    screen.copyline(output, 0, y, screen.width)
+                    if y + 1 < screen.height:
+                        screen.copyline(output, 0, y + 1, screen.width)
+            output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
+            output.write(u'\x1b[0;1;4;31m' + word)
+            output.write(u'\x1b[33m' + char)
+            output.write(u'\x1b[m\x1b[%d;%dH' % (y + 1, x + 1))
             self._prev_length = cur_width 
 
             if cur_width > 0:
-                self._output.write(u'\x1b[?25l')
+                output.write(u'\x1b[?25l')
             else:
-                self._output.write(u'\x1b[?25h')
+                output.write(u'\x1b[?25h')
         else:
             length = self._prev_length
             if length > 0:
                 y, x = screen.getyx()
-                try:
-                    screen.copyline(self._output, x, y, length)
-                finally:
-                    pass
-                self._output.write(u"\x1b[%d;%dH\x1b[?25h" % (y + 1, x + 1))
+                if x + length < screen.width:
+                    screen.copyline(output, x, y, length)
+                else:
+                    screen.copyline(output, 0, y, screen.width)
+                    if y + 1 < screen.height:
+                        screen.copyline(output, 0, y + 1, screen.width)
+                output.write(u"\x1b[%d;%dH\x1b[?25h" % (y + 1, x + 1))
                 self._prev_length = 0 
-        buf = self._output.getvalue()
+        buf = output.getvalue()
         if len(buf) > 0:
             context.puts(buf)
-            self._output.truncate(0)
+            output.truncate(0)
 
