@@ -172,6 +172,9 @@ Dependency
  - Hayaki Saito's TFF, Terminal Filter Framework
    https://github.com/saitoha/tff
 
+ - Hayaki Saito's termprop
+   https://github.com/saitoha/tff
+
 Reference
 ---------
  - Daredevil SKK (DDSKK) http://openlab.ring.gr.jp/skk/ddskk-ja.html
