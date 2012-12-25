@@ -609,7 +609,7 @@ class InputHandler(tff.DefaultHandler,
                     output.write(u'\x1b[0;32m')
                 output.write(word)
             if self._okuri:
-                output.write(u'\x1b[34m' + self._okuri)
+                output.write(u'\x1b[0;32m' + self._okuri)
             output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
 
             self._popup.draw(output)
@@ -636,7 +636,7 @@ class InputHandler(tff.DefaultHandler,
                         screen.copyline(output, 0, y + 1, screen.width)
             output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
             output.write(u'\x1b[0;1;4;31m' + word)
-            output.write(u'\x1b[33m' + char)
+            output.write(u'\x1b[0;1;32m' + char)
             output.write(u'\x1b[m\x1b[%d;%dH' % (y + 1, x + 1))
             #completions = self._wordbuf.getcompletions()
             #if completions:

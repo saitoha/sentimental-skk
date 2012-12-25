@@ -19,7 +19,7 @@
 # ***** END LICENSE BLOCK *****
 
 import title
-from canossa import IModeListener
+from canossa import IModeListenerImpl
 
 '''
 
@@ -70,51 +70,11 @@ _SKK_MODE_MARK_MAP = {
     _SKK_SUBMODE_EISUU     : u'A',
     }
 
-
-class IModeListenerImpl(IModeListener):
-
-    _has_event = False
-    _imemode = True
-    _savedimemode = True
-
-    def notifyenabled(self, n):
-        if n == 8861:
-            self._has_event = True
-        elif n == 8860:
-            self._imemode = True
-
-    def notifydisabled(self, n):
-        if n == 8861:
-            self._has_event = False
-        elif n == 8860:
-            self.reset() 
-            self._imemode = False
-
-    def notifyimeon(self):
-        self._imemode = True
-
-    def notifyimeoff(self):
-        self.reset() 
-        self._imemode = False
-
-    def notifyimesave(self):
-        self._savedimemode = self._imemode
-
-    def notifyimerestore(self):
-        self._imemode = self._savedimemode
-
-    def hasevent(self):
-        return self._has_event
-
-    def getenabled(self):
-        return self._imemode
-
 class InputMode(IModeListenerImpl):
     '''
     モードの管理をします。
     '''
     __value = -1
-
 
     def __init__(self, tty):
         self._tty = tty 
