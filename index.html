@@ -1,0 +1,171 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Sentimental-SKK by saitoha</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Sentimental-SKK</h1>
+        <p>三 ┏( ^o^)┛ ＜ Japanese Input Method SKK (Simple Kana to Kanji conversion) on your terminal</p>
+
+        <p class="view"><a href="https://github.com/saitoha/sentimental-skk">View the Project on GitHub <small>saitoha/sentimental-skk</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/saitoha/sentimental-skk/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/saitoha/sentimental-skk/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/saitoha/sentimental-skk">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>Sentimental SKK</h1>
+
+<p><img src="http://zuse.jp/misc/canossa.png" alt="sskk"></p>
+
+<h2>概要</h2>
+
+<p>端末で動作するSKKです。</p>
+
+<ul>
+<li><p>辞書登録ができません。</p></li>
+<li><p>変換候補がSKKのL辞書から見つからない場合は、Google CGI APIを使って連節変換しようとします。
+オリジナルのSKKとGoogleIMEを混ぜたようなよくわからない操作感になります。</p></li>
+<li><p>選択候補がポップアップで出ます。
+canossaというエンジンが裏でフル端末エミュレーションに近いことをやっているので
+ポップアップを出した領域を復元できます。canossaがあると現在の端末の状態を知りたい放題になるので、
+最終的にはTSFのように周囲のコンテキストに応じた賢い変換を可能にするポテンシャルを秘めています。</p></li>
+<li><p>MinTTY由来のAmbiguous Reporting対応。
+途中でフォントを変えるなどしても文字ずれしにくくなっています。</p></li>
+<li><p>canossaが親端末の代理でマウスモードの状態管理をするので、ポップアップが出ている時は
+シェル上などの本来マウスモードが有効にならない場所でもマウスがつかえます。
+拡張モード 1002 Event Mouse Tracking(xterm)対応。
+ポップアップ候補のクリックによる選択、ダブルクリックによる確定、
+スクロールによる候補の選択、ポップアップ位置のドラッグによる移動、スクロールバーに対する各種操作などができます。
+拡張モード1003 All Event Mouse Tracking(xterm)にも対応するので、端末によってはマウスオーバーイベントへUIが追従します。
+xterm由来のフォーカスモードレポーティング(DECSET 1004)にも対応しています。</p></li>
+<li><p>拡張マウストラッキング対応。
+SGR 1006/URXVT 1015どちらかのマウスエンコーディング形式に対応した端末であれば、
+223桁以上のマウス座標で誤動作することがありません。</p></li>
+<li><p>Application Cursor Mode (MinTTY)対応</p></li>
+<li><p>IME状態制御シーケンス TTIMESV/TTIMEST/TTIMERS (TeraTerm)対応</p></li>
+</ul><h2>インストール</h2>
+
+<p>pip経由でインストールするのが簡単です。 ::</p>
+
+<pre><code>    $ pip install sentimental-skk --upgrade
+</code></pre>
+
+<p>ソースから入れる場合は ::</p>
+
+<pre><code>    $ git clone --recursive https://github.com/saitoha/sentimental-skk.git sentimental-skk
+    $ cd sentimental-skk
+    $ python setup.py install
+</code></pre>
+
+<p>とします。</p>
+
+<h2>起動</h2>
+
+<p>以下のコマンドで起動します。</p>
+
+<pre><code>    $ sskk [options]
+</code></pre>
+
+<ul>
+<li>Options::</li>
+</ul><pre><code>    -h, --help                  ヘルプを表示します
+    --version                   バージョンを表示します
+    -t TERM, --term=TERM        TERM環境変数を設定します
+    -l LANG, --lang=LANG        LANG環境変数を設定します
+    -o ENC, --outenc=ENC        端末のエンコーディングを設定します
+    -u, --use-titlebar          (可能ならば)タイトルバーを使用します
+</code></pre>
+
+<h2>使い方</h2>
+
+<p>まず、通常のSKK入力を使ってみましょう。
+日本語入力モードは、C-J (Ctrlキー + J)で開始します。
+C-Jに続けて</p>
+
+<pre><code>   KyouHaYoITenkiDesu.
+</code></pre>
+
+<p>と打ってみましょう。</p>
+
+<pre><code>   今日は良い天気です。
+</code></pre>
+
+<p>と表示されると思います。</p>
+
+<p>次に、連節変換を使ってみましょう</p>
+
+<p>C-Jに続けて</p>
+
+<pre><code>   Aoiumitosiroikumo.
+</code></pre>
+
+<p>と打ってみましょう。</p>
+
+<pre><code>   碧い海と白い雲。
+</code></pre>
+
+<p>と表示されると思います。</p>
+
+<p>C-n/C-pで候補の選択、C-f/C-bで文節の移動、C-mで確定です。</p>
+
+<h2>その他</h2>
+
+<p>バグなどがあったら、issueをたてるかtwitterなどで教えてください。
+よろしくおねがいします。
+<a href="kefir_">https://twitter.com/kefir_</a></p>
+
+<h2>Dependency</h2>
+
+<ul>
+<li>
+<p>Masahiko Sato et al./SKK Development Team's SKK-JISYO.L</p>
+
+<p>This package includes the large SKK dictionary, SKK-JISYO.L.
+<a href="http://openlab.jp/skk/skk/dic/SKK-JISYO.L">http://openlab.jp/skk/skk/dic/SKK-JISYO.L</a></p>
+</li>
+<li><p>wcwidth.py
+<a href="https://svn.wso2.org/repos/wso2/carbon/platform/trunk/dependencies/cassandra/pylib/cqlshlib/wcwidth.py">https://svn.wso2.org/repos/wso2/carbon/platform/trunk/dependencies/cassandra/pylib/cqlshlib/wcwidth.py</a>
+(Licensed under Apache License 2.0)</p></li>
+<li><p>Hayaki Saito's Canossa
+<a href="https://github.com/saitoha/canossa">https://github.com/saitoha/canossa</a></p></li>
+<li><p>Hayaki Saito's TFF, Terminal Filter Framework
+<a href="https://github.com/saitoha/tff">https://github.com/saitoha/tff</a></p></li>
+<li><p>Hayaki Saito's termprop
+<a href="https://github.com/saitoha/tff">https://github.com/saitoha/tff</a></p></li>
+</ul><h2>Reference</h2>
+
+<ul>
+<li>Daredevil SKK (DDSKK) <a href="http://openlab.ring.gr.jp/skk/ddskk-ja.html">http://openlab.ring.gr.jp/skk/ddskk-ja.html</a>
+</li>
+<li>libfep <a href="https://github.com/ueno/libfep">https://github.com/ueno/libfep</a>
+</li>
+<li>uim <a href="https://code.google.com/p/uim/">https://code.google.com/p/uim/</a>
+</li>
+<li>Unicode Text Editor MinEd <a href="http://towo.net/mined/">http://towo.net/mined/</a>
+</li>
+</ul>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/saitoha">saitoha</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
