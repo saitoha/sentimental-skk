@@ -65,20 +65,24 @@ class TitleTrait():
 
 class IListboxListenerImpl(IListboxListener):
 
-    def onselected(self, index, text, remarks):
+    def onselected(self, popup, index, text, remarks):
         if self._rensetsu:
             self._rensetsu[self._index][0] = text
             self._remarks = remarks
+            if self._use_title:
+                if self._remarks:
+                    self.settitle(u'%s - %s' % (text, remarks))
+                else:
+                    self.settitle(text)
         else: 
             self._remarks = remarks
-        if self._use_title:
-            if self._remarks:
-                self.settitle(u'%s - %s' % (text, remarks))
-            else:
-                self.settitle(text)
 
-    def onsettled(self, context):
-        self._kakutei(context)
+    def onsettled(self, popup, context):
+        if self._rensetsu:
+            self._kakutei(context)
+
+    def oncancel(self, popup, context):
+        popup.close()
 
 ################################################################################
 #
@@ -113,7 +117,7 @@ class InputHandler(tff.DefaultHandler,
             self._selectmark = _SKK_MARK_SELECT
 
     def __reset(self):
-        self._popup.hide(self._output)
+        self._popup.close()
         self._inputmode.endeisuu()
         self._wordbuf.reset() 
         self._charbuf.reset()
@@ -188,7 +192,7 @@ class InputHandler(tff.DefaultHandler,
         else:
             result = self._get_google(key)
             if len(result) == 0:
-                result = [[key, [key]]]
+                result = [key]
 
         self.settitle(key)
         self._popup.assign(result)
@@ -215,12 +219,12 @@ class InputHandler(tff.DefaultHandler,
                 key = kanadb.to_kata(key)
             result = self._get_google(key)
             if len(result) == 0:
-                result = [[key, [key]]]
+                result = [key] 
 
         self._okuri += okuri 
 
         self._popup.assign(result)
-        self._wordbuf.reset() 
+        self._wordbuf.startedit() 
 
         self.settitle(u'%s - %s' % (key, buf))
 
@@ -257,7 +261,10 @@ class InputHandler(tff.DefaultHandler,
     # override
     def handle_char(self, context, c):
         
-        if self._popup.handle_char(context, c):
+        if not self._inputmode.getenabled():
+            return False
+
+        if self._rensetsu and self._popup.handle_char(context, c):
             return True
 
         elif c == 0x0a: # LF C-j
@@ -325,7 +332,7 @@ class InputHandler(tff.DefaultHandler,
 
         elif c == 0x1b: # ESC 
             if self.__iscooking():
-                self._kakutei(context)
+                #self._kakutei(context)
                 self.__reset()
                 self._inputmode.reset()
                 context.write(c)
@@ -400,7 +407,7 @@ class InputHandler(tff.DefaultHandler,
                 self._inputmode.startzen()
                 self.__reset()
             elif c == 0x6c: # l
-                if self.__iscooking():
+                if self._popup.isshown():
                     self._kakutei(context)
                 self._inputmode.reset()
                 self.__reset()
@@ -492,7 +499,7 @@ class InputHandler(tff.DefaultHandler,
             self._index += 1
             self._index = self._index % len(self._rensetsu)
             result = self._get_candidates()
-            self._popup.hide(self._output)
+            self._popup.close()
             self._popup.assign(result)
 
     def _moveprevclause(self):
@@ -500,11 +507,22 @@ class InputHandler(tff.DefaultHandler,
             self._index -= 1
             self._index = self._index % len(self._rensetsu)
             result = self._get_candidates()
-            self._popup.hide(self._output)
+            self._popup.close()
             self._popup.assign(result)
 
     def _handle_csi_cursor(self, context, parameter, intermediate, final):
-        if len(intermediate) == 0:
+        if self._popup.isshown():
+            if len(intermediate) == 0:
+                if final == 0x43: # C
+                    self._movenextclause()
+                    return True
+                elif final == 0x44: # D
+                    self._moveprevclause()
+                    return True
+        return False
+
+    def _handle_ss3_cursor(self, context, final):
+        if self._popup.isshown():
             if final == 0x43: # C
                 self._movenextclause()
                 return True
@@ -513,17 +531,10 @@ class InputHandler(tff.DefaultHandler,
                 return True
         return False
 
-    def _handle_ss3_cursor(self, context, final):
-        if final == 0x43: # C
-            self._movenextclause()
-            return True
-        elif final == 0x44: # D
-            self._moveprevclause()
-            return True
-        return False
-
     # override
     def handle_csi(self, context, parameter, intermediate, final):
+        if not self._inputmode.getenabled():
+            return False
         if self._popup.handle_csi(context, parameter, intermediate, final):
             return True
         if self._handle_csi_cursor(context, parameter, intermediate, final):
@@ -537,30 +548,43 @@ class InputHandler(tff.DefaultHandler,
         return False
 
     def handle_esc(self, context, intermediate, final):
+        if not self._inputmode.getenabled():
+            return False
         if self._popup.handle_esc(context, intermediate, final):
             return True
         return False
 
     def handle_ss3(self, context, final):
+        if not self._inputmode.getenabled():
+            return False
         if self._popup.handle_ss3(context, final):
             return True
         if self._handle_ss3_cursor(context, final):
             return True
+        if final == 0x5b: # [
+            if self.__iscooking():
+                self._kakutei(context)
+                self._inputmode.reset()
+                self.__reset()
+            return False
         return False
 
     # override
     def handle_draw(self, context):
+        if not self._inputmode.getenabled():
+            return False
         screen = self._screen
         termprop = self._termprop
         output = self._output
         rensetsu = self._rensetsu
         if rensetsu and not self._popup.isempty():
-            result = self._selectmark + rensetsu[self._index][0]
+            result = rensetsu[self._index][0]
             y, x = screen.getyx()
             cur_width = 0
             for i in xrange(0, len(rensetsu)):
                 word = rensetsu[i][0]
                 if i == self._index:
+                    cur_width += termprop.wcswidth(self._selectmark)
                     if not self._popup.isshown():
                         self._popup.set_offset(cur_width, 0)
                 cur_width += termprop.wcswidth(word)
@@ -579,12 +603,13 @@ class InputHandler(tff.DefaultHandler,
             for i in xrange(0, len(rensetsu)):
                 word = rensetsu[i][0]
                 if i == self._index:
+                    word = self._selectmark + word
                     output.write(u'\x1b[0;1;4;31m')
                 else:
                     output.write(u'\x1b[0;32m')
                 output.write(word)
             if self._okuri:
-                output.write(u'\x1b[m' + self._okuri)
+                output.write(u'\x1b[34m' + self._okuri)
             output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
 
             self._popup.draw(output)
@@ -613,6 +638,11 @@ class InputHandler(tff.DefaultHandler,
             output.write(u'\x1b[0;1;4;31m' + word)
             output.write(u'\x1b[33m' + char)
             output.write(u'\x1b[m\x1b[%d;%dH' % (y + 1, x + 1))
+            #completions = self._wordbuf.getcompletions()
+            #if completions:
+            #    self._popup.assign(completions)
+            #    self._popup._index = -1
+            #    self._popup.draw(output)
             self._prev_length = cur_width 
 
             if cur_width > 0:
@@ -635,4 +665,12 @@ class InputHandler(tff.DefaultHandler,
         if len(buf) > 0:
             context.puts(buf)
             output.truncate(0)
+
+def test():
+    import doctest
+    doctest.testmod()
+
+if __name__ == "__main__":
+    test()
+
 

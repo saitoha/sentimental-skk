@@ -80,3 +80,11 @@ class OutputHandler(tff.DefaultHandler):
         return False
 
 
+def test():
+    import doctest
+    doctest.testmod()
+
+if __name__ == "__main__":
+    test()
+
+

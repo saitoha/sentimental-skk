@@ -73,26 +73,41 @@ _SKK_MODE_MARK_MAP = {
 
 class IModeListenerImpl(IModeListener):
 
-    _enabled = True
     _has_event = False
+    _imemode = True
+    _savedimemode = True
 
     def notifyenabled(self, n):
         if n == 8861:
             self._has_event = True
         elif n == 8860:
-            self._enabled = True
+            self._imemode = True
 
     def notifydisabled(self, n):
         if n == 8861:
             self._has_event = False
         elif n == 8860:
-            self._enabled = False
+            self.reset() 
+            self._imemode = False
+
+    def notifyimeon(self):
+        self._imemode = True
+
+    def notifyimeoff(self):
+        self.reset() 
+        self._imemode = False
+
+    def notifyimesave(self):
+        self._savedimemode = self._imemode
+
+    def notifyimerestore(self):
+        self._imemode = self._savedimemode
 
     def hasevent(self):
         return self._has_event
 
     def getenabled(self):
-        return self._enabled
+        return self._imemode
 
 class InputMode(IModeListenerImpl):
     '''
@@ -124,7 +139,8 @@ class InputMode(IModeListenerImpl):
     
     def starteisuu(self):
         ''' 英数サブモードを開始 '''
-        self.__setmode(self.__value | _SKK_SUBMODE_EISUU)
+        if self.getenabled():
+            self.__setmode(self.__value | _SKK_SUBMODE_EISUU)
 
     def endeisuu(self):
         ''' 英数サブモードを終了 '''
@@ -132,15 +148,18 @@ class InputMode(IModeListenerImpl):
 
     def startzen(self):
         ''' 全角英数モードを開始 '''
-        self.__setmode(_SKK_MODE_ZENKAKU)
+        if self.getenabled():
+            self.__setmode(_SKK_MODE_ZENKAKU)
 
     def starthira(self):
         ''' ひらがなモードを開始 '''
-        self.__setmode(_SKK_MODE_HIRAGANA)
+        if self.getenabled():
+            self.__setmode(_SKK_MODE_HIRAGANA)
 
     def startkata(self):
         ''' カタカナモードを開始 '''
-        self.__setmode(_SKK_MODE_KATAKANA)
+        if self.getenabled():
+            self.__setmode(_SKK_MODE_KATAKANA)
 
     def ishira(self):
         ''' ひらがなモードかどうか '''
@@ -158,5 +177,13 @@ class InputMode(IModeListenerImpl):
 
     def ishan(self):
         return self.__value == _SKK_MODE_HANKAKU
+
+def test():
+    import doctest
+    doctest.testmod()
+
+if __name__ == "__main__":
+    test()
+
 
 

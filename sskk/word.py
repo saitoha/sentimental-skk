@@ -45,7 +45,6 @@ class WordBuffer():
         else:
             self._cookmark = _SKK_MARK_COOK
 
-
     def reset(self):
         self.__mode = _SKK_WORD_NONE 
         self.__main = u""
@@ -61,6 +60,14 @@ class WordBuffer():
         else:
             key = kanadb.to_hira(self.__main)
             self.__comp = dictionary.getcomp(key)
+
+    def getcompletions(self):
+        if self.__main:
+            key = kanadb.to_hira(self.__main)
+            completions = dictionary.getcomp(key)
+            if completions:
+                return map(lambda word: self.__main + word, completions)
+        return None 
 
     def get(self):
         if self.__mode == _SKK_WORD_NONE:

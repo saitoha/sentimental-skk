@@ -78,3 +78,11 @@ class CharacterContext:
         self.context = self.context[romanrule.SKK_ROMAN_PREV]
 
 
+def test():
+    import doctest
+    doctest.testmod()
+
+if __name__ == "__main__":
+    test()
+
+

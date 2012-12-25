@@ -18,7 +18,6 @@ except:
     sys.exit(1)
 
 import sskk.mode as mode
-import sskk.popup as popup
 import sskk.input as input
 import sskk.output as output
 import sskk.romanrule as romanrule
@@ -29,7 +28,6 @@ import sskk.dictionary as dictionary
 import doctest
 dirty = False
 for m in [mode,
-          popup,
           input,
           output,
           romanrule,
