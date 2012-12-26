@@ -50,8 +50,6 @@ from canossa import IModeListenerImpl
                    +----------+
 
 
-sentimental-skkでは、1)の方式を採用します。
-
 '''
 
 # モード
@@ -62,12 +60,19 @@ _SKK_MODE_KATAKANA     = 3
 _SKK_SUBMODE_EISUU     = 4
 
 # モードに対応するマーク(タイトルバーに表示されます)
+#_SKK_MODE_MARK_MAP = {
+#    _SKK_MODE_HANKAKU      : u'@',
+#    _SKK_MODE_ZENKAKU      : u'Ａ',
+#    _SKK_MODE_HIRAGANA     : u'あ',
+#    _SKK_MODE_KATAKANA     : u'ア',
+#    _SKK_SUBMODE_EISUU     : u'A',
+#    }
 _SKK_MODE_MARK_MAP = {
     _SKK_MODE_HANKAKU      : u'@',
-    _SKK_MODE_ZENKAKU      : u'Ａ',
-    _SKK_MODE_HIRAGANA     : u'あ',
-    _SKK_MODE_KATAKANA     : u'ア',
-    _SKK_SUBMODE_EISUU     : u'A',
+    _SKK_MODE_ZENKAKU      : u'全英',
+    _SKK_MODE_HIRAGANA     : u'かな',
+    _SKK_MODE_KATAKANA     : u'カナ',
+    _SKK_SUBMODE_EISUU     : u'aあ',
     }
 
 class InputMode(IModeListenerImpl):

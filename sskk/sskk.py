@@ -18,7 +18,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
-
 def main():
     import sys, os, optparse, codecs
     import tff
@@ -122,12 +121,19 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     output.write(u"\x1b[7;5H")
     output.write(u"       三 ┗( ^o^)┓  三 ┏( ^o^)┛\n")
     output.write(u"\x1b[1;1H")
+
+    from termprop import Termprop
+    termprop = Termprop()
+
+    output.write(u"\x1b]0;\x1b\\")
     output.write(u"\x1b[22;0t")
     output.write(u"\x1b[22;0t")
     output.flush()
 
-    from termprop import Termprop
-    termprop = Termprop()
+    rcdir = os.path.join(os.getenv("HOME"), ".sskk")
+    logdir = os.path.join(rcdir, "log")
+    if not os.path.exists(logdir):
+        os.makedirs(logdir)
 
     os.environ["__SSKK_VERTION"] = __init__.__version__
     tty = tff.DefaultPTY(term, lang, command, sys.stdin)
