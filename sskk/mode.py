@@ -31,8 +31,8 @@ from canossa import IModeListenerImpl
  元の状態(ひらがなモードまたはカタカナモード)に戻ります。
 
                    +----------+ 
-                   | 英数サブ |  /(シングルシフト) 
-                   | 変換入力 | <-------------+
+                   | abbrev   |  /(シングルシフト) 
+                   |          | <-------------+
                    +----------+               |
                        ^                      |
                        | /(シングルシフト)    |
@@ -57,22 +57,14 @@ _SKK_MODE_HANKAKU      = 0
 _SKK_MODE_ZENKAKU      = 1
 _SKK_MODE_HIRAGANA     = 2
 _SKK_MODE_KATAKANA     = 3
-_SKK_SUBMODE_EISUU     = 4
+_SKK_SUBMODE_ABBREV    = 4
 
-# モードに対応するマーク(タイトルバーに表示されます)
-#_SKK_MODE_MARK_MAP = {
-#    _SKK_MODE_HANKAKU      : u'@',
-#    _SKK_MODE_ZENKAKU      : u'Ａ',
-#    _SKK_MODE_HIRAGANA     : u'あ',
-#    _SKK_MODE_KATAKANA     : u'ア',
-#    _SKK_SUBMODE_EISUU     : u'A',
-#    }
 _SKK_MODE_MARK_MAP = {
-    _SKK_MODE_HANKAKU      : u'@',
+    _SKK_MODE_HANKAKU      : u'SKK',
     _SKK_MODE_ZENKAKU      : u'全英',
     _SKK_MODE_HIRAGANA     : u'かな',
     _SKK_MODE_KATAKANA     : u'カナ',
-    _SKK_SUBMODE_EISUU     : u'aあ',
+    _SKK_SUBMODE_ABBREV    : u'Aあ',
     }
 
 class InputMode(IModeListenerImpl):
@@ -89,7 +81,7 @@ class InputMode(IModeListenerImpl):
         if self.__value != mode:
             self.__value = mode
             if self.hasevent():
-                if self.iseisuu():
+                if self.isabbrev():
                     self._tty.write("\x1b[8854~")
                 else:
                     self._tty.write("\x1b[%d~" % (8850 + self.__value))
@@ -102,14 +94,14 @@ class InputMode(IModeListenerImpl):
     def reset(self):
         self.__setmode(_SKK_MODE_HANKAKU)
     
-    def starteisuu(self):
+    def startabbrev(self):
         ''' 英数サブモードを開始 '''
         if self.getenabled():
-            self.__setmode(self.__value | _SKK_SUBMODE_EISUU)
+            self.__setmode(self.__value | _SKK_SUBMODE_ABBREV)
 
-    def endeisuu(self):
+    def endabbrev(self):
         ''' 英数サブモードを終了 '''
-        self.__setmode(self.__value & ~_SKK_SUBMODE_EISUU)
+        self.__setmode(self.__value & ~_SKK_SUBMODE_ABBREV)
 
     def startzen(self):
         ''' 全角英数モードを開始 '''
@@ -134,8 +126,8 @@ class InputMode(IModeListenerImpl):
         ''' カタカナモードかどうか '''
         return self.__value == _SKK_MODE_KATAKANA
 
-    def iseisuu(self):
-        return self.__value & _SKK_SUBMODE_EISUU != 0
+    def isabbrev(self):
+        return self.__value & _SKK_SUBMODE_ABBREV != 0
 
     def iszen(self):
         return self.__value == _SKK_MODE_ZENKAKU
@@ -149,6 +141,4 @@ def test():
 
 if __name__ == "__main__":
     test()
-
-
 

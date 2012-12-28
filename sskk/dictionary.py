@@ -106,6 +106,133 @@ def getcomp(key):
     expand("", current)
     return candidate 
 
+
+################################################################################
+#
+# Clause
+#
+class Clause():
+
+    def __init__(self, key, candidates):
+        self._key = key
+        self._values = []
+        self._displays = []
+        for candidate in candidates:
+            row = candidate.split(";")
+            if len(row) == 2:
+                value, remarks = row
+            else:
+                value, remarks = candidate, u""
+            self._values.append(value)
+            self._displays.append(value + " " + remarks)
+        self._index = 0
+
+    def getkey(self):
+        return self._key
+
+    def getcurrentvalue(self):
+        return self._values[self._index]
+
+    def getcandidates(self):
+        return self._values
+
+    def select(self, index):
+        self._index = index
+
+################################################################################
+#
+# Clauses
+#
+class Clauses:
+
+    def __init__(self):
+        self._clauses = []
+        self._index = 0
+
+    def __iter__(self):
+        for clause in self._clauses:
+            yield clause
+
+    def add(self, clause):
+        self._clauses.append(clause)
+
+    def getkey(self):
+        word = u""
+        for clause in self._clauses:
+            word += clause.getkey()
+        return word
+
+    def getvalue(self):
+        word = u""
+        for clause in self._clauses:
+            word += clause.getcurrentvalue()
+        return word
+
+    def getcurrentclause(self):
+        return self._clauses[self._index]
+
+    def getcurrentvalue(self):
+        return self._clauses[self._index].getcurrentvalue()
+
+    def getcandidates(self):
+        return self._clauses[self._index].getcandidates()
+
+    def select(self, index):
+        self._index = index
+
+    def movenext(self):
+        self._index = (self._index + 1) % len(self._clauses)
+
+    def moveprev(self):
+        self._index = (self._index - 1) % len(self._clauses)
+
+    def shift_left(self):
+        words = []
+        for clause in self._clauses:
+            words.append(clause.getcurrentvalue())
+
+        index = self._index
+        surplus = words[index][-1:] + "".join(words[index + 1:])
+        words[index] = words[index][:-1]
+        words = words[0:index + 1] + [surplus]
+        
+        self._index = (self._index + 1) % len(self._clauses)
+
+    def shift_right(self):
+        self._index = (self._index - 1) % len(self._clauses)
+
+def call_cgi_api(key):
+    try:
+        params = urllib.urlencode({'langpair' : 'ja-Hira|ja',
+                                   'text' : key.encode("UTF-8")})
+        url = 'http://www.google.com/transliterate?'
+        json_response = urllib2.urlopen(url, params).read()
+        response = json.loads(json_response)
+         
+    except:
+        return None 
+    return clauses
+
+
+
+import urllib, urllib2, json
+def get_from_google_cgi_api(key):
+    try:
+        params = urllib.urlencode({'langpair' : 'ja-Hira|ja',
+                                   'text' : key.encode("UTF-8")})
+        url = 'http://www.google.com/transliterate?'
+        json_response = urllib2.urlopen(url, params).read()
+        response = json.loads(json_response)
+
+        clauses = Clauses() 
+        for clauseinfo in response:
+            key, candidates = clauseinfo
+            clause = Clause(key, candidates)
+            clauses.add(clause)
+    except:
+        return None 
+    return clauses
+
 thread.start_new_thread(_load, ())
 
 def test():
