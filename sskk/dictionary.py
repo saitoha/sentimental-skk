@@ -186,21 +186,47 @@ class Clauses:
     def moveprev(self):
         self._index = (self._index - 1) % len(self._clauses)
 
+    def _retry_google(self, words):
+        response = call_cgi_api(",".join(words))
+        if response:
+            self._clauses = []
+            for clauseinfo in response:
+                key, candidates = clauseinfo
+                clause = Clause(key, candidates)
+                self.add(clause)
+            if self._index >= len(self._clauses):
+                self._index = len(self._clauses) - 1
+
     def shift_left(self):
+
         words = []
         for clause in self._clauses:
-            words.append(clause.getcurrentvalue())
+            words.append(clause.getkey())
 
         index = self._index
         surplus = words[index][-1:] + "".join(words[index + 1:])
         words[index] = words[index][:-1]
         words = words[0:index + 1] + [surplus]
-        
-        self._index = (self._index + 1) % len(self._clauses)
+
+        self._retry_google(words)
 
     def shift_right(self):
-        self._index = (self._index - 1) % len(self._clauses)
 
+        words = []
+        for clause in self._clauses:
+            words.append(clause.getkey())
+
+        index = self._index
+        if index == len(words) - 1:
+            words = words[:index] + [words[index][0], words[index][1:]]
+        else:
+            words[index] += words[index + 1][0]
+            surplus = ("".join(words[index + 1:])[1:])
+            words = words[:index + 1] + [surplus]
+
+        self._retry_google(words)
+
+import urllib, urllib2, json
 def call_cgi_api(key):
     try:
         params = urllib.urlencode({'langpair' : 'ja-Hira|ja',
@@ -211,11 +237,8 @@ def call_cgi_api(key):
          
     except:
         return None 
-    return clauses
+    return response
 
-
-
-import urllib, urllib2, json
 def get_from_google_cgi_api(key):
     try:
         params = urllib.urlencode({'langpair' : 'ja-Hira|ja',

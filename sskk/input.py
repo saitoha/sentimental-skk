@@ -71,6 +71,54 @@ class TitleTrait():
 
 class IListboxListenerImpl(IListboxListener):
 
+    def oninput(self, popup, context, c):
+        if c == 0x0d: # CR C-m
+            self.onsettled(popup, context)
+        elif c == 0x0a: # LF C-j
+            self.onsettled(popup, context)
+        elif c == 0x07: # BEL C-g
+            self.oncancel(popup, context)
+        elif c == 0x08 or c == 0x7f: # C-h BS or DEL
+            if self._clauses:
+                self._clauses.shift_left()
+                self._popup.close()
+                candidates = self._clauses.getcandidates()
+                popup.assign(candidates)
+            else:
+                self.onsettled(popup, context)
+                context.write(c)
+        elif c == 0x09: # TAB C-i
+            popup.movenext()
+        elif c == 0x0c: # LF C-l
+            if self._clauses:
+                self._clauses.shift_right()
+                self._popup.close()
+                candidates = self._clauses.getcandidates()
+                popup.assign(candidates)
+        elif c == 0x0e: # C-n
+            popup.movenext()
+        elif c == 0x16: # C-v
+            popup.jumpnext()
+        elif c == 0x10: # C-p
+            popup.moveprev()
+        elif c == 0x1b: # ESC C-[ 
+            self.oncancel(popup, context)
+        elif c == 0x02: # C-b 
+            return False
+        elif c == 0x06: # C-f 
+            return False
+        elif c < 0x20: # other control chars 
+            self.onsettled(popup, context)
+            context.write(c)
+        elif c == 0x20: # SP 
+            popup.movenext()
+        elif c == 0x78: # x
+            popup.moveprev()
+        elif c <= 0x7e:
+            self.onsettled(popup, context)
+            return False
+        return True
+
     def onselected(self, popup, index, text, remarks):
         if self._clauses:
             self._clauses.getcurrentclause().select(index)
