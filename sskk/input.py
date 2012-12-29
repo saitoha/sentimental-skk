@@ -58,7 +58,7 @@ class TitleTrait():
 
     def _refleshtitle(self):
         if self._use_title:
-            self._output.write(u'\x1b]2;%s\x1b\\' % title.get())
+            title.draw(self._output)
 
     def settitle(self, value):
         face = self._getface()
@@ -133,11 +133,13 @@ class IListboxListenerImpl(IListboxListener):
             self._wordbuf.reset()
             self._wordbuf.startedit()
             self._wordbuf.append(text)
-        self._charbuf.reset()
+            self._charbuf.reset()
 
     def onsettled(self, popup, context):
         if self._clauses:
             self._kakutei(context)
+        elif self._wordbuf.length() > 0:
+            self._showpopup()
 
     def oncancel(self, popup, context):
         if self._clauses:
@@ -417,10 +419,12 @@ class InputHandler(tff.DefaultHandler,
                 context.write(c)
 
         elif c == 0x02: # C-b 
-            self._moveprevclause()
-
+            if not self._moveprevclause():
+                context.write(c)
+            
         elif c == 0x06: # C-f 
-            self._movenextclause()
+            if not self._movenextclause():
+                context.write(c)
 
         elif c < 0x20 or 0x7f < c:
             if self._inputmode.isdirect():
@@ -436,8 +440,9 @@ class InputHandler(tff.DefaultHandler,
             # 全角直接入力
             context.write(eisuudb.to_zenkaku_cp(c))
         elif self._inputmode.isabbrev():
-            # 英数変換モード
+            # abbrev mode 
             self._wordbuf.append(unichr(c))
+            self._complete()
         elif self._inputmode.ishira() or self._inputmode.iskata():
             # ひらがな変換モード・カタカナ変換モード
             #if c > 0x20 and c < 0x2f:
@@ -454,9 +459,9 @@ class InputHandler(tff.DefaultHandler,
                     word = self._wordbuf.get()
                     self._reset()
                     if self._inputmode.ishira():
-                        s = kanadb.to_kata(value)
+                        s = kanadb.to_kata(word)
                     else:
-                        s = kanadb.to_hira(value)
+                        s = kanadb.to_hira(word)
                     context.putu(s)
                 else:
                     self._charbuf.toggle()
@@ -702,6 +707,7 @@ class InputHandler(tff.DefaultHandler,
 
         if self._popup:
             self._popup.draw(output)
+
         self._prev_length = cur_width 
         if cur_width > 0:
             output.write(u'\x1b[?25l')
@@ -734,6 +740,7 @@ class InputHandler(tff.DefaultHandler,
             self._draw_word(output)
         else:
             self._draw_nothing(output)
+        self._refleshtitle()
         buf = output.getvalue()
         if len(buf) > 0:
             context.puts(buf)

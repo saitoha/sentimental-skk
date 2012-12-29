@@ -19,6 +19,7 @@
 # ***** END LICENSE BLOCK *****
 
 _enabled = True
+_dirty = True
 _mode = u'@'
 _message = u''
 _original = u''
@@ -32,18 +33,33 @@ def get():
 def setenabled(value):
     global _enabled
     _enabled = value
+    global _dirty
+    _dirty = True
 
 def setmode(value):
-    global _mode
-    _mode = value
+    if value != _mode:
+        global _mode
+        _mode = value
+        global _dirty
+        _dirty = True
 
 def setmessage(value):
-    global _message
-    _message = value
+    if value != _message:
+        global _message
+        _message = value
+        global _dirty
+        _dirty = True
 
 def setoriginal(value):
     global _original
     _original = value
+
+def draw(output):
+    if _dirty:
+        output.write(u'\x1b]2;%s\x1b\\' % get())
+        global _dirty
+        _dirty = False
+
 
 
 
