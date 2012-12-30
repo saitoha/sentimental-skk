@@ -159,11 +159,6 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                           termprop=termprop,
                           visibility=False)
 
-    canossa2 = cano.create(row=12, col=30, y=0, x=0,
-                           termenc="utf-8",
-                           termprop=termprop,
-                           visibility=False)
-
     from mode import InputMode
     from input import InputHandler
     from output import OutputHandler
@@ -192,7 +187,6 @@ along with this program. If not, see http://www.gnu.org/licenses/.
 
     session = tff.Session(tty)
 
-#    session.add_subtty("xterm", "ja_JP.UTF-8", "/bin/bash", 12, 30)
 
     try:
         inputmode = InputMode(tty)
@@ -206,18 +200,24 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                                     inputmode=inputmode)
 
         outputhandler = OutputHandler(use_title=use_title,
-                                      mode_handler=mode_handler,
-                                      canossa2=canossa2)
+                                      mode_handler=mode_handler)
 
         multiplexer = tff.FilterMultiplexer(canossa, outputhandler)
-        #multiplexer = tff.FilterMultiplexer(InnerFrameOutputHandler(canossa2), multiplexer)
+
+        if False:
+            session.add_subtty("xterm", "ja_JP.UTF-8", "/bin/bash", 12, 30)
+            canossa2 = cano.create(row=12, col=30, y=0, x=0,
+                                   termenc="utf-8",
+                                   termprop=termprop,
+                                   visibility=False)
+            multiplexer = tff.FilterMultiplexer(InnerFrameOutputHandler(canossa2), multiplexer)
 
         session.start(termenc=termenc,
                       stdin=sys.stdin,
                       stdout=sys.stdout,
                       inputhandler=inputhandler,
-                      outputhandler=multiplexer,
-                      subprocess_outputhandler=canossa2)
+                      outputhandler=multiplexer)
+#                      subprocess_outputhandler=canossa2)
     finally: 
         output.flush()
         output.write(u"\x1b[23;0t")

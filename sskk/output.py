@@ -29,11 +29,10 @@ import os
 #
 class OutputHandler(tff.DefaultHandler):
 
-    def __init__(self, use_title=False, mode_handler=None, canossa2=None):
+    def __init__(self, use_title=False, mode_handler=None):
         self.__super = super(OutputHandler, self)
         self.__use_title = use_title
         self._mode_handler = mode_handler
-        self._canossa2 = canossa2
 
     def handle_start(self, context):
         self.__super.handle_start(context)
