@@ -137,10 +137,13 @@ along with this program. If not, see http://www.gnu.org/licenses/.
 
     os.environ["__SSKK_VERTION"] = __init__.__version__
     tty = tff.DefaultPTY(term, lang, command, sys.stdin)
+    #tty.restore_term()
+    #subtty = tff.DefaultPTY("xterm", "ja_JP.UTF-8", "/bin/bash", sys.stdin)
+    #subtty.resize(12, 30)
+
     row, col = tty.fitsize()
 
     use_title = options.titlebar
-#    use_mouse = options.mouse
 
     if not "xterm" in term:
         use_title = False
@@ -158,6 +161,11 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                           termprop=termprop,
                           visibility=False)
 
+    canossa2 = cano.create(row=12, col=30, y=0, x=0,
+                           termenc="utf-8",
+                           termprop=termprop,
+                           visibility=True)
+
     from mode import InputMode
     from input import InputHandler
     from output import OutputHandler
@@ -166,27 +174,31 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     output.write(u"\x1b[23;0t")
     output.write(u"\x1b[1;1H\x1b[J")
 
+    session = tff.Session(tty)
     try:
         inputmode = InputMode(tty)
         mode_handler = cano.ModeHandler(inputmode)
-        inputhandler = InputHandler(screen=canossa.screen,
+        inputhandler = InputHandler(session=session,
+                                    screen=canossa.screen,
                                     termenc=termenc,
                                     termprop=termprop,
                                     use_title=use_title,
                                     mousemode=mode_handler,
                                     inputmode=inputmode)
+                                    #canossa2=canossa2)
 
         outputhandler = OutputHandler(use_title=use_title,
                                       mode_handler=mode_handler)
 
         multiplexer = tff.FilterMultiplexer(canossa, outputhandler)
+        #multiplexer = tff.FilterMultiplexer(multiplexer, canossa2)
 
-        session = tff.Session(tty)
         session.start(termenc=termenc,
                       stdin=sys.stdin,
                       stdout=sys.stdout,
                       inputhandler=inputhandler,
                       outputhandler=multiplexer)
+#                      subprocess_outputhandler=canossa2)
     finally: 
         output.flush()
         output.write(u"\x1b[23;0t")

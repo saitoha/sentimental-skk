@@ -168,7 +168,9 @@ class InputHandler(tff.DefaultHandler,
     _bracket_right = _SKK_MARK_CLOSE
     _clauses = None
 
-    def __init__(self, screen, termenc, termprop, use_title, mousemode, inputmode):
+    def __init__(self, session, screen, termenc, termprop,
+                 use_title, mousemode, inputmode,
+                 canossa2=None):
         self._screen = screen
         self._output = codecs.getwriter(termenc)(StringIO(), errors='ignore')
         self._charbuf = context.CharacterContext()
@@ -178,6 +180,8 @@ class InputHandler(tff.DefaultHandler,
         self._termprop = termprop
         self.set_titlemode(use_title)
         self._stack = []
+        #self._canossa2 = canossa2
+        self._session = session
         # detects libvte + Ambiguous=narrow environment
         if not termprop.is_cjk and termprop.da1 == "?62;9;" and re.match(">1;[23][0-9]{3};0", termprop.da2):
             self._selectmark = _SKK_MARK_SELECT + u" " # add pad
@@ -326,6 +330,9 @@ class InputHandler(tff.DefaultHandler,
                 self._kakutei(context)
             else:
                 context.write(c)
+
+        #elif c == 0x1a: # BEL C-z
+        #    self._session.switch_input_target()
 
         elif c == 0x07: # BEL C-g
             self._reset()
@@ -745,6 +752,14 @@ class InputHandler(tff.DefaultHandler,
         if len(buf) > 0:
             context.puts(buf)
             output.truncate(0)
+
+        #context.puts("\x1b7")
+        #import StringIO
+        #s = StringIO.StringIO()
+        #self._canossa2.screen.copyrect(s, 0, 0, 30, 12)
+        #context.puts(s.getvalue())
+        #self._canossa2.handle_draw(context)
+        #context.puts("\x1b8")
 
 def test():
     import doctest
