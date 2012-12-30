@@ -29,10 +29,11 @@ import os
 #
 class OutputHandler(tff.DefaultHandler):
 
-    def __init__(self, use_title=False, mode_handler=None):
+    def __init__(self, use_title=False, mode_handler=None, canossa2=None):
         self.__super = super(OutputHandler, self)
         self.__use_title = use_title
         self._mode_handler = mode_handler
+        self._canossa2 = canossa2
 
     def handle_start(self, context):
         self.__super.handle_start(context)
@@ -77,8 +78,8 @@ class OutputHandler(tff.DefaultHandler):
                             value = num + [0x3b] + [ord(x) for x in s]
                             new_title = u"".join([unichr(c) for c in value])
                             context.writestring(u"\x1b]%s\x1b\\" % new_title)
-        return False
 
+        return False
 
 def test():
     import doctest

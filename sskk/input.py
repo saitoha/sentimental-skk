@@ -180,7 +180,7 @@ class InputHandler(tff.DefaultHandler,
         self._termprop = termprop
         self.set_titlemode(use_title)
         self._stack = []
-        #self._canossa2 = canossa2
+        self._canossa2 = canossa2
         self._session = session
         # detects libvte + Ambiguous=narrow environment
         if not termprop.is_cjk and termprop.da1 == "?62;9;" and re.match(">1;[23][0-9]{3};0", termprop.da2):
@@ -325,6 +325,14 @@ class InputHandler(tff.DefaultHandler,
             elif self._iscooking():
                 self._kakutei(context)
 
+        elif self._inputmode.ishan():
+            # 半角直接入力
+            context.write(c)
+
+        elif self._inputmode.iszen():
+            # 全角直接入力
+            context.write(eisuudb.to_zenkaku_cp(c))
+
         elif c == 0x0d: # CR C-m
             if self._iscooking():
                 self._kakutei(context)
@@ -335,7 +343,10 @@ class InputHandler(tff.DefaultHandler,
         #    self._session.switch_input_target()
 
         elif c == 0x07: # BEL C-g
-            self._reset()
+            if self._iscooking():
+                self._reset()
+            else:
+                context.write(c)
 
         elif c == 0x08 or c == 0x7f: # BS or DEL
             if not self._charbuf.isempty():
@@ -440,12 +451,6 @@ class InputHandler(tff.DefaultHandler,
                 self._reset()
                 context.write(c)
 
-        elif self._inputmode.ishan():
-            # 半角直接入力
-            context.write(c)
-        elif self._inputmode.iszen():
-            # 全角直接入力
-            context.write(eisuudb.to_zenkaku_cp(c))
         elif self._inputmode.isabbrev():
             # abbrev mode 
             self._wordbuf.append(unichr(c))
@@ -695,7 +700,8 @@ class InputHandler(tff.DefaultHandler,
         cur_width += termprop.wcswidth(word) 
         cur_width += termprop.wcswidth(char) 
         if len(char) > 0 and len(word) == 0 and self._anti_optimization_flag:
-            screen.copyline(output, 0, y, screen.width)
+            if y < screen.height - 1:
+                screen.copyline(output, 0, y, screen.width)
             self._anti_optimization_flag = False
         elif len(char) == 1 and len(word) == 0:
             self._anti_optimization_flag = True
@@ -752,14 +758,6 @@ class InputHandler(tff.DefaultHandler,
         if len(buf) > 0:
             context.puts(buf)
             output.truncate(0)
-
-        #context.puts("\x1b7")
-        #import StringIO
-        #s = StringIO.StringIO()
-        #self._canossa2.screen.copyrect(s, 0, 0, 30, 12)
-        #context.puts(s.getvalue())
-        #self._canossa2.handle_draw(context)
-        #context.puts("\x1b8")
 
 def test():
     import doctest

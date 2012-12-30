@@ -31,23 +31,20 @@ def get():
         return u'%s   %s' % (_original, _message)
 
 def setenabled(value):
-    global _enabled
+    global _enabled, _dirty
     _enabled = value
-    global _dirty
     _dirty = True
 
 def setmode(value):
     if value != _mode:
-        global _mode
+        global _mode, _dirty
         _mode = value
-        global _dirty
         _dirty = True
 
 def setmessage(value):
     if value != _message:
-        global _message
+        global _message, _dirty
         _message = value
-        global _dirty
         _dirty = True
 
 def setoriginal(value):
@@ -56,8 +53,8 @@ def setoriginal(value):
 
 def draw(output):
     if _dirty:
-        output.write(u'\x1b]2;%s\x1b\\' % get())
         global _dirty
+        output.write(u'\x1b]2;%s\x1b\\' % get())
         _dirty = False
 
 
