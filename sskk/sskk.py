@@ -190,7 +190,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
 
     try:
         inputmode = InputMode(tty)
-        mode_handler = cano.ModeHandler(inputmode)
+        mode_handler = cano.ModeHandler(inputmode, termprop)
         inputhandler = InputHandler(session=session,
                                     screen=canossa.screen,
                                     termenc=termenc,

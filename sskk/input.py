@@ -581,6 +581,8 @@ class InputHandler(tff.DefaultHandler,
             result = self._clauses.getcandidates()
             self._popup.close()
             self._popup.assign(result)
+            return True
+        return False
 
     def _moveprevclause(self):
         if self._clauses:
@@ -588,6 +590,8 @@ class InputHandler(tff.DefaultHandler,
             result = self._clauses.getcandidates()
             self._popup.close()
             self._popup.assign(result)
+            return True
+        return False
 
     def _handle_csi_cursor(self, context, parameter, intermediate, final):
         if self._popup.isshown():
