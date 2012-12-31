@@ -115,6 +115,9 @@ along with this program. If not, see http://www.gnu.org/licenses/.
             'Invalid TERM environment is detected: "%s"' % termenc)
 
     output = codecs.getwriter(termenc)(sys.stdout, errors='ignore')
+    output.write(u"\x1b[22;0t")
+    output.flush()
+
     output.write(u"\x1b[1;1H\x1b[J")
     output.write(u"\x1b[5;5H")
     output.write(u"      ＼ Sentimental-SKK %s ／\n" % __init__.__version__)
@@ -126,7 +129,6 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     termprop = Termprop()
 
     output.write(u"\x1b]0;\x1b\\")
-    output.write(u"\x1b[22;0t")
     output.write(u"\x1b[22;0t")
     output.flush()
 
