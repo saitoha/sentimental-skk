@@ -13,6 +13,11 @@ What is this?
    :width: 640
 
 
+Requirements
+------------
+Python 2.6/2.7 unix/linux version
+
+
 Install
 -------
 

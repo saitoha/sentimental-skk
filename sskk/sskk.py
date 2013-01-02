@@ -118,6 +118,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     output.write(u"\x1b[22;0t")
     output.flush()
 
+#    output.write(u"\x1b[>2t")
     output.write(u"\x1b[1;1H\x1b[J")
     output.write(u"\x1b[5;5H")
     output.write(u"      ＼ Sentimental-SKK %s ／\n" % __init__.__version__)
@@ -169,24 +170,6 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     output.write(u"\x1b[23;0t")
     output.write(u"\x1b[1;1H\x1b[J")
 
-    class InnerFrameOutputHandler(tff.DefaultHandler):
-
-        top = 5
-        left = 5
-        enabled = True
-
-        def __init__(self, canossa):
-            self._screen = canossa.screen
-
-        def handle_draw(self, context):
-            if self.enabled:
-                context.puts("\x1b7")
-                import StringIO
-                s = StringIO.StringIO()
-                self._screen.copyrect(s, 0, 0, 30, 12, self.left, self.top)
-                context.puts(s.getvalue())
-                context.puts("\x1b8")
-
     session = tff.Session(tty)
 
 
@@ -205,21 +188,11 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                                       mode_handler=mode_handler)
 
         multiplexer = tff.FilterMultiplexer(canossa, outputhandler)
-
-        if False:
-            session.add_subtty("xterm", "ja_JP.UTF-8", "/bin/bash", 12, 30)
-            canossa2 = cano.create(row=12, col=30, y=0, x=0,
-                                   termenc="utf-8",
-                                   termprop=termprop,
-                                   visibility=False)
-            multiplexer = tff.FilterMultiplexer(InnerFrameOutputHandler(canossa2), multiplexer)
-
         session.start(termenc=termenc,
                       stdin=sys.stdin,
                       stdout=sys.stdout,
                       inputhandler=inputhandler,
                       outputhandler=multiplexer)
-#                      subprocess_outputhandler=canossa2)
     finally: 
         output.flush()
         output.write(u"\x1b[23;0t")

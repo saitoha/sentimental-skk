@@ -25,6 +25,7 @@ import title
 import kanadb, eisuudb, dictionary
 import context, word
 from canossa import Listbox, IListboxListener
+from canossa import InnerFrame, IInnerFrameListener
 
 import codecs, re
 
@@ -99,6 +100,9 @@ class IListboxListenerImpl(IListboxListener):
             popup.movenext()
         elif c == 0x16: # C-v
             popup.jumpnext()
+        elif c == 0x17: # C-w
+            word = self._clauses.getvalue()
+            self.open_wikipedia(word)
         elif c == 0x10: # C-p
             popup.moveprev()
         elif c == 0x1b: # ESC C-[ 
@@ -151,12 +155,23 @@ class IListboxListenerImpl(IListboxListener):
         self._wordbuf.append(text)
         self._complete()
 
+
+class IInnerFrameListenerImpl(IInnerFrameListener):
+
+    def onclose(self, iframe, context):
+        self._iframe = None
+        screen = self._screen
+        screen.copyrect(self._output,
+                        iframe.left - 1, iframe.top - 1,
+                        iframe.innerscreen.width + 2, iframe.innerscreen.height + 2)
+
 ################################################################################
 #
 # InputHandler
 #
 class InputHandler(tff.DefaultHandler, 
                    IListboxListenerImpl,
+                   IInnerFrameListenerImpl,
                    TitleTrait):
 
     _stack = None
@@ -167,17 +182,20 @@ class InputHandler(tff.DefaultHandler,
     _bracket_left = _SKK_MARK_OPEN
     _bracket_right = _SKK_MARK_CLOSE
     _clauses = None
+    _iframe = None
 
     def __init__(self, session, screen, termenc, termprop,
                  use_title, mousemode, inputmode,
                  canossa2=None):
         self._screen = screen
         self._output = codecs.getwriter(termenc)(StringIO(), errors='ignore')
+        self._termenc = termenc
         self._charbuf = context.CharacterContext()
         self._inputmode = inputmode
         self._wordbuf = word.WordBuffer(termprop)
         self._popup = Listbox(self, screen, termprop, mousemode, self._output)
         self._termprop = termprop
+        self._mousemode = mousemode
         self.set_titlemode(use_title)
         self._stack = []
         self._canossa2 = canossa2
@@ -218,7 +236,7 @@ class InputHandler(tff.DefaultHandler,
             return True
         return False
 
-    def _tango_henkan(self):
+    def _convert_tango(self):
         key = self._wordbuf.get()
 
         if self._inputmode.iskata():
@@ -244,7 +262,7 @@ class InputHandler(tff.DefaultHandler,
         self.settitle(key)
         return True
 
-    def _okuri_henkan(self):
+    def _convert_okuri(self):
         buf = self._charbuf.getbuffer()
         assert len(buf) > 0
         buf = buf[0]
@@ -294,11 +312,11 @@ class InputHandler(tff.DefaultHandler,
     def _showpopup(self):
         ''' 次候補 '''
         if self._wordbuf.has_okuri():
-            self._okuri_henkan()
+            self._convert_okuri()
         else:
             s = self._draincharacters()
             self._wordbuf.append(s)
-            self._tango_henkan()
+            self._convert_tango()
 
     def _complete(self):
         completions = self._wordbuf.getcompletions()
@@ -307,9 +325,33 @@ class InputHandler(tff.DefaultHandler,
         else:
             self._popup.close()
 
+    def open_wikipedia(self, word):
+        import urllib
+        url = "http://ja.wikipedia.org/wiki/"
+        url += urllib.quote_plus(word.encode('utf-8'))
+
+        screen = self._screen
+
+        height = int(screen.height * 0.7)
+        width = int(screen.width * 0.7)
+        top = int((screen.height - height) / 2)
+        left = int((screen.width - width) / 2)
+        self._iframe = InnerFrame(self._session, 
+                                  self,
+                                  screen,
+                                  top, left, height, width,
+                                  "/opt/local/bin/w3m '%s'" % url,
+                                  self._termenc,
+                                  self._termprop,
+                                  self._mousemode)
+
+    def destruct_subprocess(self):
+        session = self._session
+        session.destruct_subprocess()
+
     # override
     def handle_char(self, context, c):
-        
+
         if not self._inputmode.getenabled():
             return False
 
@@ -393,6 +435,8 @@ class InputHandler(tff.DefaultHandler,
                     context.write(c)
 
         elif c == 0x11: # C-q
+            if self._popup.isshown():
+                self._popup.close()
             if self._inputmode.isabbrev():
                 word = self._wordbuf.get()
                 word = eisuudb.to_zenkaku(word)
@@ -406,6 +450,14 @@ class InputHandler(tff.DefaultHandler,
                 context.putu(str_hankata)
                 self._wordbuf.reset()
             else:
+                context.write(c)
+
+        elif c == 0x17: # C-w
+            if not self._wordbuf.isempty():
+                word = self._wordbuf.get()
+                self.open_wikipedia(word)
+            else:
+                self._reset()
                 context.write(c)
 
         elif c == 0x1b: # ESC 
@@ -500,7 +552,7 @@ class InputHandler(tff.DefaultHandler,
                 self._charbuf.reset()
                 if self._popup.isempty():
                     if not self._wordbuf.isempty():
-                        self._tango_henkan()
+                        self._convert_tango()
                         self._charbuf.put(c)
                         s = self._charbuf.drain()
                         self._okuri += s 
@@ -536,7 +588,7 @@ class InputHandler(tff.DefaultHandler,
                     # キャラクタバッファが終了状態か 
                     if self._charbuf.isfinal():
                         # 送り仮名変換
-                        self._okuri_henkan()
+                        self._convert_okuri()
 
             elif c == 0x2d or 0x61 <= c and c <= 0x7a: # a - z
                 if self._charbuf.put(c):
@@ -546,7 +598,7 @@ class InputHandler(tff.DefaultHandler,
                             context.putu(s)
                         elif self._wordbuf.has_okuri():
                             # 送り仮名変換
-                            self._okuri_henkan()
+                            self._convert_okuri()
                         else:
                             s = self._charbuf.drain()
                             self._wordbuf.append(s)
@@ -618,6 +670,8 @@ class InputHandler(tff.DefaultHandler,
     def handle_csi(self, context, parameter, intermediate, final):
         if not self._inputmode.getenabled():
             return False
+        #if self._iframe and self._iframe.handle_csi(context, parameter, intermediate, final):
+        #    return True
         if self._popup.handle_csi(context, parameter, intermediate, final):
             return True
         if self._handle_csi_cursor(context, parameter, intermediate, final):
@@ -745,16 +799,32 @@ class InputHandler(tff.DefaultHandler,
             output.write(u"\x1b[%d;%dH\x1b[?25h" % (y + 1, x + 1))
             self._prev_length = 0 
 
+    def handle_resize(self, context, row, col):
+        try:
+            if self._iframe:
+                self._iframe.close()
+        except:
+            pass
+        finally:
+            self._iframe = None
+
     # override
     def handle_draw(self, context):
         if not self._inputmode.getenabled():
             return False
         output = self._output
         clauses = self._clauses
+        iframe = self._iframe
         if clauses and not self._popup.isempty():
-            self._draw_clauses_with_popup(output)
+            if iframe:
+                iframe.draw(output)
+            else:
+                self._draw_clauses_with_popup(output)
         elif not self._wordbuf.isempty() or not self._charbuf.isempty():
-            self._draw_word(output)
+            if iframe:
+                iframe.draw(output)
+            else:
+                self._draw_word(output)
         else:
             self._draw_nothing(output)
         self._refleshtitle()
