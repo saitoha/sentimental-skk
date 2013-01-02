@@ -340,7 +340,7 @@ class InputHandler(tff.DefaultHandler,
                                   self,
                                   screen,
                                   top, left, height, width,
-                                  "/opt/local/bin/w3m '%s'" % url,
+                                  "w3m '%s'" % url,
                                   self._termenc,
                                   self._termprop,
                                   self._mousemode)
