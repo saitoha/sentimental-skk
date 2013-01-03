@@ -87,7 +87,7 @@ def _maketree(rule):
     for key, value in tree.items(): 
         context = tree
         if key == 0x6e: # 'n'
-            for code in [ord(c) for c in list('bcdfghjkmprstvwxz')]: 
+            for code in [ord(c) for c in 'bcdfghjkmprstvwxz']: 
                 value[code] = { SKK_ROMAN_VALUE: rule['nn'],
                                 SKK_ROMAN_NEXT: tree[code],
                                 SKK_ROMAN_BUFFER: 'nn' }

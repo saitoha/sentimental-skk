@@ -212,7 +212,7 @@ class InputHandler(tff.DefaultHandler,
         self._popup.close()
         self._inputmode.endabbrev()
         self._wordbuf.reset() 
-        self._charbuf.reset()
+        #self._charbuf.reset()
         self._okuri = u""
         self._clauses = None
         self._anti_optimization_flag = False
@@ -263,8 +263,8 @@ class InputHandler(tff.DefaultHandler,
     def _convert_okuri(self):
         buf = self._charbuf.getbuffer()
         assert len(buf) > 0
-        buf = buf[0]
         okuri = self._draincharacters()
+        buf = buf[0]
         key = self._wordbuf.get()
 
         self._okuri = u""
