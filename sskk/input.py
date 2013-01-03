@@ -143,6 +143,7 @@ class IListboxListenerImpl(IListboxListener):
         if self._clauses:
             self._kakutei(context)
         elif self._wordbuf.length() > 0:
+            self._popup.close()
             self._showpopup()
 
     def oncancel(self, popup, context):
@@ -212,7 +213,7 @@ class InputHandler(tff.DefaultHandler,
         self._popup.close()
         self._inputmode.endabbrev()
         self._wordbuf.reset() 
-        #self._charbuf.reset()
+        self._charbuf.reset()
         self._okuri = u""
         self._clauses = None
         self._anti_optimization_flag = False
@@ -304,7 +305,10 @@ class InputHandler(tff.DefaultHandler,
             word = self._wordbuf.get()
         #dictionary.feedback(key, value)
         self.onkakutei()
-        self._reset()
+        self._popup.close()
+        self._inputmode.endabbrev()
+        self._wordbuf.reset() 
+        self._anti_optimization_flag = False
         context.putu(word)
 
     def _showpopup(self):
