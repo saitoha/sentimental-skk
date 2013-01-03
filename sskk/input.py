@@ -159,11 +159,9 @@ class IListboxListenerImpl(IListboxListener):
 class IInnerFrameListenerImpl(IInnerFrameListener):
 
     def onclose(self, iframe, context):
+        iframe.clear()
         self._iframe = None
         screen = self._screen
-        screen.copyrect(self._output,
-                        iframe.left - 1, iframe.top - 1,
-                        iframe.innerscreen.width + 2, iframe.innerscreen.height + 2)
 
 ################################################################################
 #
@@ -332,8 +330,8 @@ class InputHandler(tff.DefaultHandler,
 
         screen = self._screen
 
-        height = int(screen.height * 0.7)
-        width = int(screen.width * 0.7)
+        height = min(20, int(screen.height * 0.7))
+        width = min(60, int(screen.width * 0.7))
         top = int((screen.height - height) / 2)
         left = int((screen.width - width) / 2)
         self._iframe = InnerFrame(self._session, 
@@ -343,7 +341,8 @@ class InputHandler(tff.DefaultHandler,
                                   "w3m '%s'" % url,
                                   self._termenc,
                                   self._termprop,
-                                  self._mousemode)
+                                  self._mousemode,
+                                  self._output)
 
     def destruct_subprocess(self):
         session = self._session
@@ -816,15 +815,13 @@ class InputHandler(tff.DefaultHandler,
         clauses = self._clauses
         iframe = self._iframe
         if clauses and not self._popup.isempty():
+            self._draw_clauses_with_popup(output)
             if iframe:
                 iframe.draw(output)
-            else:
-                self._draw_clauses_with_popup(output)
         elif not self._wordbuf.isempty() or not self._charbuf.isempty():
+            self._draw_word(output)
             if iframe:
                 iframe.draw(output)
-            else:
-                self._draw_word(output)
         else:
             self._draw_nothing(output)
         self._refleshtitle()
