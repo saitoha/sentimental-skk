@@ -30,7 +30,7 @@ _okuridb = {}
 _compdb = {}
 _encoding = 0
 
-def _register(key):
+def _register(key, value):
     current = _compdb
     for c in key:
         if current.has_key(c):
@@ -39,6 +39,10 @@ def _register(key):
             new_current = {}
             current[c] = new_current 
             current = new_current
+
+_control_chars = re.compile("[\x00-\x1f\x7f\x80-\x9f\xff]")
+def _escape(s):
+    return _control_chars.sub("", s)
 
 def _decode_line(line):
     global _encoding
@@ -59,10 +63,10 @@ def _load_dict(filename):
         key = g.group(1)
         okuri = g.group(2)
         value = g.group(3)
-        _register(key)
         if okuri:
             _okuridb[key + okuri] = value.split("/")
         else:
+            _register(key, value)
             _tangodb[key] = value.split("/")
 
 def _get_fallback_dict_path():
@@ -97,13 +101,34 @@ def getcomp(key):
         else:
             return None
     candidate = []
-    def expand(key, current):
-        if current == {}:
-            candidate.append(key)
-        else:
-            for c in current:
-                expand(key + c, current[c]) 
-    expand("", current)
+    generators = []
+    def expand_all(key, current, candidate):
+        for c, value in current:
+            if value == {}:
+                candidate.append(key + c)
+            else:
+                expand_all(key + c, (x for x in value.items()), candidate) 
+
+    def expand_sparse(key, current, candidate):
+        for c, value in current:
+            if value == {}:
+                candidate.append(key + c)
+                return True
+            if expand_sparse(key + c, (x for x in value.items()), candidate):
+                generators.append((key, current))
+                return True
+        return False
+
+    for c in current:
+        expand_sparse(c, (x for x in current[c].items()), candidate)
+        if len(candidate) > 20:
+            break
+    else:
+        if len(candidate) < 10:
+            for item in generators:
+                key, cur = item
+                expand_all(c, cur, candidate)
+
     return candidate 
 
 
@@ -114,7 +139,7 @@ def getcomp(key):
 class Clause():
 
     def __init__(self, key, candidates):
-        self._key = key
+        self._key = _escape(key)
         self._values = []
         self._displays = []
         for candidate in candidates:
@@ -123,8 +148,8 @@ class Clause():
                 value, remarks = row
             else:
                 value, remarks = candidate, u""
-            self._values.append(value)
-            self._displays.append(value + " " + remarks)
+            self._values.append(_escape(value))
+            self._displays.append(_escape(value + " " + remarks))
         self._index = 0
 
     def getkey(self):
