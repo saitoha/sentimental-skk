@@ -20,6 +20,7 @@
 
 def main():
     import sys, os, optparse, codecs
+    import logging
     import tff
     import __init__
 
@@ -138,9 +139,11 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     if not os.path.exists(logdir):
         os.makedirs(logdir)
 
+    logfile = os.path.join(logdir, "log.txt")
+    logging.basicConfig(filename=logfile, filemode="w")
+
     os.environ["__SSKK_VERTION"] = __init__.__version__
     tty = tff.DefaultPTY(term, lang, command, sys.stdin)
-
 
     row, col = tty.fitsize()
 
