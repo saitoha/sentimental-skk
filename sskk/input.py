@@ -24,10 +24,12 @@ import tff
 import title
 import kanadb, eisuudb, dictionary
 import context, word
+
 from canossa import Listbox, IListboxListener
 from canossa import InnerFrame, IInnerFrameListener
 
 import codecs, re
+import logging, traceback
 
 try:
     from cStringIO import StringIO
@@ -91,10 +93,11 @@ class IListboxListenerImpl(IListboxListener):
         elif c == 0x09: # TAB C-i
             popup.movenext()
         elif c == 0x0c: # LF C-l
-            if self._clauses:
-                self._clauses.shift_right()
+            clauses = self._clauses
+            if clauses:
+                clauses.shift_right()
                 self._popup.close()
-                candidates = self._clauses.getcandidates()
+                candidates = clauses.getcandidates()
                 popup.assign(candidates)
         elif c == 0x0e: # C-n
             popup.movenext()
@@ -141,7 +144,7 @@ class IListboxListenerImpl(IListboxListener):
 
     def onsettled(self, popup, context):
         if self._clauses:
-            self._kakutei(context)
+            self._settle(context)
         elif self._wordbuf.length() > 0:
             self._popup.close()
             self._showpopup()
@@ -292,11 +295,12 @@ class InputHandler(tff.DefaultHandler,
         self.settitle(u'%s - %s' % (key, buf))
         return True
 
-    def _kakutei(self, context):
+    def _settle(self, context):
         ''' 確定 '''
-        if self._clauses:
-            key = self._clauses.getkey()
-            word = self._clauses.getvalue() + self._okuri
+        clauses = self._clauses
+        if clauses:
+            key = clauses.getkey()
+            word = clauses.getvalue() + self._okuri
             self._clauses = None
             self._okuri = u""
         else:
@@ -313,11 +317,12 @@ class InputHandler(tff.DefaultHandler,
 
     def _showpopup(self):
         ''' 次候補 '''
-        if self._wordbuf.has_okuri():
+        wordbuf = self._wordbuf
+        if wordbuf.has_okuri():
             self._convert_okuri()
         else:
             s = self._draincharacters()
-            self._wordbuf.append(s)
+            wordbuf.append(s)
             self._convert_tango()
 
     def _complete(self):
@@ -368,7 +373,7 @@ class InputHandler(tff.DefaultHandler,
             elif self._inputmode.iszen():
                 self._inputmode.starthira()
             elif self._iscooking():
-                self._kakutei(context)
+                self._settle(context)
 
         elif self._inputmode.ishan():
             # 半角直接入力
@@ -380,12 +385,9 @@ class InputHandler(tff.DefaultHandler,
 
         elif c == 0x0d: # CR C-m
             if self._iscooking():
-                self._kakutei(context)
+                self._settle(context)
             else:
                 context.write(c)
-
-        #elif c == 0x1a: # BEL C-z
-        #    self._session.switch_input_target()
 
         elif c == 0x07: # BEL C-g
             if self._iscooking():
@@ -465,7 +467,7 @@ class InputHandler(tff.DefaultHandler,
 
         elif c == 0x1b: # ESC 
             if self._iscooking():
-                #self._kakutei(context)
+                #self._settle(context)
                 self._reset()
                 self._inputmode.reset()
                 context.write(c)
@@ -487,7 +489,7 @@ class InputHandler(tff.DefaultHandler,
                 self._wordbuf.startedit()
                 self._wordbuf.append(s)
                 if self._wordbuf.length() > 0:
-                    self._kakutei(context)
+                    self._settle(context)
             else:
                 context.write(c)
 
@@ -513,7 +515,7 @@ class InputHandler(tff.DefaultHandler,
         elif self._inputmode.ishira() or self._inputmode.iskata():
             # ひらがな変換モード・カタカナ変換モード
             #if c > 0x20 and c < 0x2f:
-            #    self._kakutei(context)
+            #    self._settle(context)
             if c == 0x2f and (self._charbuf.isempty() or self._charbuf.getbuffer() != u'z'): # /
                 if not self._iscooking():
                     self._inputmode.startabbrev()
@@ -539,12 +541,12 @@ class InputHandler(tff.DefaultHandler,
                     self._reset()
             elif c == 0x4c: # L
                 if self._iscooking():
-                    self._kakutei(context)
+                    self._settle(context)
                 self._inputmode.startzen()
                 self._reset()
             elif c == 0x6c: # l
                 if self._popup.isshown():
-                    self._kakutei(context)
+                    self._settle(context)
                 self._inputmode.reset()
                 self._reset()
             elif c == 0x3c: # <
@@ -566,7 +568,7 @@ class InputHandler(tff.DefaultHandler,
                         s = unichr(c)
                         context.write(c)
                 else:
-                    self._kakutei(context)
+                    self._settle(context)
                     if self._charbuf.put(c):
                         s = self._charbuf.drain()
                         context.write(ord(s))
@@ -611,7 +613,7 @@ class InputHandler(tff.DefaultHandler,
                     self._charbuf.put(c)
             else:
                 if self._iscooking():
-                    self._kakutei(context)
+                    self._settle(context)
                 if self._charbuf.put(c):
                     s = self._charbuf.drain()
                     context.write(ord(s))
@@ -703,7 +705,7 @@ class InputHandler(tff.DefaultHandler,
             return True
         if final == 0x5b: # [
             if self._iscooking():
-                self._kakutei(context)
+                self._settle(context)
                 self._inputmode.reset()
                 self._reset()
             return False
@@ -807,7 +809,7 @@ class InputHandler(tff.DefaultHandler,
             if self._iframe:
                 self._iframe.close()
         except:
-            pass
+            loging.error("Resize failed")
         finally:
             self._iframe = None
 

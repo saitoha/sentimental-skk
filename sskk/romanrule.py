@@ -84,18 +84,33 @@ def _maketree(rule):
             buf += chr(code)
             context[SKK_ROMAN_BUFFER] = buf 
         context[SKK_ROMAN_VALUE] = value
+        first = key[0]
+        if first in 'bcdfghjkmprstvwxz':
+            key = first + key
+            value = rule['xtu'] + value
+            buf = u''
+            context = tree
+            for code in [ord(c) for c in list(key)]:
+                if not context.has_key(code):
+                    context[code] = { SKK_ROMAN_PREV: context }
+                context = context[code]
+                buf += chr(code)
+                context[SKK_ROMAN_BUFFER] = buf 
+            tree[ord(first)][ord(first)][SKK_ROMAN_BUFFER] = rule['xtu'] + first
+
+            context[SKK_ROMAN_VALUE] = value
+
     for key, value in tree.items(): 
         context = tree
         if key == 0x6e: # 'n'
             for code in [ord(c) for c in 'bcdfghjkmprstvwxz']: 
                 value[code] = { SKK_ROMAN_VALUE: rule['nn'],
-                                SKK_ROMAN_NEXT: tree[code],
-                                SKK_ROMAN_BUFFER: 'nn' }
-        else:
-            if not value.has_key(SKK_ROMAN_VALUE):
-                value[key] = { SKK_ROMAN_VALUE: rule['xtu'],
-                               SKK_ROMAN_NEXT: tree[key],
-                               SKK_ROMAN_BUFFER: chr(key) + chr(key) }
+                                SKK_ROMAN_NEXT: tree[code] }
+        #else:
+        #    if not value.has_key(SKK_ROMAN_VALUE):
+        #        value[key] = { SKK_ROMAN_VALUE: rule['xtu'],
+        #                       SKK_ROMAN_NEXT: tree[key],
+        #                       SKK_ROMAN_BUFFER: chr(key) + chr(key) }
     tree[SKK_ROMAN_BUFFER] = '' 
     tree[SKK_ROMAN_PREV] = tree 
     return tree
