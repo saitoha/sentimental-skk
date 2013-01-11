@@ -128,6 +128,10 @@ def getcomp(key):
             for item in generators:
                 key, cur = item
                 expand_all(c, cur, candidate)
+            if len(candidate) < 10:
+                for c in current:
+                    if current[c] == {}:
+                        candidate.append(c)
 
     return candidate 
 

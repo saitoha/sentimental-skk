@@ -18,15 +18,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
-import dictionary
-import kanadb
+import dictionary, kanadb
 import re
 
 _SKK_WORD_NONE  = 0
 _SKK_WORD_MAIN  = 1
 _SKK_WORD_OKURI = 2
 
-_SKK_MARK_COOK = u'▽'
+_SKK_MARK_COOK  = u'▽'
 _SKK_MARK_OKURI = u'*'
 
 class WordBuffer():
@@ -40,7 +39,7 @@ class WordBuffer():
     def __init__(self, termprop):
         self.reset()
         self._wcswidth = termprop.wcswidth
-        if not termprop.is_cjk and termprop.da1 == "?62;9;" and re.match(">1;[23][0-9]{3};0", termprop.da2):
+        if not termprop.is_cjk and termprop.is_vte():
             self._cookmark = _SKK_MARK_COOK + u" "
         else:
             self._cookmark = _SKK_MARK_COOK
@@ -85,18 +84,18 @@ class WordBuffer():
             self.startedit()
         elif self.__mode == _SKK_WORD_MAIN:
             self.__main += value 
-        else: # self.__mode == _SKK_WORD_OKURI:
+        else:
+            assert self.__mode == _SKK_WORD_OKURI
             self.__main += value 
 
     def back(self):
-        if self.__mode == _SKK_WORD_MAIN:
+        if len(self.__main) == 0:
+            self.__mode = _SKK_WORD_NONE
+        elif self.__mode == _SKK_WORD_MAIN:
             self.__main = self.__main[:-1]
-            if len(self.__main) == 0:
-                self.__mode = _SKK_WORD_NONE
-        elif self.__mode == _SKK_WORD_OKURI:
-            self.__mode = _SKK_WORD_MAIN 
         else:
-            raise Exception("Cannot back: %s" % self.__main)
+            assert self.__mode == _SKK_WORD_OKURI
+            self.__mode = _SKK_WORD_MAIN 
 
     def startedit(self):
         self.__mode = _SKK_WORD_MAIN

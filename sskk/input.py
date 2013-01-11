@@ -68,10 +68,6 @@ class TitleTrait():
         title.setmessage(face + " " + value)
         self._refleshtitle()
 
-    def onkakutei(self):
-        title.setmessage(u'＼(^o^)／')
-        self._refleshtitle()
-
 class IListboxListenerImpl(IListboxListener):
 
     def oninput(self, popup, context, c):
@@ -156,7 +152,7 @@ class IListboxListenerImpl(IListboxListener):
         self._clauses = None
         self._wordbuf.reset()
         self._wordbuf.startedit()
-        self._wordbuf.append(text)
+        self._wordbuf.append(text + self._okuri)
         self._complete()
 
 
@@ -203,10 +199,11 @@ class InputHandler(tff.DefaultHandler,
         self._canossa2 = canossa2
         self._session = session
         # detects libvte + Ambiguous=narrow environment
-        if not termprop.is_cjk and termprop.da1 == "?62;9;" and re.match(">1;[23][0-9]{3};0", termprop.da2):
-            self._selectmark = _SKK_MARK_SELECT + u" " # add pad
-            self._bracket_left = _SKK_MARK_OPEN + u" "
-            self._bracket_right = _SKK_MARK_CLOSE + u" "
+        if not termprop.is_cjk and termprop.is_vte():
+            pad = u" "
+            self._selectmark = _SKK_MARK_SELECT + pad
+            self._bracket_left = _SKK_MARK_OPEN + pad 
+            self._bracket_right = _SKK_MARK_CLOSE + pad 
         else:
             self._selectmark = _SKK_MARK_SELECT
             self._bracket_left = _SKK_MARK_OPEN
@@ -266,6 +263,8 @@ class InputHandler(tff.DefaultHandler,
 
     def _convert_okuri(self):
         buf = self._charbuf.getbuffer()
+        if len(buf) == 0:
+            return False
         assert len(buf) > 0
         okuri = self._draincharacters()
         buf = buf[0]
@@ -305,10 +304,11 @@ class InputHandler(tff.DefaultHandler,
             self._okuri = u""
         else:
             s = self._draincharacters()
-            self._wordbuf.append(s)
             word = self._wordbuf.get()
+            word += s
         #dictionary.feedback(key, value)
-        self.onkakutei()
+        title.setmessage(u'＼(^o^)／')
+        self._refleshtitle()
         self._popup.close()
         self._inputmode.endabbrev()
         self._wordbuf.reset() 
@@ -467,7 +467,6 @@ class InputHandler(tff.DefaultHandler,
 
         elif c == 0x1b: # ESC 
             if self._iscooking():
-                #self._settle(context)
                 self._reset()
                 self._inputmode.reset()
                 context.write(c)
@@ -514,18 +513,19 @@ class InputHandler(tff.DefaultHandler,
             self._complete()
         elif self._inputmode.ishira() or self._inputmode.iskata():
             # ひらがな変換モード・カタカナ変換モード
-            #if c > 0x20 and c < 0x2f:
-            #    self._settle(context)
-            if c == 0x2f and (self._charbuf.isempty() or self._charbuf.getbuffer() != u'z'): # /
+            charbuf = self._charbuf
+            wordbuf = self._wordbuf
+
+            if c == 0x2f and (charbuf.isempty() or charbuf.getbuffer() != u'z'): # /
                 if not self._iscooking():
                     self._inputmode.startabbrev()
-                    self._wordbuf.reset()
-                    self._wordbuf.startedit()
+                    wordbuf.reset()
+                    wordbuf.startedit()
             elif c == 0x71: # q
                 if self._iscooking():
                     s = self._draincharacters()
-                    self._wordbuf.append(s)
-                    word = self._wordbuf.get()
+                    wordbuf.append(s)
+                    word = wordbuf.get()
                     self._reset()
                     if self._inputmode.ishira():
                         s = kanadb.to_kata(word)
@@ -533,18 +533,13 @@ class InputHandler(tff.DefaultHandler,
                         s = kanadb.to_hira(word)
                     context.putu(s)
                 else:
-                    self._charbuf.toggle()
+                    charbuf.toggle()
                     if self._inputmode.ishira():
                         self._inputmode.startkata()
                     elif self._inputmode.iskata():
                         self._inputmode.starthira()
                     self._reset()
-            elif c == 0x4c: # L
-                if self._iscooking():
-                    self._settle(context)
-                self._inputmode.startzen()
-                self._reset()
-            elif c == 0x6c: # l
+            elif c == 0x6c and charbuf.getbuffer() != "z": # l
                 if self._popup.isshown():
                     self._settle(context)
                 self._inputmode.reset()
@@ -554,63 +549,73 @@ class InputHandler(tff.DefaultHandler,
             elif c == 0x3e: # >
                 self._clauses.shift_right()
             elif c == 0x2c or c == 0x2e or c == 0x3a or c == 0x3b or c == 0x5b or c == 0x5d: # , . ; : [ ]
-                self._charbuf.reset()
+                charbuf.reset()
                 if self._popup.isempty():
-                    if not self._wordbuf.isempty():
+                    if not wordbuf.isempty():
                         self._convert_tango()
-                        self._charbuf.put(c)
-                        s = self._charbuf.drain()
+                        charbuf.put(c)
+                        s = charbuf.drain()
                         self._okuri += s 
-                    elif self._charbuf.put(c):
-                        s = self._charbuf.drain()
+                    elif charbuf.put(c):
+                        s = charbuf.drain()
                         context.write(ord(s))
                     else:
                         s = unichr(c)
                         context.write(c)
                 else:
                     self._settle(context)
-                    if self._charbuf.put(c):
-                        s = self._charbuf.drain()
+                    if charbuf.put(c):
+                        s = charbuf.drain()
                         context.write(ord(s))
                     else:
                         context.write(c)
-            elif 0x41 <= c and c <= 0x5a: # A - Z
-                # 大文字のとき
-                # 先行する入力があるか
-                if self._wordbuf.isempty() or len(self._wordbuf.get()) == 0:
-                    self._charbuf.put(c + 0x20) # 小文字に変換し、文字バッファに溜める
-                    self._wordbuf.startedit()
-                    if self._charbuf.isfinal():
-                        s = self._charbuf.drain()
-                        self._wordbuf.append(s)
-                        self._complete()
-                else:
-                    s = self._draincharacters()
-                    self._wordbuf.append(s)
-                    self._charbuf.put(c + 0x20) # 小文字に変換し、文字バッファに溜める
-                    # 先行する入力があるとき、送り仮名マーク('*')をつける
-                    self._wordbuf.startokuri()
-                    # キャラクタバッファが終了状態か 
-                    if self._charbuf.isfinal():
-                        # 送り仮名変換
-                        self._convert_okuri()
 
-            elif c == 0x2d or 0x61 <= c and c <= 0x7a: # a - z
-                if self._charbuf.put(c):
-                    if self._charbuf.isfinal():
-                        if self._wordbuf.isempty():
-                            s = self._charbuf.drain()
+            elif c == 0x2d or (0x61 <= c and c <= 0x7a) or charbuf.getbuffer() == "z": # _, a - z, z*
+                if charbuf.put(c):
+                    if charbuf.isfinal():
+                        if wordbuf.isempty():
+                            s = charbuf.drain()
                             context.putu(s)
-                        elif self._wordbuf.has_okuri():
+                        elif wordbuf.has_okuri():
                             # 送り仮名変換
                             self._convert_okuri()
                         else:
-                            s = self._charbuf.drain()
-                            self._wordbuf.append(s)
+                            s = charbuf.drain()
+                            wordbuf.append(s)
                             self._complete()
                 else:
-                    self._charbuf.reset()
-                    self._charbuf.put(c)
+                    charbuf.reset()
+                    charbuf.put(c)
+
+            elif c == 0x4c: # L
+                if self._iscooking():
+                    self._settle(context)
+                self._inputmode.startzen()
+                self._reset()
+
+            elif 0x41 <= c and c <= 0x5a: # A - Z
+                # 大文字のとき
+                # 先行する入力があるか
+                if wordbuf.isempty() or len(wordbuf.get()) == 0:
+                    charbuf.put(c) # 文字バッファに溜める
+                    wordbuf.startedit()
+                    if charbuf.isfinal():
+                        s = charbuf.drain()
+                        wordbuf.append(s)
+                        self._complete()
+                else:
+                    charbuf.put(c) # 文字バッファに溜める
+                    if charbuf.hasnext():
+                        s = charbuf.getbuffer()
+                        wordbuf.append(s)
+                        charbuf.reset()
+                        charbuf.put(c)
+                    # 先行する入力があるとき、送り仮名マーク('*')をつける
+                    wordbuf.startokuri()
+                    # キャラクタバッファが終了状態か 
+                    if charbuf.isfinal():
+                        # 送り仮名変換
+                        self._convert_okuri()
             else:
                 if self._iscooking():
                     self._settle(context)

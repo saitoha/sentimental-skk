@@ -63,12 +63,20 @@ class CharacterContext:
             else:
                 self.reset()
             return s
-        return u''
+        return u""
 
     def getbuffer(self):
-        return self.context[romanrule.SKK_ROMAN_BUFFER]
+        key = romanrule.SKK_ROMAN_BUFFER
+        if self.context.has_key(key):
+            return self.context[key]
+        return u""
 
     def put(self, c):
+        if self.context.has_key(c):
+            self.context = self.context[c]
+            return True
+        if 0x41 <= c and c <= 0x5a: # A - Z
+            c += 0x20 # convert to a - z
         if self.context.has_key(c):
             self.context = self.context[c]
             return True
