@@ -61,7 +61,7 @@ _rule = {'a'   : u'あ'    , 'i'   : u'い'    , 'u'   : u'う'    , 'e'   : u'�
          'zh'  : u'←'     , 'zj'  : u'↓'     , 'zk'  : u'↑'     , 'zl'  : u'→'     , 'z-'  : u'〜'    ,
          'z,'  : u'‥'     , 'z.'  : u'…'     , 'z/'  : u'・'    , 'z['  : u'『'    , 'z]'  : u'』'    ,
          'z?'  : u'？'    , 'z('  : u'（'    , 'z)'  : u'）'    , 'z{'  : u'【'    , 'z}'  : u'】'    ,
-         'zL'  : u'⇒'     ,
+         'zL'  : u'⇒'     , 'z '  : u'　'    ,
          '['   : u'「'    , ']'   : u'」'    , ':'   : u'：'    , ';'   : u'；'                       }
 
 _hira_rule = _rule 
@@ -88,20 +88,20 @@ def _maketree(rule):
             context[SKK_ROMAN_BUFFER] = buf 
         context[SKK_ROMAN_VALUE] = value
         first = key[0]
-        if first in 'bcdfghjkmprstvwxz':
-            key = first + key
-            value = rule['xtu'] + value
-            buf = u''
-            context = tree
-            for code in [ord(c) for c in key]:
-                if not context.has_key(code):
-                    context[code] = { SKK_ROMAN_PREV: context }
-                context = context[code]
-                buf += chr(code)
-                context[SKK_ROMAN_BUFFER] = buf 
-            tree[ord(first)][ord(first)][SKK_ROMAN_BUFFER] = rule['xtu'] + first
+        key = first + key
+        value = rule['xtu'] + value
+        buf = u''
+        context = tree
+        for code in [ord(c) for c in key]:
+            if not context.has_key(code):
+                context[code] = { SKK_ROMAN_PREV: context }
+            context = context[code]
+            if buf == chr(code):
+                buf = rule['xtu']
+            buf += chr(code)
+            context[SKK_ROMAN_BUFFER] = buf 
 
-            context[SKK_ROMAN_VALUE] = value
+        context[SKK_ROMAN_VALUE] = value
 
     for key, value in tree.items(): 
         context = tree
