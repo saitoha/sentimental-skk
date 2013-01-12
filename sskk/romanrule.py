@@ -88,20 +88,21 @@ def _maketree(rule):
             context[SKK_ROMAN_BUFFER] = buf 
         context[SKK_ROMAN_VALUE] = value
         first = key[0]
-        key = first + key
-        value = rule['xtu'] + value
-        buf = u''
-        context = tree
-        for code in [ord(c) for c in key]:
-            if not context.has_key(code):
-                context[code] = { SKK_ROMAN_PREV: context }
-            context = context[code]
-            if buf == chr(code):
-                buf = rule['xtu']
-            buf += chr(code)
-            context[SKK_ROMAN_BUFFER] = buf 
+        if first in 'bcdfghjkmprstvwxz':
+            key = first + key
+            value = rule['xtu'] + value
+            buf = u''
+            context = tree
+            for code in [ord(c) for c in key]:
+                if not context.has_key(code):
+                    context[code] = { SKK_ROMAN_PREV: context }
+                context = context[code]
+                if buf == chr(code):
+                    buf = rule['xtu']
+                buf += chr(code)
+                context[SKK_ROMAN_BUFFER] = buf 
 
-        context[SKK_ROMAN_VALUE] = value
+            context[SKK_ROMAN_VALUE] = value
 
     for key, value in tree.items(): 
         context = tree

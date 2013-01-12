@@ -40,6 +40,8 @@ for m in [mode,
 if dirty:
     raise Exception("test failed.")
 
+print "succeeded."
+
 setup(name                  = 'sentimental-skk',
       version               = __version__,
       description           = '三 ┏( ^o^)┛ ＜ Japanese Input Method SKK (Simple Kana to Kanji conversion) on your terminal',

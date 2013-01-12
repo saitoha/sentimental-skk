@@ -262,10 +262,13 @@ class InputHandler(tff.DefaultHandler,
         return True
 
     def _convert_okuri(self):
+
+        clauses = self._clauses
+
         buf = self._charbuf.getbuffer()
-        if len(buf) == 0:
+        if not buf:
             return False
-        assert len(buf) > 0
+        assert buf
         okuri = self._draincharacters()
         buf = buf[0]
         key = self._wordbuf.get()
@@ -276,19 +279,20 @@ class InputHandler(tff.DefaultHandler,
             key = kanadb.to_hira(key)
         result = dictionary.getokuri(key + buf)
         if result: 
-            self._clauses = dictionary.Clauses()
-            self._clauses.add(dictionary.Clause(key, result))
+            clauses = dictionary.Clauses()
+            clauses.add(dictionary.Clause(key, result))
         else:
             if self._inputmode.iskata():
                 key = kanadb.to_kata(key)
-            self._clauses = dictionary.get_from_google_cgi_api(key)
-            if not self._clauses:
-                self._clauses = dictionary.Clauses()
-                self._clauses.add(dictionary.Clause(key, [key]))
+            clauses = dictionary.get_from_google_cgi_api(key)
+            if not clauses:
+                clauses = dictionary.Clauses()
+                clauses.add(dictionary.Clause(key, [key]))
+        self._clauses = clauses
 
         self._okuri += okuri 
 
-        self._popup.assign(self._clauses.getcandidates())
+        self._popup.assign(clauses.getcandidates())
         self._wordbuf.startedit() 
 
         self.settitle(u'%s - %s' % (key, buf))
@@ -366,22 +370,12 @@ class InputHandler(tff.DefaultHandler,
         if self._clauses and self._popup.handle_char(context, c):
             return True
 
-        elif c == 0x0a: # LF C-j
-            self._inputmode.endabbrev()
-            if self._inputmode.ishan():
-                self._inputmode.starthira()
-            elif self._inputmode.iszen():
-                self._inputmode.starthira()
-            elif self._iscooking():
+        if self._inputmode.handle_char(context, c):
+            return True
+
+        if c == 0x0a: # LF C-j
+            if self._iscooking():
                 self._settle(context)
-
-        elif self._inputmode.ishan():
-            # 半角直接入力
-            context.write(c)
-
-        elif self._inputmode.iszen():
-            # 全角直接入力
-            context.write(eisuudb.to_zenkaku_cp(c))
 
         elif c == 0x0d: # CR C-m
             if self._iscooking():
@@ -401,7 +395,7 @@ class InputHandler(tff.DefaultHandler,
             elif not self._wordbuf.isempty():
                 self._inputmode.endabbrev()
                 self._wordbuf.back()
-                if len(self._wordbuf.getbuffer()) == 0:
+                if not self._wordbuf.getbuffer():
                     self._popup.close()
                 else:
                     self._complete()
@@ -409,16 +403,12 @@ class InputHandler(tff.DefaultHandler,
                 context.write(c)
 
         elif c == 0x09: # TAB C-i
-            if self._popup.isshown():
-                self._popup.movenext()
-            elif not self._charbuf.isempty():
-                # キャラクタバッファ編集中
-                pass # 何もしない 
-            elif not self._wordbuf.isempty():
+            if not self._wordbuf.isempty():
                 # ワードバッファ編集中
                 s = self._draincharacters()
                 self._wordbuf.append(s)
                 self._wordbuf.complete()
+                self._charbuf.reset()
             else:
                 context.write(c)
 
@@ -474,11 +464,7 @@ class InputHandler(tff.DefaultHandler,
                 context.write(c)
 
         elif c == 0x20: # SP 
-            if self._inputmode.ishan():
-                context.write(c)
-            elif self._inputmode.iszen():
-                context.write(eisuudb.to_zenkaku_cp(c))
-            elif not self._wordbuf.isempty():
+            if not self._wordbuf.isempty():
                 s = self._draincharacters()
                 self._wordbuf.append(s)
                 if self._wordbuf.length() > 0:
@@ -515,10 +501,12 @@ class InputHandler(tff.DefaultHandler,
             # ひらがな変換モード・カタカナ変換モード
             charbuf = self._charbuf
             wordbuf = self._wordbuf
+            inputmode = self._inputmode
+            popup = self._popup
 
             if c == 0x2f and (charbuf.isempty() or charbuf.getbuffer() != u'z'): # /
                 if not self._iscooking():
-                    self._inputmode.startabbrev()
+                    inputmode.startabbrev()
                     wordbuf.reset()
                     wordbuf.startedit()
             elif c == 0x71: # q
@@ -527,30 +515,26 @@ class InputHandler(tff.DefaultHandler,
                     wordbuf.append(s)
                     word = wordbuf.get()
                     self._reset()
-                    if self._inputmode.ishira():
+                    if inputmode.ishira():
                         s = kanadb.to_kata(word)
                     else:
                         s = kanadb.to_hira(word)
                     context.putu(s)
                 else:
                     charbuf.toggle()
-                    if self._inputmode.ishira():
-                        self._inputmode.startkata()
-                    elif self._inputmode.iskata():
-                        self._inputmode.starthira()
+                    if inputmode.ishira():
+                        inputmode.startkata()
+                    elif inputmode.iskata():
+                        inputmode.starthira()
                     self._reset()
             elif c == 0x6c and charbuf.getbuffer() != "z": # l
-                if self._popup.isshown():
+                if popup.isshown():
                     self._settle(context)
-                self._inputmode.reset()
+                inputmode.reset()
                 self._reset()
-            elif c == 0x3c: # <
-                self._clauses.shift_left()
-            elif c == 0x3e: # >
-                self._clauses.shift_right()
             elif c == 0x2c or c == 0x2e or c == 0x3a or c == 0x3b or c == 0x5b or c == 0x5d: # , . ; : [ ]
                 charbuf.reset()
-                if self._popup.isempty():
+                if popup.isempty():
                     if not wordbuf.isempty():
                         self._convert_tango()
                         charbuf.put(c)
@@ -570,52 +554,46 @@ class InputHandler(tff.DefaultHandler,
                     else:
                         context.write(c)
 
-            elif c == 0x2d or (0x61 <= c and c <= 0x7a) or charbuf.getbuffer() == "z": # _, a - z, z*
+            elif (0x61 <= c and c <= 0x7a) or charbuf.getbuffer() == "z": # _, a - z, z*
                 if charbuf.put(c):
-                    if charbuf.isfinal():
-                        if wordbuf.isempty():
-                            s = charbuf.drain()
-                            context.putu(s)
-                        elif wordbuf.has_okuri():
-                            # 送り仮名変換
-                            self._convert_okuri()
-                        else:
-                            s = charbuf.drain()
-                            wordbuf.append(s)
-                            self._complete()
-                else:
-                    charbuf.reset()
-                    charbuf.put(c)
-
-            elif c == 0x4c: # L
-                if self._iscooking():
-                    self._settle(context)
-                self._inputmode.startzen()
-                self._reset()
+                    if wordbuf.isempty():
+                        s = charbuf.drain()
+                        context.putu(s)
+                    elif wordbuf.has_okuri():
+                        # 送り仮名変換
+                        self._convert_okuri()
+                    else:
+                        s = charbuf.drain()
+                        wordbuf.append(s)
+                        self._complete()
 
             elif 0x41 <= c and c <= 0x5a: # A - Z
                 # 大文字のとき
                 # 先行する入力があるか
-                if wordbuf.isempty() or len(wordbuf.get()) == 0:
-                    charbuf.put(c) # 文字バッファに溜める
+                if wordbuf.isempty() or not wordbuf.get():
                     wordbuf.startedit()
-                    if charbuf.isfinal():
+                    if charbuf.put(c): # 文字バッファに溜める
                         s = charbuf.drain()
                         wordbuf.append(s)
                         self._complete()
                 else:
-                    charbuf.put(c) # 文字バッファに溜める
-                    if charbuf.hasnext():
-                        s = charbuf.getbuffer()
-                        wordbuf.append(s)
-                        charbuf.reset()
-                        charbuf.put(c)
-                    # 先行する入力があるとき、送り仮名マーク('*')をつける
-                    wordbuf.startokuri()
-                    # キャラクタバッファが終了状態か 
-                    if charbuf.isfinal():
-                        # 送り仮名変換
-                        self._convert_okuri()
+                    if not charbuf.put(c) and c == 0x4c: # L
+                        if self._iscooking():
+                            self._settle(context)
+                        self._inputmode.startzen()
+                        self._reset()
+                    else: 
+                        if charbuf.hasnext():
+                            s = charbuf.getbuffer()
+                            wordbuf.append(s)
+                            charbuf.reset()
+                            charbuf.put(c)
+                        # 先行する入力があるとき、送り仮名マーク('*')をつける
+                        wordbuf.startokuri()
+                        # キャラクタバッファが終了状態か 
+                        if charbuf.isfinal():
+                            # 送り仮名変換
+                            self._convert_okuri()
             else:
                 if self._iscooking():
                     self._settle(context)
@@ -628,7 +606,7 @@ class InputHandler(tff.DefaultHandler,
         return True # handled
 
     def _handle_amb_report(self, context, parameter, intermediate, final):
-        if len(intermediate) == 0:
+        if not intermediate:
             if final == 0x57: # W
                 if parameter == [0x32]:
                     self._termprop.set_amb_as_double()                    
@@ -657,7 +635,7 @@ class InputHandler(tff.DefaultHandler,
 
     def _handle_csi_cursor(self, context, parameter, intermediate, final):
         if self._popup.isshown():
-            if len(intermediate) == 0:
+            if not intermediate:
                 if final == 0x43: # C
                     self._movenextclause()
                     return True
@@ -680,8 +658,6 @@ class InputHandler(tff.DefaultHandler,
     def handle_csi(self, context, parameter, intermediate, final):
         if not self._inputmode.getenabled():
             return False
-        #if self._iframe and self._iframe.handle_csi(context, parameter, intermediate, final):
-        #    return True
         if self._popup.handle_csi(context, parameter, intermediate, final):
             return True
         if self._handle_csi_cursor(context, parameter, intermediate, final):
@@ -767,11 +743,11 @@ class InputHandler(tff.DefaultHandler,
         cur_width = 0
         cur_width += termprop.wcswidth(word) 
         cur_width += termprop.wcswidth(char) 
-        if len(char) > 0 and len(word) == 0 and self._anti_optimization_flag:
+        if char and not word and self._anti_optimization_flag:
             if y < screen.height - 1:
                 screen.copyline(output, 0, y, screen.width)
             self._anti_optimization_flag = False
-        elif len(char) == 1 and len(word) == 0:
+        elif len(char) == 1 and not word:
             self._anti_optimization_flag = True
         if self._prev_length > cur_width:
             length = self._prev_length - cur_width
@@ -837,7 +813,7 @@ class InputHandler(tff.DefaultHandler,
             self._draw_nothing(output)
         self._refleshtitle()
         buf = output.getvalue()
-        if len(buf) > 0:
+        if buf:
             context.puts(buf)
             output.truncate(0)
 

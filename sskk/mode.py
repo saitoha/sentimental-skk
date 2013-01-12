@@ -67,6 +67,8 @@ _SKK_MODE_MARK_MAP = {
     _SKK_SUBMODE_ABBREV    : u'Aあ',
     }
 
+import eisuudb
+
 class InputMode(IModeListenerImpl):
     '''
     モードの管理をします。
@@ -86,6 +88,29 @@ class InputMode(IModeListenerImpl):
                 else:
                     self._tty.write("\x1b[%d~" % (8850 + self.__value))
         title.setmode(_SKK_MODE_MARK_MAP[min(mode, 4)])
+
+    def handle_char(self, context, c):
+
+        if c == 0x0a: # LF C-j
+            self.endabbrev()
+            if self.ishan():
+                self.starthira()
+                return True
+            elif self.iszen():
+                self.starthira()
+                return True
+
+        elif self.ishan():
+            # 半角直接入力
+            context.write(c)
+            return True
+
+        elif self.iszen():
+            # 全角直接入力
+            context.write(eisuudb.to_zenkaku_cp(c))
+            return True
+
+        return False
 
     def isdirect(self):
         value = self.__value
