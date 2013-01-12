@@ -24,6 +24,8 @@ import sskk.romanrule as romanrule
 import sskk.kanadb as kanadb
 import sskk.eisuudb as eisuudb
 import sskk.dictionary as dictionary
+import sskk.context as context
+import sskk.word as word
 
 import doctest
 dirty = False
@@ -33,7 +35,10 @@ for m in [mode,
           romanrule,
           kanadb,
           eisuudb,
-          dictionary]:
+          dictionary,
+          context,
+          word,
+          ]:
     failure_count, test_count = doctest.testmod(m)
     if failure_count > 0:
         dirty = True

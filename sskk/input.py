@@ -155,6 +155,8 @@ class IListboxListenerImpl(IListboxListener):
         self._wordbuf.append(text + self._okuri)
         self._complete()
 
+    def onrepeat(self, popup):
+        return False
 
 class IInnerFrameListenerImpl(IInnerFrameListener):
 
@@ -273,8 +275,6 @@ class InputHandler(tff.DefaultHandler,
         buf = buf[0]
         key = self._wordbuf.get()
 
-        self._okuri = u""
-
         if self._inputmode.iskata():
             key = kanadb.to_hira(key)
         result = dictionary.getokuri(key + buf)
@@ -290,7 +290,7 @@ class InputHandler(tff.DefaultHandler,
                 clauses.add(dictionary.Clause(key, [key]))
         self._clauses = clauses
 
-        self._okuri += okuri 
+        self._okuri = okuri 
 
         self._popup.assign(clauses.getcandidates())
         self._wordbuf.startedit() 
@@ -330,7 +330,7 @@ class InputHandler(tff.DefaultHandler,
             self._convert_tango()
 
     def _complete(self):
-        completions = self._wordbuf.getcompletions()
+        completions = self._wordbuf.getcompletions(self._charbuf.complete())
         if completions:
             self._popup.assign(completions, -1)
         else:
@@ -559,6 +559,7 @@ class InputHandler(tff.DefaultHandler,
                     if wordbuf.isempty():
                         s = charbuf.drain()
                         context.putu(s)
+                        self._complete()
                     elif wordbuf.has_okuri():
                         # 送り仮名変換
                         self._convert_okuri()
@@ -572,7 +573,8 @@ class InputHandler(tff.DefaultHandler,
                 # 先行する入力があるか
                 if wordbuf.isempty() or not wordbuf.get():
                     wordbuf.startedit()
-                    if charbuf.put(c): # 文字バッファに溜める
+                    charbuf.put(c)
+                    if charbuf.isfinal(): # 文字バッファに溜める
                         s = charbuf.drain()
                         wordbuf.append(s)
                         self._complete()

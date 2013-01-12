@@ -19,6 +19,7 @@
 # ***** END LICENSE BLOCK *****
 
 import os, thread, inspect, re
+import romanrule
 
 rcdir = os.path.join(os.getenv("HOME"), ".sskk")
 dictdir = os.path.join(rcdir, "dict")
@@ -42,6 +43,12 @@ def _register(key, value):
 
 _control_chars = re.compile("[\x00-\x1f\x7f\x80-\x9f\xff]")
 def _escape(s):
+    """
+    >>> _escape("abc")
+    'abc'
+    >>> _escape("lda\\x1baa\x10laa")
+    'ldaaalaa'
+    """
     return _control_chars.sub("", s)
 
 def _decode_line(line):
@@ -76,12 +83,11 @@ def _get_fallback_dict_path():
 
 def _load():
     dict_list = os.listdir(dictdir)
-    if len(dict_list) == 0:
+    if not dict_list:
         _load_dict(_get_fallback_dict_path())
     else:
         for f in dict_list:
             _load_dict(os.path.join(dictdir, f))
-
 
 def gettango(key):
     if _tangodb.has_key(key):
@@ -93,15 +99,15 @@ def getokuri(key):
         return _okuridb[key]
     return None
 
-def getcomp(key):
-    current = _compdb
-    for c in key:
-        if current.has_key(c):
-            current = current[c]
+def getcomp(key, comp):
+    
+    _current = _compdb
+    for _c in key:
+        if _current.has_key(_c):
+            _current = _current[_c]
         else:
             return None
-    candidate = []
-    generators = []
+
     def expand_all(key, current, candidate):
         for c, value in current:
             if value == {}:
@@ -109,30 +115,46 @@ def getcomp(key):
             else:
                 expand_all(key + c, (x for x in value.items()), candidate) 
 
-    def expand_sparse(key, current, candidate):
+    def expand_sparse(key, current, candidate, generators):
         for c, value in current:
             if value == {}:
                 candidate.append(key + c)
                 return True
-            if expand_sparse(key + c, (x for x in value.items()), candidate):
-                generators.append((key, current))
+            if expand_sparse(key + c, (x for x in value.items()), candidate, generators):
+                generators.append((key + c, current))
                 return True
         return False
 
-    for c in current:
-        expand_sparse(c, (x for x in current[c].items()), candidate)
-        if len(candidate) > 20:
-            break
-    else:
-        if len(candidate) < 10:
-            for item in generators:
-                key, cur = item
-                expand_all(c, cur, candidate)
+    def impl(key, current, candidate):
+        generators = []
+        for c in current:
+            expand_sparse(key + c, (x for x in current[c].items()), candidate, generators)
+            if len(candidate) > 10:
+                break
+        else:
             if len(candidate) < 10:
-                for c in current:
-                    if current[c] == {}:
-                        candidate.append(c)
+                for item in generators:
+                    k, v = item
+                    expand_all(k, v, candidate)
+                if len(candidate) < 10:
+                    for c in current:
+                        if current[c] == {}:
+                            candidate.append(key + c)
+                if current == {}:
+                    candidate.append(key)
 
+    candidate = []
+    if not comp:
+        impl(u"", _current, candidate)
+    else:
+        for _key in comp:
+            if len(_key) == 1:
+                if _current.has_key(_key):
+                    impl(_key, _current[_key], candidate)
+            elif len(_key) == 2:
+                if _current.has_key(_key[0]):
+                    if _current[_key[0]].has_key(_key[1]):
+                        impl(_key, _current[_key[0]][_key[1]], candidate)
     return candidate 
 
 

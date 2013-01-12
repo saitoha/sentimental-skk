@@ -71,6 +71,25 @@ class CharacterContext:
             return self.context[key]
         return u""
 
+    def complete(self):
+        """
+        >>> context = CharacterContext()
+        >>> context.put(ord("k"))
+        True
+        >>> print context.complete()
+        """
+        if not self.getbuffer():
+            return None
+        def expand(context):
+            for key, value in context.items():
+                if key == romanrule.SKK_ROMAN_VALUE:
+                    yield value 
+                elif key > 0x1f and key != 0x6e:
+                    for key, value in value.items():
+                        if key == romanrule.SKK_ROMAN_VALUE:
+                            yield value 
+        return list(set([c for c in expand(self.context)]))
+
     def put(self, c):
         if self.context.has_key(c):
             self.context = self.context[c]

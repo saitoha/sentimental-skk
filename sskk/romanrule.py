@@ -114,13 +114,16 @@ def _maketree(rule):
     tree[SKK_ROMAN_PREV] = tree 
     return tree
 
+_hira_tree = _maketree(_hira_rule)
+_kata_tree = _maketree(_kata_rule)
+
 def makehiratree():
     ''' make hirakana input state tree
     >>> t = makekatatree() 
     >>> t[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u30ad\u30e3'
     '''
-    return _maketree(_hira_rule)
+    return _hira_tree
 
 def makekatatree():
     ''' make katakana input state tree
@@ -128,7 +131,7 @@ def makekatatree():
     >>> t[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE] 
     u'\u304d\u3083'
     '''
-    return _maketree(_kata_rule)
+    return _kata_tree
 
 def test():
     import doctest
