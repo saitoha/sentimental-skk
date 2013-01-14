@@ -61,7 +61,7 @@ class WordBuffer():
             self.__comp = dictionary.getcomp(key, None)
 
     def getcompletions(self, finals=None):
-        if self.__main:
+        if self.__main or finals:
             key = kanadb.to_hira(self.__main)
             completions = dictionary.getcomp(key, finals)
             if completions:

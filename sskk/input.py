@@ -33,7 +33,7 @@ import logging, traceback
 
 try:
     from cStringIO import StringIO
-except:
+except ImportError:
     from StringIO import StringIO
 
 # マーク
@@ -373,6 +373,9 @@ class InputHandler(tff.DefaultHandler,
         if self._inputmode.handle_char(context, c):
             return True
 
+        if self._charbuf.handle_char(context, c):
+            return True
+
         if c == 0x0a: # LF C-j
             if self._iscooking():
                 self._settle(context)
@@ -392,8 +395,11 @@ class InputHandler(tff.DefaultHandler,
         elif c == 0x08 or c == 0x7f: # BS or DEL
             if not self._charbuf.isempty():
                 self._charbuf.back()
+                if not self._charbuf.getbuffer():
+                    self._popup.close()
+                else:
+                    self._complete()
             elif not self._wordbuf.isempty():
-                self._inputmode.endabbrev()
                 self._wordbuf.back()
                 if not self._wordbuf.getbuffer():
                     self._popup.close()
@@ -409,6 +415,7 @@ class InputHandler(tff.DefaultHandler,
                 self._wordbuf.append(s)
                 self._wordbuf.complete()
                 self._charbuf.reset()
+                self._popup.movenext()
             else:
                 context.write(c)
 
@@ -486,12 +493,12 @@ class InputHandler(tff.DefaultHandler,
             if not self._movenextclause():
                 context.write(c)
 
-        elif c < 0x20 or 0x7f < c:
-            if self._inputmode.isdirect():
-                context.write(c)
-            else:
-                self._reset()
-                context.write(c)
+        elif c < 0x20:
+            self._reset()
+            context.write(c)
+
+        elif c > 0x7f:
+            self._wordbuf.append(unichr(c))
 
         elif self._inputmode.isabbrev():
             # abbrev mode 
@@ -544,7 +551,6 @@ class InputHandler(tff.DefaultHandler,
                         s = charbuf.drain()
                         context.write(ord(s))
                     else:
-                        s = unichr(c)
                         context.write(c)
                 else:
                     self._settle(context)
@@ -567,7 +573,7 @@ class InputHandler(tff.DefaultHandler,
                         s = charbuf.drain()
                         wordbuf.append(s)
                         self._complete()
-
+ 
             elif 0x41 <= c and c <= 0x5a: # A - Z
                 # 大文字のとき
                 # 先行する入力があるか
@@ -578,8 +584,13 @@ class InputHandler(tff.DefaultHandler,
                         s = charbuf.drain()
                         wordbuf.append(s)
                         self._complete()
+                    elif c == 0x4c: # L
+                        if self._iscooking():
+                            self._settle(context)
+                        self._inputmode.startzen()
+                        self._reset()
                 else:
-                    if not charbuf.put(c) and c == 0x4c: # L
+                    if not charbuf.put(c) and not charbuf.isfinal() and c == 0x4c: # L
                         if self._iscooking():
                             self._settle(context)
                         self._inputmode.startzen()
@@ -692,6 +703,10 @@ class InputHandler(tff.DefaultHandler,
                 self._inputmode.reset()
                 self._reset()
             return False
+        if not self._wordbuf.isempty():
+            return True
+        if not self._charbuf.isempty():
+            return True
         return False
 
     def _draw_clauses_with_popup(self, output):

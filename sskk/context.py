@@ -104,6 +104,8 @@ class CharacterContext:
     def back(self):
         self.context = self.context[romanrule.SKK_ROMAN_PREV]
 
+    def handle_char(self, context, c):
+        return False
 
 def test():
     import doctest

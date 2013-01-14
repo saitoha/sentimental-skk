@@ -175,7 +175,6 @@ along with this program. If not, see http://www.gnu.org/licenses/.
 
     session = tff.Session(tty)
 
-
     try:
         inputmode = InputMode(tty)
         mode_handler = cano.ModeHandler(inputmode, termprop)
@@ -196,7 +195,11 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                       stdout=sys.stdout,
                       inputhandler=inputhandler,
                       outputhandler=multiplexer)
+    except:
+        logging.exception("Aborted by exception.")
+        print "sskk aborted by an uncaught exception. see $HOME/.sskk/log/log.txt."
     finally: 
+        tty.restore_term()
         output.flush()
         output.write(u"\x1b[23;0t")
        
