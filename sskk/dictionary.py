@@ -20,6 +20,7 @@
 
 import os, thread, inspect, re
 import romanrule
+import logging
 
 rcdir = os.path.join(os.getenv("HOME"), ".sskk")
 dictdir = os.path.join(rcdir, "dict")
@@ -60,31 +61,49 @@ def _decode_line(line):
         return unicode(line, [u'eucjp', u'utf-8]'][_encoding])
 
 def _load_dict(filename):
-    p = re.compile('^(.+?)([a-z])? /(.+)/')
+    p = re.compile('^(?:([0-9a-z.])|(.+?)([a-z])?) /(.+)/')
     
-    for line in open(filename):
-        if line[1] == ';':
-            continue
-        line = _decode_line(line)
-        g = p.match(line)
-        key = g.group(1)
-        okuri = g.group(2)
-        value = g.group(3)
-        if okuri:
-            _okuridb[key + okuri] = value.split("/")
-        else:
-            _register(key, value)
-            _tangodb[key] = value.split("/")
+    try:
+        for line in open(filename):
+            if len(line) < 4 or line[1] == ';':
+                continue
+            line = _decode_line(line)
+            g = p.match(line)
+            alphakey = g.group(1)
+            key = g.group(2)
+            okuri = g.group(3)
+            value = g.group(4)
+            if key:
+                if okuri:
+                    key += okuri
+                else:
+                    _register(key, value)
+                if _tangodb.has_key(key):
+                    _tangodb[key] += value.split("/")
+                else:
+                    _tangodb[key] = value.split("/")
+            else:
+                if _tangodb.has_key(alphakey):
+                    _tangodb[alphakey] += value.split("/")
+                else:
+                    _tangodb[alphakey] = value.split("/")
+    except:
+        logging.exception("loading process failed. filename: %s" % filename)
 
-def _get_fallback_dict_path():
+def _get_fallback_dict_path(name):
     filename = inspect.getfile(inspect.currentframe())
     dirpath = os.path.abspath(os.path.dirname(inspect.getfile(inspect.currentframe())))
-    return os.path.join(dirpath, 'SKK-JISYO.L')
+    return os.path.join(dirpath, name)
 
 def _load():
     dict_list = os.listdir(dictdir)
     if not dict_list:
-        _load_dict(_get_fallback_dict_path())
+        _load_dict(_get_fallback_dict_path('SKK-JISYO.L'))
+        _load_dict(_get_fallback_dict_path('SKK-JISYO.JIS2'))
+        _load_dict(_get_fallback_dict_path('SKK-JISYO.assoc'))
+        _load_dict(_get_fallback_dict_path('SKK-JISYO.edict'))
+        _load_dict(_get_fallback_dict_path('SKK-JISYO.geo'))
+        _load_dict(_get_fallback_dict_path('SKK-JISYO.jinmei'))
     else:
         for f in dict_list:
             _load_dict(os.path.join(dictdir, f))
@@ -95,8 +114,8 @@ def gettango(key):
     return None
 
 def getokuri(key):
-    if _okuridb.has_key(key):
-        return _okuridb[key]
+    if _tangodb.has_key(key):
+        return _tangodb[key]
     return None
 
 def getcomp(key, comp):
@@ -308,6 +327,7 @@ def get_from_google_cgi_api(key):
     return clauses
 
 thread.start_new_thread(_load, ())
+#_load()
 
 def test():
     import doctest
