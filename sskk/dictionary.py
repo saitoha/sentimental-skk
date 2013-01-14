@@ -61,7 +61,7 @@ def _decode_line(line):
         return unicode(line, [u'eucjp', u'utf-8]'][_encoding])
 
 def _load_dict(filename):
-    p = re.compile('^(?:([0-9a-z.])|(.+?)([a-z])?) /(.+)/')
+    p = re.compile('^(?:([0-9a-z.]+?)|(.+?)([a-z])?) /(.+)/')
     
     try:
         for line in open(filename):
@@ -83,6 +83,7 @@ def _load_dict(filename):
                 else:
                     _tangodb[key] = value.split("/")
             else:
+                _register(alphakey, value)
                 if _tangodb.has_key(alphakey):
                     _tangodb[alphakey] += value.split("/")
                 else:
@@ -326,8 +327,8 @@ def get_from_google_cgi_api(key):
         return None 
     return clauses
 
-thread.start_new_thread(_load, ())
-#_load()
+#thread.start_new_thread(_load, ())
+_load()
 
 def test():
     import doctest

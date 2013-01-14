@@ -76,7 +76,6 @@ class CharacterContext:
         >>> context = CharacterContext()
         >>> context.put(ord("k"))
         True
-        >>> print context.complete()
         """
         if not self.getbuffer():
             return None
