@@ -1,4 +1,4 @@
 include COPYING
 include README.rst
-include sskk/SKK-JISYO.L
+include sskk/SKK-JISYO.*
 include *.py
