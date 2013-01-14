@@ -162,10 +162,8 @@ How It Works
 
 Dependency
 ----------
- - Masahiko Sato et al./SKK Development Team's SKK-JISYO.L
-
-   This package includes the large SKK dictionary, SKK-JISYO.L.
-   http://openlab.jp/skk/skk/dic/SKK-JISYO.L
+ - Masahiko Sato et al./SKK Development Team's SKK dictionaries 
+   http://openlab.jp/skk/skk/dic
 
  - wcwidth.py
    https://svn.wso2.org/repos/wso2/carbon/platform/trunk/dependencies/cassandra/pylib/cqlshlib/wcwidth.py
