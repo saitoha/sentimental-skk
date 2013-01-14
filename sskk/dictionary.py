@@ -327,8 +327,8 @@ def get_from_google_cgi_api(key):
         return None 
     return clauses
 
-#thread.start_new_thread(_load, ())
-_load()
+thread.start_new_thread(_load, ())
+#_load()
 
 def test():
     import doctest
