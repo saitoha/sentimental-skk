@@ -1,4 +1,9 @@
 include COPYING
 include README.rst
-include sskk/SKK-JISYO.*
+include sskk/SKK-JISYO.L
+include sskk/SKK-JISYO.JIS2
+include sskk/SKK-JISYO.assoc
+include sskk/SKK-JISYO.edict
+include sskk/SKK-JISYO.geo
+include sskk/SKK-JISYO.jinmei
 include *.py
