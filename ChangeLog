@@ -1,14 +1,20 @@
+2013-01-16 Hayaki Saito <user@zuse.jp>
+
+    * Version 0.0.59
+    * VTEの誤判定を修正
+    * 動的補完のバグを修正 
+
+2012-12-28 Hayaki Saito <user@zuse.jp>
+
+    * 動的補完つきの初リリース 
+    * abbrevモードでのC-q(全角入力)を実装
+
 
 2012-11-26 Hayaki Saito <user@zuse.jp>
 
     * Use TFF 0.1.10
     * Fix mouse behavior 
     * load user dictionary encoded in EUC-JP or UTF-8, if $HOME/.sskk/dict/* exists.
-
-2012-12-28 Hayaki Saito <user@zuse.jp>
-
-    * 動的補完つきの初リリース 
-    * abbrevモードでのC-q(全角入力)を実装
 
 
 

@@ -50,7 +50,7 @@ print "succeeded."
 setup(name                  = 'sentimental-skk',
       version               = __version__,
       description           = '三 ┏( ^o^)┛ ＜ Japanese Input Method SKK (Simple Kana to Kanji conversion) on your terminal',
-      long_description      = open(dirpath + "/README.rst").read(),
+      long_description      = open(os.path.join(dirpath, "README.rst")).read(),
       py_modules            = ['sskk'],
       eager_resources       = ['sskk/SKK-JISYO.L',
                                'sskk/SKK-JISYO.assoc',

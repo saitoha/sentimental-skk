@@ -159,7 +159,7 @@ def getcomp(key, comp):
                 if len(candidate) < 10:
                     for c in current:
                         if current[c] == {}:
-                            candidate.append(key + c)
+                            candidate.append(c)
                 if current == {}:
                     candidate.append(key)
 
