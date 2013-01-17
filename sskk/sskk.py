@@ -186,10 +186,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                                     mousemode=mode_handler,
                                     inputmode=inputmode)
 
-        outputhandler = OutputHandler(use_title=use_title,
-                                      mode_handler=mode_handler)
-
-        multiplexer = tff.FilterMultiplexer(canossa, outputhandler)
+        multiplexer = tff.FilterMultiplexer(canossa, tff.DefaultHandler())
         session.start(termenc=termenc,
                       stdin=sys.stdin,
                       stdout=sys.stdout,
