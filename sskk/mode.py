@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # ***** BEGIN LICENSE BLOCK *****
-# Copyright (C) 2012  Hayaki Saito <user@zuse.jp>
+# Copyright (C) 2012-2013  Hayaki Saito <user@zuse.jp>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -73,20 +73,20 @@ class InputMode(IModeListenerImpl):
     '''
     モードの管理をします。
     '''
-    __value = -1
+    _value = -1
 
     def __init__(self, tty):
         self._tty = tty 
         self.__setmode(_SKK_MODE_HANKAKU)
 
     def __setmode(self, mode):
-        if self.__value != mode:
-            self.__value = mode
+        if self._value != mode:
+            self._value = mode
             if self.hasevent():
                 if self.isabbrev():
                     self._tty.write("\x1b[8854~")
                 else:
-                    self._tty.write("\x1b[%d~" % (8850 + self.__value))
+                    self._tty.write("\x1b[%d~" % (8850 + self._value))
         title.setmode(_SKK_MODE_MARK_MAP[min(mode, 4)])
 
     def handle_char(self, context, c):
@@ -113,7 +113,7 @@ class InputMode(IModeListenerImpl):
         return False
 
     def isdirect(self):
-        value = self.__value
+        value = self._value
         return value == _SKK_MODE_HANKAKU or value == _SKK_MODE_ZENKAKU
     
     def reset(self):
@@ -122,11 +122,11 @@ class InputMode(IModeListenerImpl):
     def startabbrev(self):
         ''' 英数サブモードを開始 '''
         if self.getenabled():
-            self.__setmode(self.__value | _SKK_SUBMODE_ABBREV)
+            self.__setmode(self._value | _SKK_SUBMODE_ABBREV)
 
     def endabbrev(self):
         ''' 英数サブモードを終了 '''
-        self.__setmode(self.__value & ~_SKK_SUBMODE_ABBREV)
+        self.__setmode(self._value & ~_SKK_SUBMODE_ABBREV)
 
     def startzen(self):
         ''' 全角英数モードを開始 '''
@@ -145,20 +145,20 @@ class InputMode(IModeListenerImpl):
 
     def ishira(self):
         ''' ひらがなモードかどうか '''
-        return self.__value == _SKK_MODE_HIRAGANA
+        return self._value == _SKK_MODE_HIRAGANA
 
     def iskata(self):
         ''' カタカナモードかどうか '''
-        return self.__value == _SKK_MODE_KATAKANA
+        return self._value == _SKK_MODE_KATAKANA
 
     def isabbrev(self):
-        return self.__value & _SKK_SUBMODE_ABBREV != 0
+        return self._value & _SKK_SUBMODE_ABBREV != 0
 
     def iszen(self):
-        return self.__value == _SKK_MODE_ZENKAKU
+        return self._value == _SKK_MODE_ZENKAKU
 
     def ishan(self):
-        return self.__value == _SKK_MODE_HANKAKU
+        return self._value == _SKK_MODE_HANKAKU
 
 def test():
     import doctest
