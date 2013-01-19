@@ -612,6 +612,12 @@ class InputHandler(tff.DefaultHandler,
                     else:
                         self._complete()
                 else:
+                    s = charbuf.getbuffer()
+                    if s == u'n':
+                        charbuf.put(0x6e) # n
+                        s = charbuf.drain()
+                        wordbuf.append(s)
+                        charbuf.reset()
                     if not charbuf.put(c) and not charbuf.isfinal() and c == 0x4c: # L
                         if self._iscooking():
                             self._settle(context)
