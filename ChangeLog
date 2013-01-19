@@ -1,3 +1,8 @@
+2013-01-18 Hayaki Saito <user@zuse.jp>
+
+    * Version 0.0.60
+    * ローマ字ルールを修正：panYa -> ぱん*や 
+
 2013-01-16 Hayaki Saito <user@zuse.jp>
 
     * Version 0.0.59
