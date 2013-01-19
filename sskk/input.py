@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # ***** BEGIN LICENSE BLOCK *****
-# Copyright (C) 2012  Hayaki Saito <user@zuse.jp>
+# Copyright (C) 2012-2013  Hayaki Saito <user@zuse.jp>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,10 +23,12 @@ import tff
 
 import title
 import kanadb, eisuudb, dictionary
-import context, word
+import word
 
+from charbuf import CharacterContext
 from canossa import Listbox, IListboxListener
 from canossa import InnerFrame, IInnerFrameListener
+from canossa import IScreenListener
 
 import codecs, re
 import logging, traceback
@@ -45,6 +47,20 @@ rcdir = os.path.join(os.getenv("HOME"), ".sskk")
 histdir = os.path.join(rcdir, "history")
 if not os.path.exists(histdir):
     os.makedirs(histdir)
+
+class IScreenListenerImpl(IScreenListener):
+
+    def ontitlechanged(self, s):
+        title.setoriginal(s)
+        self._refleshtitle()
+        return None 
+
+    def onmodeenabled(self, n):
+        return False
+
+    def onmodedisabled(self, n):
+        return False
+
 
 class TitleTrait():
 
@@ -170,6 +186,7 @@ class IInnerFrameListenerImpl(IInnerFrameListener):
 # InputHandler
 #
 class InputHandler(tff.DefaultHandler, 
+                   IScreenListenerImpl,
                    IListboxListenerImpl,
                    IInnerFrameListenerImpl,
                    TitleTrait):
@@ -190,7 +207,7 @@ class InputHandler(tff.DefaultHandler,
         self._screen = screen
         self._output = codecs.getwriter(termenc)(StringIO(), errors='ignore')
         self._termenc = termenc
-        self._charbuf = context.CharacterContext()
+        self._charbuf = CharacterContext()
         self._inputmode = inputmode
         self._wordbuf = word.WordBuffer(termprop)
         self._listbox = Listbox(self, screen, termprop, mousemode, self._output)
@@ -200,6 +217,7 @@ class InputHandler(tff.DefaultHandler,
         self._stack = []
         self._canossa2 = canossa2
         self._session = session
+        self._screen.setlistener(self)
         # detects libvte + Ambiguous=narrow environment
         if not termprop.is_cjk and termprop.is_vte():
             pad = u" "

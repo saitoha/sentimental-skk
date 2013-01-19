@@ -19,24 +19,22 @@ except:
 
 import sskk.mode as mode
 import sskk.input as input
-import sskk.output as output
 import sskk.romanrule as romanrule
 import sskk.kanadb as kanadb
 import sskk.eisuudb as eisuudb
 import sskk.dictionary as dictionary
-import sskk.context as context
+import sskk.charbuf as charbuf
 import sskk.word as word
 
 import doctest
 dirty = False
 for m in [mode,
           input,
-          output,
           romanrule,
           kanadb,
           eisuudb,
           dictionary,
-          context,
+          charbuf,
           word,
           ]:
     failure_count, test_count = doctest.testmod(m)
@@ -49,7 +47,7 @@ print "succeeded."
 
 setup(name                  = 'sentimental-skk',
       version               = __version__,
-      description           = '三 ┏( ^o^)┛ ＜ Japanese Input Method SKK (Simple Kana to Kanji conversion) on your terminal',
+      description           = '三 ──( ^o^)─ ＜ Japanese Input Method SKK (Simple Kana to Kanji conversion) on your terminal',
       long_description      = open(os.path.join(dirpath, "README.rst")).read(),
       py_modules            = ['sskk'],
       eager_resources       = ['sskk/SKK-JISYO.L',

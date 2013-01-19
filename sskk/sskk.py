@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # ***** BEGIN LICENSE BLOCK *****
-# Copyright (C) 2012  Hayaki Saito <user@zuse.jp>
+# Copyright (C) 2012-2013  Hayaki Saito <user@zuse.jp>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,19 +45,15 @@ def main():
                       action="store_true", default=False,
                       help='use title bar manipulation feature')
 
-#    parser.add_option('-m', '--use-mouse', dest='mouse',
-#                      action="store_true", default=False,
-#                      help='use mouse selection feature')
-
     (options, args) = parser.parse_args()
 
     if options.version:
         print '''
 
-      三 ┗( ^o^)┓  三 ┏( ^o^)┛
+      三o-( ^o^)-o-( ^o^)-o-( ^o^)-o
 
 sentimental-skk %s 
-Copyright (C) 2012 Hayaki Saito <user@zuse.jp>. 
+Copyright (C) 2012-2013 Hayaki Saito <user@zuse.jp>. 
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -76,7 +72,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
 
     if os.getenv("__SSKK_VERTION"):
         print "\n＼SSKK process is already running！！！／\n"
-        print "       三 ┗( ^o^)┓  三 ┏( ^o^)┛\n"
+        print "       三 -( ^o^)-  三 -( ^o^)-\n"
         return
 
     # retrive starting command
@@ -124,7 +120,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     output.write(u"\x1b[5;5H")
     output.write(u"      ＼ Sentimental-SKK %s ／\n" % __init__.__version__)
     output.write(u"\x1b[7;5H")
-    output.write(u"       三 ┗( ^o^)┓  三 ┏( ^o^)┛\n")
+    output.write(u"       三( ^o^) 三( ^o^) 三( ^o^)\n")
     output.write(u"\x1b[1;1H")
 
     from termprop import Termprop
@@ -167,7 +163,6 @@ along with this program. If not, see http://www.gnu.org/licenses/.
 
     from mode import InputMode
     from input import InputHandler
-    from output import OutputHandler
 
     output.flush()
     output.write(u"\x1b[23;0t")
@@ -197,6 +192,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         print "sskk aborted by an uncaught exception. see $HOME/.sskk/log/log.txt."
     finally: 
         tty.restore_term()
+        output.write(u"\x1b]0;\x1b\\")
         output.flush()
         output.write(u"\x1b[23;0t")
        

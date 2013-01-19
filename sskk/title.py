@@ -57,6 +57,3 @@ def draw(output):
         output.write(u'\x1b]2;%s\x1b\\' % get())
         _dirty = False
 
-
-
-
