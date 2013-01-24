@@ -22,6 +22,8 @@ import os, thread, inspect, re
 import romanrule
 import logging
 
+_TIMEOUT = 0.8
+
 rcdir = os.path.join(os.getenv("HOME"), ".sskk")
 dictdir = os.path.join(rcdir, "dict")
 if not os.path.exists(dictdir):
@@ -233,6 +235,9 @@ class Clauses:
             word += clause.getkey()
         return word
 
+    def length(self):
+        return len(self._clauses)
+
     def getvalue(self):
         word = u""
         for clause in self._clauses:
@@ -252,10 +257,10 @@ class Clauses:
         self._index = index
 
     def movenext(self):
-        self._index = (self._index + 1) % len(self._clauses)
+        self._index = (self._index + 1) % self.length()
 
     def moveprev(self):
-        self._index = (self._index - 1) % len(self._clauses)
+        self._index = (self._index - 1) % self.length()
 
     def _retry_google(self, words):
         response = call_cgi_api(",".join(words))
@@ -303,22 +308,18 @@ def call_cgi_api(key):
         params = urllib.urlencode({'langpair' : 'ja-Hira|ja',
                                    'text' : key.encode("UTF-8")})
         url = 'http://www.google.com/transliterate?'
-        json_response = urllib2.urlopen(url, params).read()
+        json_response = urllib2.urlopen(url, params, _TIMEOUT).read()
         response = json.loads(json_response)
          
     except:
         return None 
     return response
 
-def get_from_google_cgi_api(key):
+def get_from_google_cgi_api(clauses, key):
     try:
-        params = urllib.urlencode({'langpair' : 'ja-Hira|ja',
-                                   'text' : key.encode("UTF-8")})
-        url = 'http://www.google.com/transliterate?'
-        json_response = urllib2.urlopen(url, params).read()
-        response = json.loads(json_response)
-
-        clauses = Clauses() 
+        response = call_cgi_api(key)
+        if not response:
+            return None
         for clauseinfo in response:
             key, candidates = clauseinfo
             clause = Clause(key, candidates)
