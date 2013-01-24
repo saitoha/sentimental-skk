@@ -29,6 +29,7 @@ from charbuf import CharacterContext
 from canossa import Listbox, IListboxListener
 from canossa import InnerFrame, IInnerFrameListener
 from canossa import IScreenListener
+from canossa import Cursor
 
 import codecs, re
 import logging, traceback
@@ -179,6 +180,7 @@ class IInnerFrameListenerImpl(IInnerFrameListener):
     def onclose(self, iframe, context):
         iframe.clear()
         self._iframe = None
+        self._inputhandler = None
         screen = self._screen
 
 ################################################################################
@@ -200,10 +202,10 @@ class InputHandler(tff.DefaultHandler,
     _bracket_right = _SKK_MARK_CLOSE
     _clauses = None
     _iframe = None
+    _inputhandler = None
 
     def __init__(self, session, screen, termenc, termprop,
-                 use_title, mousemode, inputmode,
-                 canossa2=None):
+                 use_title, mousemode, inputmode):
         self._screen = screen
         self._output = codecs.getwriter(termenc)(StringIO(), errors='ignore')
         self._termenc = termenc
@@ -215,7 +217,6 @@ class InputHandler(tff.DefaultHandler,
         self._mousemode = mousemode
         self.set_titlemode(use_title)
         self._stack = []
-        self._canossa2 = canossa2
         self._session = session
         self._screen.setlistener(self)
         # detects libvte + Ambiguous=narrow environment
@@ -265,14 +266,11 @@ class InputHandler(tff.DefaultHandler,
 
         self._okuri = u""
 
+        clauses = dictionary.Clauses()
         if result: 
-            clauses = dictionary.Clauses()
             clauses.add(dictionary.Clause(key, result))
-        else:
-            clauses = dictionary.get_from_google_cgi_api(key)
-            if not clauses:
-                clauses = dictionary.Clauses()
-                clauses.add(dictionary.Clause(key, [key]))
+        elif not dictionary.get_from_google_cgi_api(clauses, key):
+            clauses.add(dictionary.Clause(key, [key]))
 
         candidates = clauses.getcandidates()
         self._listbox.assign(candidates)
@@ -288,28 +286,25 @@ class InputHandler(tff.DefaultHandler,
         buf = self._charbuf.getbuffer()
         if not buf:
             return False
-        assert buf
         okuri = self._draincharacters()
+        self._okuri = okuri 
         buf = buf[0]
         key = self._wordbuf.get()
 
         if self._inputmode.iskata():
             key = kanadb.to_hira(key)
         result = dictionary.getokuri(key + buf)
+        clauses = dictionary.Clauses()
         if result: 
-            clauses = dictionary.Clauses()
             clauses.add(dictionary.Clause(key, result))
         else:
             if self._inputmode.iskata():
                 key = kanadb.to_kata(key)
-            clauses = dictionary.get_from_google_cgi_api(key)
-            if not clauses:
-                clauses = dictionary.Clauses()
+            if not dictionary.get_from_google_cgi_api(clauses, key + okuri):
                 clauses.add(dictionary.Clause(key, [key]))
+            else:
+                self._okuri = u"" 
         self._clauses = clauses
-
-        self._okuri = okuri 
-
         self._listbox.assign(clauses.getcandidates())
         self._wordbuf.startedit() 
 
@@ -365,8 +360,17 @@ class InputHandler(tff.DefaultHandler,
         width = min(60, int(screen.width * 0.7))
         top = int((screen.height - height) / 2)
         left = int((screen.width - width) / 2)
+
+        inputhandler = InputHandler(self._session,
+                                    self._screen,
+                                    self._termenc,
+                                    self._termprop,
+                                    False,
+                                    self._mousemode,
+                                    self._inputmode)
         self._iframe = InnerFrame(self._session, 
                                   self,
+                                  inputhandler,
                                   screen,
                                   top, left, height, width,
                                   "w3m '%s'" % url,
@@ -374,6 +378,7 @@ class InputHandler(tff.DefaultHandler,
                                   self._termprop,
                                   self._mousemode,
                                   self._output)
+        self._inputhandler = inputhandler
 
     def destruct_subprocess(self):
         session = self._session
@@ -578,23 +583,7 @@ class InputHandler(tff.DefaultHandler,
                     else:
                         context.write(c)
 
-            elif (0x61 <= c and c <= 0x7a) or charbuf.getbuffer() == "z": # _, a - z, z*
-                if charbuf.put(c):
-                    if wordbuf.isempty():
-                        s = charbuf.drain()
-                        context.putu(s)
-                        self._complete()
-                    elif wordbuf.has_okuri():
-                        # 送り仮名変換
-                        self._convert_okuri()
-                    else:
-                        s = charbuf.drain()
-                        wordbuf.append(s)
-                        self._complete()
-                else:
-                    self._complete()
- 
-            elif 0x41 <= c and c <= 0x5a: # A - Z
+            elif 0x41 <= c and c <= 0x5a and charbuf.getbuffer() != "z": # A - Z
                 # 大文字のとき
                 # 先行する入力があるか
                 if wordbuf.isempty() or not wordbuf.get():
@@ -635,14 +624,32 @@ class InputHandler(tff.DefaultHandler,
                         if charbuf.isfinal():
                             # 送り仮名変換
                             self._convert_okuri()
+
+            #elif (0x61 <= c and c <= 0x7a) or c == 0x2d: # _, a - z, z*
             else:
-                if self._iscooking():
-                    self._settle(context)
-                if self._charbuf.put(c):
-                    s = self._charbuf.drain()
-                    context.write(ord(s))
+                if charbuf.put(c):
+                    if wordbuf.isempty():
+                        s = charbuf.drain()
+                        context.putu(s)
+                        self._complete()
+                    elif wordbuf.has_okuri():
+                        # 送り仮名変換
+                        self._convert_okuri()
+                    else:
+                        s = charbuf.drain()
+                        wordbuf.append(s)
+                        self._complete()
                 else:
-                    context.write(c)
+                    wordbuf.append(chr(c))
+                    self._complete()
+            # else:
+            #    if self._iscooking():
+            #        self._settle(context)
+            #    if self._charbuf.put(c):
+            #        s = self._charbuf.drain()
+            #        context.write(ord(s))
+            #    else:
+            #        context.write(c)
 
         return True # handled
 
@@ -854,6 +861,7 @@ class InputHandler(tff.DefaultHandler,
             logging.error("Resize failed")
         finally:
             self._iframe = None
+            self._inputhandler = None
 
     # override
     def handle_draw(self, context):
@@ -877,6 +885,15 @@ class InputHandler(tff.DefaultHandler,
         if buf:
             context.puts(buf)
             output.truncate(0)
+        if self._inputhandler:
+            cursor = self._screen.cursor
+            try:
+                innercursor = iframe.innerscreen.cursor
+                self._screen.cursor = Cursor(iframe.top + innercursor.row,
+                                             iframe.left + innercursor.col)
+                self._inputhandler.handle_draw(context)
+            finally:
+                self._screen.cursor = cursor
 
 def test():
     import doctest
