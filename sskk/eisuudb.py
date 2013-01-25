@@ -44,7 +44,7 @@ def _loaddb():
     for han, zen in _eisuudb:
         _han_to_zen[han] = zen
         _han_to_zen_cp[ord(han)] = ord(zen)
- 
+
 def to_zenkaku(s):
     """
     convert ascii string to Japanese Zenkaku string
@@ -72,7 +72,7 @@ def to_zenkaku_cp(code):
     '0xff08'
     >>> hex(to_zenkaku_cp(84))
     '0xff34'
-    """ 
+    """
     if _han_to_zen_cp.has_key(code):
         return _han_to_zen_cp[code]
     return code

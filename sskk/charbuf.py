@@ -28,7 +28,7 @@ import romanrule
 class CharacterContext:
 
     def __init__(self):
-        # makes trie trees 
+        # makes trie trees
         self.__hira_tree = romanrule.makehiratree()
         self.__kata_tree = romanrule.makekatatree()
         self.hardreset()
@@ -82,11 +82,11 @@ class CharacterContext:
         def expand(context):
             for key, value in context.items():
                 if key == romanrule.SKK_ROMAN_VALUE:
-                    yield value 
+                    yield value
                 elif key > 0x1f and key != 0x6e:
                     for key, value in value.items():
                         if key == romanrule.SKK_ROMAN_VALUE:
-                            yield value 
+                            yield value
         return list(set([c for c in expand(self.context)]))
 
     def put(self, c):

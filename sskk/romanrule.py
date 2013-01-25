@@ -56,7 +56,7 @@ _rule = {'a'   : u'あ'    , 'i'   : u'い'    , 'u'   : u'う'    , 'e'   : u'�
          'ra'  : u'ら'    , 'ri'  : u'り'    , 'ru'  : u'る'    , 're'  : u'れ'    , 'ro'  : u'ろ'    ,
          'rya' : u'りゃ'  , 'ryi' : u'りぃ'  , 'ryu' : u'りゅ'  , 'rye' : u'りぇ'  , 'ryo' : u'りょ'  ,
          'wa'  : u'わ'    , 'wi'  : u'うぃ'  , 'wu'  : u'う'    , 'we'  : u'うぇ'  , 'wo'  : u'を'    ,
-         'nn'  : u'ん'    , 'tsu' : u'つ'    , 'xtu' : u'っ'    , 'xtsu': u'っ'    , 
+         'nn'  : u'ん'    , 'tsu' : u'つ'    , 'xtu' : u'っ'    , 'xtsu': u'っ'    ,
          '-'   : u'ー'    , ','   : u'、'    , '.'   : u'。'    , 'z:'  : u'：'    , 'z;'  : u'；'    ,
          'zh'  : u'←'     , 'zj'  : u'↓'     , 'zk'  : u'↑'     , 'zl'  : u'→'     , 'z-'  : u'〜'    ,
          'z,'  : u'‥'     , 'z.'  : u'…'     , 'z/'  : u'・'    , 'z['  : u'『'    , 'z]'  : u'』'    ,
@@ -64,10 +64,10 @@ _rule = {'a'   : u'あ'    , 'i'   : u'い'    , 'u'   : u'う'    , 'e'   : u'�
          'zL'  : u'⇒'     , 'z '  : u'　'    ,
          '['   : u'「'    , ']'   : u'」'    , ':'   : u'：'    , ';'   : u'；'                       }
 
-_hira_rule = _rule 
+_hira_rule = _rule
 _kata_rule = {}
 for key, value in _hira_rule.items():
-    _kata_rule[key] = kanadb.to_kata(value) 
+    _kata_rule[key] = kanadb.to_kata(value)
 
 SKK_ROMAN_VALUE  = 0
 SKK_ROMAN_NEXT   = 1
@@ -85,7 +85,7 @@ def _maketree(rule):
                 context[code] = { SKK_ROMAN_PREV: context }
             context = context[code]
             buf += chr(code)
-            context[SKK_ROMAN_BUFFER] = buf 
+            context[SKK_ROMAN_BUFFER] = buf
         context[SKK_ROMAN_VALUE] = value
         first = key[0]
         if first in 'bcdfghjkmprstvwxz':
@@ -100,18 +100,18 @@ def _maketree(rule):
                 if buf == chr(code):
                     buf = rule['xtu']
                 buf += chr(code)
-                context[SKK_ROMAN_BUFFER] = buf 
+                context[SKK_ROMAN_BUFFER] = buf
 
             context[SKK_ROMAN_VALUE] = value
 
-    for key, value in tree.items(): 
+    for key, value in tree.items():
         context = tree
         if key == 0x6e: # 'n'
-            for code in [ord(c) for c in 'bcdfghjkmprstvwxz']: 
+            for code in [ord(c) for c in 'bcdfghjkmprstvwxz']:
                 value[code] = { SKK_ROMAN_VALUE: rule['nn'],
                                 SKK_ROMAN_NEXT: tree[code] }
-    tree[SKK_ROMAN_BUFFER] = '' 
-    tree[SKK_ROMAN_PREV] = tree 
+    tree[SKK_ROMAN_BUFFER] = ''
+    tree[SKK_ROMAN_PREV] = tree
     return tree
 
 _hira_tree = _maketree(_hira_rule)
@@ -119,7 +119,7 @@ _kata_tree = _maketree(_kata_rule)
 
 def makehiratree():
     ''' make hirakana input state tree
-    >>> t = makekatatree() 
+    >>> t = makekatatree()
     >>> t[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u30ad\u30e3'
     '''
@@ -127,8 +127,8 @@ def makehiratree():
 
 def makekatatree():
     ''' make katakana input state tree
-    >>> t = makehiratree() 
-    >>> t[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE] 
+    >>> t = makehiratree()
+    >>> t[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u304d\u3083'
     '''
     return _kata_tree

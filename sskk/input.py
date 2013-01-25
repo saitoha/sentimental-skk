@@ -54,7 +54,7 @@ class IScreenListenerImpl(IScreenListener):
     def ontitlechanged(self, s):
         title.setoriginal(s)
         self._refleshtitle()
-        return None 
+        return None
 
     def onmodeenabled(self, n):
         return False
@@ -121,16 +121,16 @@ class IListboxListenerImpl(IListboxListener):
             self.open_wikipedia(word)
         elif c == 0x10: # C-p
             listbox.moveprev()
-        elif c == 0x1b: # ESC C-[ 
+        elif c == 0x1b: # ESC C-[
             self.oncancel(listbox, context)
-        elif c == 0x02: # C-b 
+        elif c == 0x02: # C-b
             return False
-        elif c == 0x06: # C-f 
+        elif c == 0x06: # C-f
             return False
-        elif c < 0x20: # other control chars 
+        elif c < 0x20: # other control chars
             self.onsettled(listbox, context)
             context.write(c)
-        elif c == 0x20: # SP 
+        elif c == 0x20: # SP
             listbox.movenext()
         elif c == 0x78: # x
             listbox.moveprev()
@@ -148,7 +148,7 @@ class IListboxListenerImpl(IListboxListener):
                     self.settitle(u'%s - %s' % (text, remarks))
                 else:
                     self.settitle(text)
-        elif index >= 0: 
+        elif index >= 0:
             self._remarks = remarks
             self._wordbuf.reset()
             self._wordbuf.startedit()
@@ -187,7 +187,7 @@ class IInnerFrameListenerImpl(IInnerFrameListener):
 #
 # InputHandler
 #
-class InputHandler(tff.DefaultHandler, 
+class InputHandler(tff.DefaultHandler,
                    IScreenListenerImpl,
                    IListboxListenerImpl,
                    IInnerFrameListenerImpl,
@@ -195,8 +195,8 @@ class InputHandler(tff.DefaultHandler,
 
     _stack = None
     _prev_length = 0
-    _anti_optimization_flag = False 
-    _selected_text = None 
+    _anti_optimization_flag = False
+    _selected_text = None
     _okuri = ""
     _bracket_left = _SKK_MARK_OPEN
     _bracket_right = _SKK_MARK_CLOSE
@@ -223,8 +223,8 @@ class InputHandler(tff.DefaultHandler,
         if not termprop.is_cjk and termprop.is_vte():
             pad = u" "
             self._selectmark = _SKK_MARK_SELECT + pad
-            self._bracket_left = _SKK_MARK_OPEN + pad 
-            self._bracket_right = _SKK_MARK_CLOSE + pad 
+            self._bracket_left = _SKK_MARK_OPEN + pad
+            self._bracket_right = _SKK_MARK_CLOSE + pad
         else:
             self._selectmark = _SKK_MARK_SELECT
             self._bracket_left = _SKK_MARK_OPEN
@@ -233,7 +233,7 @@ class InputHandler(tff.DefaultHandler,
     def _reset(self):
         self._listbox.close()
         self._inputmode.endabbrev()
-        self._wordbuf.reset() 
+        self._wordbuf.reset()
         self._charbuf.reset()
         self._okuri = u""
         self._clauses = None
@@ -267,7 +267,7 @@ class InputHandler(tff.DefaultHandler,
         self._okuri = u""
 
         clauses = dictionary.Clauses()
-        if result: 
+        if result:
             clauses.add(dictionary.Clause(key, result))
         elif not dictionary.get_from_google_cgi_api(clauses, key):
             clauses.add(dictionary.Clause(key, [key]))
@@ -287,7 +287,7 @@ class InputHandler(tff.DefaultHandler,
         if not buf:
             return False
         okuri = self._draincharacters()
-        self._okuri = okuri 
+        self._okuri = okuri
         buf = buf[0]
         key = self._wordbuf.get()
 
@@ -295,7 +295,7 @@ class InputHandler(tff.DefaultHandler,
             key = kanadb.to_hira(key)
         result = dictionary.getokuri(key + buf)
         clauses = dictionary.Clauses()
-        if result: 
+        if result:
             clauses.add(dictionary.Clause(key, result))
         else:
             if self._inputmode.iskata():
@@ -303,10 +303,10 @@ class InputHandler(tff.DefaultHandler,
             if not dictionary.get_from_google_cgi_api(clauses, key + okuri):
                 clauses.add(dictionary.Clause(key, [key]))
             else:
-                self._okuri = u"" 
+                self._okuri = u""
         self._clauses = clauses
         self._listbox.assign(clauses.getcandidates())
-        self._wordbuf.startedit() 
+        self._wordbuf.startedit()
 
         self.settitle(u'%s - %s' % (key, buf))
         return True
@@ -328,7 +328,7 @@ class InputHandler(tff.DefaultHandler,
         self._refleshtitle()
         self._listbox.close()
         self._inputmode.endabbrev()
-        self._wordbuf.reset() 
+        self._wordbuf.reset()
         self._anti_optimization_flag = False
         context.putu(word)
 
@@ -368,7 +368,7 @@ class InputHandler(tff.DefaultHandler,
                                     False,
                                     self._mousemode,
                                     self._inputmode)
-        self._iframe = InnerFrame(self._session, 
+        self._iframe = InnerFrame(self._session,
                                   self,
                                   inputhandler,
                                   screen,
@@ -485,7 +485,7 @@ class InputHandler(tff.DefaultHandler,
                 self._reset()
                 context.write(c)
 
-        elif c == 0x1b: # ESC 
+        elif c == 0x1b: # ESC
             if self._iscooking():
                 self._reset()
                 self._inputmode.reset()
@@ -493,7 +493,7 @@ class InputHandler(tff.DefaultHandler,
             else:
                 context.write(c)
 
-        elif c == 0x20: # SP 
+        elif c == 0x20: # SP
             if not self._wordbuf.isempty():
                 s = self._draincharacters()
                 self._wordbuf.append(s)
@@ -508,11 +508,11 @@ class InputHandler(tff.DefaultHandler,
             else:
                 context.write(c)
 
-        elif c == 0x02: # C-b 
+        elif c == 0x02: # C-b
             if not self._moveprevclause():
                 context.write(c)
-            
-        elif c == 0x06: # C-f 
+
+        elif c == 0x06: # C-f
             if not self._movenextclause():
                 context.write(c)
 
@@ -524,7 +524,7 @@ class InputHandler(tff.DefaultHandler,
             self._wordbuf.append(unichr(c))
 
         elif self._inputmode.isabbrev():
-            # abbrev mode 
+            # abbrev mode
             self._wordbuf.append(unichr(c))
             self._complete()
         elif self._inputmode.ishira() or self._inputmode.iskata():
@@ -569,7 +569,7 @@ class InputHandler(tff.DefaultHandler,
                         self._convert_tango()
                         charbuf.put(c)
                         s = charbuf.drain()
-                        self._okuri += s 
+                        self._okuri += s
                     elif charbuf.put(c):
                         s = charbuf.drain()
                         context.write(ord(s))
@@ -612,7 +612,7 @@ class InputHandler(tff.DefaultHandler,
                             self._settle(context)
                         self._inputmode.startzen()
                         self._reset()
-                    else: 
+                    else:
                         if charbuf.hasnext():
                             s = charbuf.getbuffer()
                             wordbuf.append(s)
@@ -620,7 +620,7 @@ class InputHandler(tff.DefaultHandler,
                             charbuf.put(c)
                         # 先行する入力があるとき、送り仮名マーク('*')をつける
                         wordbuf.startokuri()
-                        # キャラクタバッファが終了状態か 
+                        # キャラクタバッファが終了状態か
                         if charbuf.isfinal():
                             # 送り仮名変換
                             self._convert_okuri()
@@ -657,9 +657,9 @@ class InputHandler(tff.DefaultHandler,
         if not intermediate:
             if final == 0x57: # W
                 if parameter == [0x32]:
-                    self._termprop.set_amb_as_double()                    
+                    self._termprop.set_amb_as_double()
                 elif parameter == [0x31] or parameter == []:
-                    self._termprop.set_amb_as_single()                    
+                    self._termprop.set_amb_as_single()
                 return True
         return False
 
@@ -704,7 +704,7 @@ class InputHandler(tff.DefaultHandler,
                     else:
                         self._complete()
                 else:
-                    return False 
+                    return False
             return True
         return False
 
@@ -806,11 +806,11 @@ class InputHandler(tff.DefaultHandler,
         screen = self._screen
         termprop = self._termprop
         word = self._wordbuf.getbuffer()
-        char = self._charbuf.getbuffer() 
+        char = self._charbuf.getbuffer()
         y, x = screen.getyx()
         cur_width = 0
-        cur_width += termprop.wcswidth(word) 
-        cur_width += termprop.wcswidth(char) 
+        cur_width += termprop.wcswidth(word)
+        cur_width += termprop.wcswidth(char)
         if char and not word and self._anti_optimization_flag:
             if y < screen.height - 1:
                 screen.copyline(output, 0, y, screen.width)
@@ -833,7 +833,7 @@ class InputHandler(tff.DefaultHandler,
         if self._listbox:
             self._listbox.draw(output)
 
-        self._prev_length = cur_width 
+        self._prev_length = cur_width
         if cur_width > 0:
             output.write(u'\x1b[?25l')
         else:
@@ -851,7 +851,7 @@ class InputHandler(tff.DefaultHandler,
                 if y + 1 < screen.height:
                     screen.copyline(output, 0, y + 1, screen.width)
             output.write(u"\x1b[%d;%dH\x1b[?25h" % (y + 1, x + 1))
-            self._prev_length = 0 
+            self._prev_length = 0
 
     def handle_resize(self, context, row, col):
         try:

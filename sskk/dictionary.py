@@ -41,7 +41,7 @@ def _register(key, value):
             current = current[c]
         else:
             new_current = {}
-            current[c] = new_current 
+            current[c] = new_current
             current = new_current
 
 _control_chars = re.compile("[\x00-\x1f\x7f\x80-\x9f\xff]")
@@ -64,7 +64,7 @@ def _decode_line(line):
 
 def _load_dict(filename):
     p = re.compile('^(?:([0-9a-z.]+?)|(.+?)([a-z])?) /(.+)/')
-    
+
     try:
         for line in open(filename):
             if len(line) < 4 or line[1] == ';':
@@ -122,7 +122,7 @@ def getokuri(key):
     return None
 
 def getcomp(key, comp):
-    
+
     _current = _compdb
     for _c in key:
         if _current.has_key(_c):
@@ -135,7 +135,7 @@ def getcomp(key, comp):
             if value == {}:
                 candidate.append(key + c)
             else:
-                expand_all(key + c, (x for x in value.items()), candidate) 
+                expand_all(key + c, (x for x in value.items()), candidate)
 
     def expand_sparse(key, current, candidate, generators):
         for c, value in current:
@@ -177,7 +177,7 @@ def getcomp(key, comp):
                 if _current.has_key(_key[0]):
                     if _current[_key[0]].has_key(_key[1]):
                         impl(_key, _current[_key[0]][_key[1]], candidate)
-    return candidate 
+    return candidate
 
 
 ################################################################################
@@ -310,9 +310,9 @@ def call_cgi_api(key):
         url = 'http://www.google.com/transliterate?'
         json_response = urllib2.urlopen(url, params, _TIMEOUT).read()
         response = json.loads(json_response)
-         
+
     except:
-        return None 
+        return None
     return response
 
 def get_from_google_cgi_api(clauses, key):
@@ -325,7 +325,7 @@ def get_from_google_cgi_api(clauses, key):
             clause = Clause(key, candidates)
             clauses.add(clause)
     except:
-        return None 
+        return None
     return clauses
 
 thread.start_new_thread(_load, ())

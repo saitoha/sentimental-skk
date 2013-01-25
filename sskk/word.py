@@ -45,13 +45,13 @@ class WordBuffer():
             self._cookmark = _SKK_MARK_COOK
 
     def reset(self):
-        self.__mode = _SKK_WORD_NONE 
+        self.__mode = _SKK_WORD_NONE
         self.__main = u""
-        self.__comp = None 
+        self.__comp = None
         self.__comp_index = 0
 
     def isempty(self):
-        return self.__mode == _SKK_WORD_NONE 
+        return self.__mode == _SKK_WORD_NONE
 
     def complete(self):
         if self.__comp:
@@ -66,7 +66,7 @@ class WordBuffer():
             completions = dictionary.getcomp(key, finals)
             if completions:
                 return map(lambda word: self.__main + word, completions)
-        return None 
+        return None
 
     def get(self):
         if self.__mode == _SKK_WORD_NONE:
@@ -74,7 +74,7 @@ class WordBuffer():
         elif self.__mode == _SKK_WORD_MAIN:
             if self.__comp:
                 return self.__main + self.__comp[self.__comp_index]
-            return self.__main 
+            return self.__main
         else:
             assert self.__mode == _SKK_WORD_OKURI
             return self.__main
@@ -83,10 +83,10 @@ class WordBuffer():
         if self.__mode == _SKK_WORD_NONE:
             self.startedit()
         elif self.__mode == _SKK_WORD_MAIN:
-            self.__main += value 
+            self.__main += value
         else:
             assert self.__mode == _SKK_WORD_OKURI
-            self.__main += value 
+            self.__main += value
 
     def back(self):
         if len(self.__main) == 0:
@@ -95,7 +95,7 @@ class WordBuffer():
             self.__main = self.__main[:-1]
         else:
             assert self.__mode == _SKK_WORD_OKURI
-            self.__mode = _SKK_WORD_MAIN 
+            self.__mode = _SKK_WORD_MAIN
 
     def startedit(self):
         self.__mode = _SKK_WORD_MAIN
