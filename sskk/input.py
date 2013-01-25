@@ -361,13 +361,15 @@ class InputHandler(tff.DefaultHandler,
         top = int((screen.height - height) / 2)
         left = int((screen.width - width) / 2)
 
+        from mode import InputMode
+        inputmode = InputMode(self._session.tty)
         inputhandler = InputHandler(self._session,
                                     self._screen,
                                     self._termenc,
                                     self._termprop,
                                     False,
                                     self._mousemode,
-                                    self._inputmode)
+                                    inputmode)
         self._iframe = InnerFrame(self._session,
                                   self,
                                   inputhandler,

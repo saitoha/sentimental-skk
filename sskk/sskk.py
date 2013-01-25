@@ -161,7 +161,6 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                           termprop=termprop,
                           visibility=False)
 
-    from mode import InputMode
     from input import InputHandler
 
     output.flush()
@@ -171,6 +170,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     session = tff.Session(tty)
 
     try:
+        from mode import InputMode
         inputmode = InputMode(tty)
         mode_handler = cano.ModeHandler(inputmode, termprop)
         inputhandler = InputHandler(session=session,
