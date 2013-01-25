@@ -30,8 +30,8 @@ from canossa import IModeListenerImpl
  つまり、確定するなどして英数変換入力が終わると、
  元の状態(ひらがなモードまたはカタカナモード)に戻ります。
 
-                   +----------+ 
-                   | abbrev   |  /(シングルシフト) 
+                   +----------+
+                   | abbrev   |  /(シングルシフト)
                    |          | <-------------+
                    +----------+               |
                        ^                      |
@@ -76,7 +76,7 @@ class InputMode(IModeListenerImpl):
     _value = -1
 
     def __init__(self, tty):
-        self._tty = tty 
+        self._tty = tty
         self.__setmode(_SKK_MODE_HANKAKU)
 
     def __setmode(self, mode):
@@ -115,10 +115,10 @@ class InputMode(IModeListenerImpl):
     def isdirect(self):
         value = self._value
         return value == _SKK_MODE_HANKAKU or value == _SKK_MODE_ZENKAKU
-    
+
     def reset(self):
         self.__setmode(_SKK_MODE_HANKAKU)
-    
+
     def startabbrev(self):
         ''' 英数サブモードを開始 '''
         if self.getenabled():

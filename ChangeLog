@@ -1,3 +1,8 @@
+2013-01-20 Hayaki Saito <user@zuse.jp>
+
+    * Version 0.0.61
+    * 「ー」等で強制変換してしまう問題を修正 
+
 2013-01-18 Hayaki Saito <user@zuse.jp>
 
     * Version 0.0.60

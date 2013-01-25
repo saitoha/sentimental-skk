@@ -52,8 +52,8 @@ def main():
 
       三o-( ^o^)-o-( ^o^)-o-( ^o^)-o
 
-sentimental-skk %s 
-Copyright (C) 2012-2013 Hayaki Saito <user@zuse.jp>. 
+sentimental-skk %s
+Copyright (C) 2012-2013 Hayaki Saito <user@zuse.jp>.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -161,7 +161,6 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                           termprop=termprop,
                           visibility=False)
 
-    from mode import InputMode
     from input import InputHandler
 
     output.flush()
@@ -171,6 +170,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     session = tff.Session(tty)
 
     try:
+        from mode import InputMode
         inputmode = InputMode(tty)
         mode_handler = cano.ModeHandler(inputmode, termprop)
         inputhandler = InputHandler(session=session,
@@ -190,13 +190,13 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     except:
         logging.exception("Aborted by exception.")
         print "sskk aborted by an uncaught exception. see $HOME/.sskk/log/log.txt."
-    finally: 
+    finally:
         tty.restore_term()
         output.write(u"\x1b]0;\x1b\\")
         output.flush()
         output.write(u"\x1b[23;0t")
-       
+
 ''' main '''
-if __name__ == '__main__':    
+if __name__ == '__main__':
     main()
 
