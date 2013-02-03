@@ -18,7 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
-__author__  = "Hayaki Saito (user@zuse.jp)"
+__author__ = "Hayaki Saito (user@zuse.jp)"
 __version__ = "0.0.61"
 __license__ = "GPL v3"
 
@@ -28,4 +28,3 @@ from sskk import *
 ''' main '''
 if __name__ == '__main__':
     main()
-
