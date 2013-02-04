@@ -21,7 +21,8 @@
 
 import romanrule
 
-################################################################################
+
+###############################################################################
 #
 # CharacterContext
 #
@@ -50,15 +51,15 @@ class CharacterContext:
         return id(self.context) == id(self.__current_tree)
 
     def isfinal(self):
-        return self.context.has_key(romanrule.SKK_ROMAN_VALUE)
+        return romanrule.SKK_ROMAN_VALUE in self.context
 
     def hasnext(self):
-        return self.context.has_key(romanrule.SKK_ROMAN_NEXT)
+        return romanrule.SKK_ROMAN_NEXT in self.context
 
     def drain(self):
-        if self.context.has_key(romanrule.SKK_ROMAN_VALUE):
+        if romanrule.SKK_ROMAN_VALUE in self.context:
             s = self.context[romanrule.SKK_ROMAN_VALUE]
-            if self.context.has_key(romanrule.SKK_ROMAN_NEXT):
+            if romanrule.SKK_ROMAN_NEXT in self.context:
                 self.context = self.context[romanrule.SKK_ROMAN_NEXT]
             else:
                 self.reset()
@@ -67,7 +68,7 @@ class CharacterContext:
 
     def getbuffer(self):
         key = romanrule.SKK_ROMAN_BUFFER
-        if self.context.has_key(key):
+        if key in self.context:
             return self.context[key]
         return u""
 
@@ -79,6 +80,7 @@ class CharacterContext:
         """
         if not self.getbuffer():
             return None
+
         def expand(context):
             for key, value in context.items():
                 if key == romanrule.SKK_ROMAN_VALUE:
@@ -90,12 +92,12 @@ class CharacterContext:
         return list(set([c for c in expand(self.context)]))
 
     def put(self, c):
-        if self.context.has_key(c):
+        if c in self.context:
             self.context = self.context[c]
             return True
-        if 0x41 <= c and c <= 0x5a: # A - Z
-            c += 0x20 # convert to a - z
-        if self.context.has_key(c):
+        if 0x41 <= c and c <= 0x5a:  # A - Z
+            c += 0x20  # convert to a - z
+        if c in self.context:
             self.context = self.context[c]
             return True
         return False
@@ -106,11 +108,10 @@ class CharacterContext:
     def handle_char(self, context, c):
         return False
 
+
 def test():
     import doctest
     doctest.testmod()
 
 if __name__ == "__main__":
     test()
-
-

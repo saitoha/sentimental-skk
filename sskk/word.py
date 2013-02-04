@@ -18,15 +18,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
-import dictionary, kanadb
-import re
+import dictionary
+import kanadb
 
-_SKK_WORD_NONE  = 0
-_SKK_WORD_MAIN  = 1
+_SKK_WORD_NONE = 0
+_SKK_WORD_MAIN = 1
 _SKK_WORD_OKURI = 2
 
-_SKK_MARK_COOK  = u'▽'
+_SKK_MARK_COOK = u'▽'
 _SKK_MARK_OKURI = u'*'
+
 
 class WordBuffer():
 
@@ -121,4 +122,3 @@ class WordBuffer():
         elif self.has_okuri():
             return self._cookmark + self.get() + _SKK_MARK_OKURI
         return self._cookmark + self.get()
-

@@ -22,7 +22,9 @@ import os
 import tff
 
 import title
-import kanadb, eisuudb, dictionary
+import kanadb
+import eisuudb
+import dictionary
 import word
 
 from charbuf import CharacterContext
@@ -31,13 +33,8 @@ from canossa import InnerFrame, IInnerFrameListener
 from canossa import IScreenListener
 from canossa import Cursor
 
-import codecs, re
-import logging, traceback
-
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+import codecs
+import logging
 
 # マーク
 _SKK_MARK_SELECT = u'▼'
@@ -48,6 +45,7 @@ rcdir = os.path.join(os.getenv("HOME"), ".sskk")
 histdir = os.path.join(rcdir, "history")
 if not os.path.exists(histdir):
     os.makedirs(histdir)
+
 
 class IScreenListenerImpl(IScreenListener):
 
@@ -85,16 +83,17 @@ class TitleTrait():
         title.setmessage(face + " " + value)
         self._refleshtitle()
 
+
 class IListboxListenerImpl(IListboxListener):
 
     def oninput(self, listbox, context, c):
-        if c == 0x0d: # CR C-m
+        if c == 0x0d:  # CR C-m
             self.onsettled(listbox, context)
-        elif c == 0x0a: # LF C-j
+        elif c == 0x0a:  # LF C-j
             self.onsettled(listbox, context)
-        elif c == 0x07: # BEL C-g
+        elif c == 0x07:  # BEL C-g
             self.oncancel(listbox, context)
-        elif c == 0x08 or c == 0x7f: # C-h BS or DEL
+        elif c == 0x08 or c == 0x7f:  # C-h BS or DEL
             if self._clauses:
                 self._clauses.shift_left()
                 listbox.close()
@@ -103,36 +102,36 @@ class IListboxListenerImpl(IListboxListener):
             else:
                 self.onsettled(listbox, context)
                 context.write(c)
-        elif c == 0x09: # TAB C-i
+        elif c == 0x09:  # TAB C-i
             listbox.movenext()
-        elif c == 0x0c: # LF C-l
+        elif c == 0x0c:  # LF C-l
             clauses = self._clauses
             if clauses:
                 clauses.shift_right()
                 self._listbox.close()
                 candidates = clauses.getcandidates()
                 listbox.assign(candidates)
-        elif c == 0x0e: # C-n
+        elif c == 0x0e:  # C-n
             listbox.movenext()
-        elif c == 0x16: # C-v
+        elif c == 0x16:  # C-v
             listbox.jumpnext()
-        elif c == 0x17: # C-w
-            word = self._clauses.getvalue()
-            self.open_wikipedia(word)
-        elif c == 0x10: # C-p
+        elif c == 0x17:  # C-w
+            value = self._clauses.getvalue()
+            self.open_wikipedia(value)
+        elif c == 0x10:  # C-p
             listbox.moveprev()
-        elif c == 0x1b: # ESC C-[
+        elif c == 0x1b:  # ESC C-[
             self.oncancel(listbox, context)
-        elif c == 0x02: # C-b
+        elif c == 0x02:  # C-b
             return False
-        elif c == 0x06: # C-f
+        elif c == 0x06:  # C-f
             return False
-        elif c < 0x20: # other control chars
+        elif c < 0x20:  # other control chars
             self.onsettled(listbox, context)
             context.write(c)
-        elif c == 0x20: # SP
+        elif c == 0x20:  # SP
             listbox.movenext()
-        elif c == 0x78: # x
+        elif c == 0x78:  # x
             listbox.moveprev()
         elif c <= 0x7e:
             self.onsettled(listbox, context)
@@ -175,15 +174,16 @@ class IListboxListenerImpl(IListboxListener):
     def onrepeat(self, listbox):
         return False
 
+
 class IInnerFrameListenerImpl(IInnerFrameListener):
 
     def onclose(self, iframe, context):
         iframe.clear()
         self._iframe = None
         self._inputhandler = None
-        screen = self._screen
 
-################################################################################
+
+###############################################################################
 #
 # InputHandler
 #
@@ -207,12 +207,20 @@ class InputHandler(tff.DefaultHandler,
     def __init__(self, session, screen, termenc, termprop,
                  use_title, mousemode, inputmode):
         self._screen = screen
-        self._output = codecs.getwriter(termenc)(StringIO(), errors='ignore')
+        try:
+            from cStringIO import StringIO
+            output = StringIO()
+        except ImportError:
+            from StringIO import StringIO
+            output = StringIO()
+
+        self._output = codecs.getwriter(termenc)(output, errors='ignore')
         self._termenc = termenc
         self._charbuf = CharacterContext()
         self._inputmode = inputmode
         self._wordbuf = word.WordBuffer(termprop)
-        self._listbox = Listbox(self, screen, termprop, mousemode, self._output)
+        self._listbox = Listbox(self, screen, termprop,
+                                mousemode, self._output)
         self._termprop = termprop
         self._mousemode = mousemode
         self.set_titlemode(use_title)
@@ -243,7 +251,7 @@ class InputHandler(tff.DefaultHandler,
         charbuf = self._charbuf
         s = charbuf.getbuffer()
         if s == u'n':
-            charbuf.put(0x6e) # n
+            charbuf.put(0x6e)  # n
         s = charbuf.drain()
         return s
 
@@ -315,7 +323,6 @@ class InputHandler(tff.DefaultHandler,
         ''' 確定 '''
         clauses = self._clauses
         if clauses:
-            key = clauses.getkey()
             word = clauses.getvalue() + self._okuri
             self._clauses = None
             self._okuri = u""
@@ -401,23 +408,23 @@ class InputHandler(tff.DefaultHandler,
         if self._charbuf.handle_char(context, c):
             return True
 
-        if c == 0x0a: # LF C-j
+        if c == 0x0a:  # LF C-j
             if self._iscooking():
                 self._settle(context)
 
-        elif c == 0x0d: # CR C-m
+        elif c == 0x0d:  # CR C-m
             if self._iscooking():
                 self._settle(context)
             else:
                 context.write(c)
 
-        elif c == 0x07: # BEL C-g
+        elif c == 0x07:  # BEL C-g
             if self._iscooking():
                 self._reset()
             else:
                 context.write(c)
 
-        elif c == 0x08 or c == 0x7f: # BS or DEL
+        elif c == 0x08 or c == 0x7f:  # BS or DEL
             if not self._charbuf.isempty():
                 self._charbuf.back()
                 if not self._charbuf.getbuffer():
@@ -433,7 +440,7 @@ class InputHandler(tff.DefaultHandler,
             else:
                 context.write(c)
 
-        elif c == 0x09: # TAB C-i
+        elif c == 0x09:  # TAB C-i
             if not self._wordbuf.isempty():
                 # ワードバッファ編集中
                 s = self._draincharacters()
@@ -444,7 +451,7 @@ class InputHandler(tff.DefaultHandler,
             else:
                 context.write(c)
 
-        elif c == 0x0e: # C-n
+        elif c == 0x0e:  # C-n
             if self._listbox.isshown():
                 self._listbox.movenext()
             elif not self._wordbuf.isempty():
@@ -454,14 +461,14 @@ class InputHandler(tff.DefaultHandler,
             else:
                 context.write(c)
 
-        elif c == 0x10: # C-p
+        elif c == 0x10:  # C-p
             if self._listbox.isshown():
                 self._listbox.moveprev()
             elif self._wordbuf.isempty():
                 if self._charbuf.isempty():
                     context.write(c)
 
-        elif c == 0x11: # C-q
+        elif c == 0x11:  # C-q
             if self._listbox.isshown():
                 self._listbox.close()
             if self._inputmode.isabbrev():
@@ -479,7 +486,7 @@ class InputHandler(tff.DefaultHandler,
             else:
                 context.write(c)
 
-        elif c == 0x17: # C-w
+        elif c == 0x17:  # C-w
             if not self._wordbuf.isempty():
                 word = self._wordbuf.get()
                 self.open_wikipedia(word)
@@ -487,7 +494,7 @@ class InputHandler(tff.DefaultHandler,
                 self._reset()
                 context.write(c)
 
-        elif c == 0x1b: # ESC
+        elif c == 0x1b:  # ESC
             if self._iscooking():
                 self._reset()
                 self._inputmode.reset()
@@ -495,7 +502,7 @@ class InputHandler(tff.DefaultHandler,
             else:
                 context.write(c)
 
-        elif c == 0x20: # SP
+        elif c == 0x20:  # SP
             if not self._wordbuf.isempty():
                 s = self._draincharacters()
                 self._wordbuf.append(s)
@@ -510,11 +517,11 @@ class InputHandler(tff.DefaultHandler,
             else:
                 context.write(c)
 
-        elif c == 0x02: # C-b
+        elif c == 0x02:  # C-b
             if not self._moveprevclause():
                 context.write(c)
 
-        elif c == 0x06: # C-f
+        elif c == 0x06:  # C-f
             if not self._movenextclause():
                 context.write(c)
 
@@ -536,12 +543,13 @@ class InputHandler(tff.DefaultHandler,
             inputmode = self._inputmode
             listbox = self._listbox
 
-            if c == 0x2f and (charbuf.isempty() or charbuf.getbuffer() != u'z'): # /
+            if c == 0x2f and (charbuf.isempty()
+                              or charbuf.getbuffer() != u'z'):  # /
                 if not self._iscooking():
                     inputmode.startabbrev()
                     wordbuf.reset()
                     wordbuf.startedit()
-            elif c == 0x71: # q
+            elif c == 0x71:  # q
                 if self._iscooking():
                     s = self._draincharacters()
                     wordbuf.append(s)
@@ -559,12 +567,13 @@ class InputHandler(tff.DefaultHandler,
                     elif inputmode.iskata():
                         inputmode.starthira()
                     self._reset()
-            elif c == 0x6c and charbuf.getbuffer() != "z": # l
+            elif c == 0x6c and charbuf.getbuffer() != "z":  # l
                 if listbox.isshown():
                     self._settle(context)
                 inputmode.reset()
                 self._reset()
-            elif c == 0x2c or c == 0x2e or c == 0x3a or c == 0x3b or c == 0x5b or c == 0x5d: # , . ; : [ ]
+            elif (c == 0x2c or c == 0x2e or c == 0x3a or
+                  c == 0x3b or c == 0x5b or c == 0x5d):  # , . ; : [ ]
                 charbuf.reset()
                 if listbox.isempty():
                     if not wordbuf.isempty():
@@ -585,17 +594,18 @@ class InputHandler(tff.DefaultHandler,
                     else:
                         context.write(c)
 
-            elif 0x41 <= c and c <= 0x5a and charbuf.getbuffer() != "z": # A - Z
+            elif (0x41 <= c and c <= 0x5a and
+                  charbuf.getbuffer() != "z"):  # A - Z
                 # 大文字のとき
                 # 先行する入力があるか
                 if wordbuf.isempty() or not wordbuf.get():
                     wordbuf.startedit()
                     charbuf.put(c)
-                    if charbuf.isfinal(): # 文字バッファに溜める
+                    if charbuf.isfinal():  # 文字バッファに溜める
                         s = charbuf.drain()
                         wordbuf.append(s)
                         self._complete()
-                    elif c == 0x4c: # L
+                    elif c == 0x4c:  # L
                         if self._iscooking():
                             self._settle(context)
                         self._inputmode.startzen()
@@ -605,11 +615,13 @@ class InputHandler(tff.DefaultHandler,
                 else:
                     s = charbuf.getbuffer()
                     if s == u'n':
-                        charbuf.put(0x6e) # n
+                        charbuf.put(0x6e)  # n
                         s = charbuf.drain()
                         wordbuf.append(s)
                         charbuf.reset()
-                    if not charbuf.put(c) and not charbuf.isfinal() and c == 0x4c: # L
+                    if (not charbuf.put(c)
+                            and not charbuf.isfinal()
+                            and c == 0x4c):  # L
                         if self._iscooking():
                             self._settle(context)
                         self._inputmode.startzen()
@@ -653,11 +665,11 @@ class InputHandler(tff.DefaultHandler,
             #    else:
             #        context.write(c)
 
-        return True # handled
+        return True  # handled
 
     def _handle_amb_report(self, context, parameter, intermediate, final):
         if not intermediate:
-            if final == 0x57: # W
+            if final == 0x57:  # W
                 if parameter == [0x32]:
                     self._termprop.set_amb_as_double()
                 elif parameter == [0x31] or parameter == []:
@@ -685,13 +697,13 @@ class InputHandler(tff.DefaultHandler,
 
     def _handle_csi_cursor(self, context, parameter, intermediate, final):
         if self._listbox.isshown():
-            if final == 0x43: # C
+            if final == 0x43:  # C
                 self._movenextclause()
                 return True
-            elif final == 0x44: # D
+            elif final == 0x44:  # D
                 self._moveprevclause()
                 return True
-        if final == 0x7e: # ~
+        if final == 0x7e:  # ~
             if parameter == [0x33] and not intermediate:
                 if not self._charbuf.isempty():
                     self._charbuf.back()
@@ -712,10 +724,10 @@ class InputHandler(tff.DefaultHandler,
 
     def _handle_ss3_cursor(self, context, final):
         if self._listbox.isshown():
-            if final == 0x43: # C
+            if final == 0x43:  # C
                 self._movenextclause()
                 return True
-            elif final == 0x44: # D
+            elif final == 0x44:  # D
                 self._moveprevclause()
                 return True
         return False
@@ -750,7 +762,7 @@ class InputHandler(tff.DefaultHandler,
             return True
         if self._handle_ss3_cursor(context, final):
             return True
-        if final == 0x5b: # [
+        if final == 0x5b:  # [
             if self._iscooking():
                 self._settle(context)
                 self._inputmode.reset()
@@ -766,7 +778,6 @@ class InputHandler(tff.DefaultHandler,
         screen = self._screen
         termprop = self._termprop
         clauses = self._clauses
-        result = clauses.getcurrentvalue()
         y, x = screen.getyx()
         cur_width = 0
         selected_clause = clauses.getcurrentclause()
@@ -897,11 +908,10 @@ class InputHandler(tff.DefaultHandler,
             finally:
                 self._screen.cursor = cursor
 
+
 def test():
     import doctest
     doctest.testmod()
 
 if __name__ == "__main__":
     test()
-
-

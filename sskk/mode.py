@@ -53,21 +53,20 @@ from canossa import IModeListenerImpl
 '''
 
 # モード
-_SKK_MODE_HANKAKU      = 0
-_SKK_MODE_ZENKAKU      = 1
-_SKK_MODE_HIRAGANA     = 2
-_SKK_MODE_KATAKANA     = 3
-_SKK_SUBMODE_ABBREV    = 4
+_SKK_MODE_HANKAKU = 0
+_SKK_MODE_ZENKAKU = 1
+_SKK_MODE_HIRAGANA = 2
+_SKK_MODE_KATAKANA = 3
+_SKK_SUBMODE_ABBREV = 4
 
-_SKK_MODE_MARK_MAP = {
-    _SKK_MODE_HANKAKU      : u'SKK',
-    _SKK_MODE_ZENKAKU      : u'全英',
-    _SKK_MODE_HIRAGANA     : u'かな',
-    _SKK_MODE_KATAKANA     : u'カナ',
-    _SKK_SUBMODE_ABBREV    : u'Aあ',
-    }
+_SKK_MODE_MARK_MAP = {_SKK_MODE_HANKAKU: u'SKK',
+                      _SKK_MODE_ZENKAKU: u'全英',
+                      _SKK_MODE_HIRAGANA: u'かな',
+                      _SKK_MODE_KATAKANA: u'カナ',
+                      _SKK_SUBMODE_ABBREV: u'Aあ'}
 
 import eisuudb
+
 
 class InputMode(IModeListenerImpl):
     '''
@@ -91,7 +90,7 @@ class InputMode(IModeListenerImpl):
 
     def handle_char(self, context, c):
 
-        if c == 0x0a: # LF C-j
+        if c == 0x0a:  # LF C-j
             self.endabbrev()
             if self.ishan():
                 self.starthira()
@@ -160,10 +159,10 @@ class InputMode(IModeListenerImpl):
     def ishan(self):
         return self._value == _SKK_MODE_HANKAKU
 
+
 def test():
     import doctest
     doctest.testmod()
 
 if __name__ == "__main__":
     test()
-
