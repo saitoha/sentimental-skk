@@ -327,10 +327,10 @@ def call_cgi_api(key):
         params = urllib.urlencode({'langpair': 'ja-Hira|ja',
                                    'text': key.encode("UTF-8")})
         url = 'http://www.google.com/transliterate?'
-        response = urllib2.urlopen(url, params)
+        response = urllib2.urlopen(url + str(params))
         json_response = response.read()
-        if json_response:
-            logging.exception("call_cgi_api failed. %s" % url+params)
+        if not json_response:
+            logging.exception("call_cgi_api failed. %s" % (url + str(params)))
             return None
         response = json.loads(json_response)
 
