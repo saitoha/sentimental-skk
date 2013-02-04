@@ -18,11 +18,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
-import os, thread, inspect, re
-import romanrule
+import os
+import thread
+import inspect
+import re
 import logging
 
-_TIMEOUT = 0.8
+_TIMEOUT = 1.0
 
 rcdir = os.path.join(os.getenv("HOME"), ".sskk")
 dictdir = os.path.join(rcdir, "dict")
@@ -34,10 +36,11 @@ _okuridb = {}
 _compdb = {}
 _encoding = 0
 
+
 def _register(key, value):
     current = _compdb
     for c in key:
-        if current.has_key(c):
+        if c in current:
             current = current[c]
         else:
             new_current = {}
@@ -45,6 +48,8 @@ def _register(key, value):
             current = new_current
 
 _control_chars = re.compile("[\x00-\x1f\x7f\x80-\x9f\xff]")
+
+
 def _escape(s):
     """
     >>> _escape("abc")
@@ -54,6 +59,7 @@ def _escape(s):
     """
     return _control_chars.sub("", s)
 
+
 def _decode_line(line):
     global _encoding
     try:
@@ -61,6 +67,7 @@ def _decode_line(line):
     except:
         _encoding = 1 - _encoding
         return unicode(line, [u'eucjp', u'utf-8]'][_encoding])
+
 
 def _load_dict(filename):
     p = re.compile('^(?:([0-9a-z.]+?)|(.+?)([a-z])?) /(.+)/')
@@ -80,23 +87,25 @@ def _load_dict(filename):
                     key += okuri
                 else:
                     _register(key, value)
-                if _tangodb.has_key(key):
+                if key in _tangodb:
                     _tangodb[key] += value.split("/")
                 else:
                     _tangodb[key] = value.split("/")
             else:
                 _register(alphakey, value)
-                if _tangodb.has_key(alphakey):
+                if alphakey in _tangodb:
                     _tangodb[alphakey] += value.split("/")
                 else:
                     _tangodb[alphakey] = value.split("/")
     except:
         logging.exception("loading process failed. filename: %s" % filename)
 
+
 def _get_fallback_dict_path(name):
     filename = inspect.getfile(inspect.currentframe())
-    dirpath = os.path.abspath(os.path.dirname(inspect.getfile(inspect.currentframe())))
+    dirpath = os.path.abspath(os.path.dirname(filename))
     return os.path.join(dirpath, name)
+
 
 def _load():
     dict_list = os.listdir(dictdir)
@@ -111,21 +120,24 @@ def _load():
         for f in dict_list:
             _load_dict(os.path.join(dictdir, f))
 
+
 def gettango(key):
-    if _tangodb.has_key(key):
+    if key in _tangodb:
         return _tangodb[key]
     return None
 
+
 def getokuri(key):
-    if _tangodb.has_key(key):
+    if key in _tangodb:
         return _tangodb[key]
     return None
+
 
 def getcomp(key, comp):
 
     _current = _compdb
     for _c in key:
-        if _current.has_key(_c):
+        if _c in _current:
             _current = _current[_c]
         else:
             return None
@@ -142,7 +154,8 @@ def getcomp(key, comp):
             if value == {}:
                 candidate.append(key + c)
                 return True
-            if expand_sparse(key + c, (x for x in value.items()), candidate, generators):
+            generator = (x for x in value.items())
+            if expand_sparse(key + c, generator, candidate, generators):
                 generators.append((key + c, current))
                 return True
         return False
@@ -150,7 +163,8 @@ def getcomp(key, comp):
     def impl(key, current, candidate):
         generators = []
         for c in current:
-            expand_sparse(key + c, (x for x in current[c].items()), candidate, generators)
+            generator = (x for x in current[c].items())
+            expand_sparse(key + c, generator, candidate, generators)
             if len(candidate) > 10:
                 break
         else:
@@ -171,16 +185,16 @@ def getcomp(key, comp):
     else:
         for _key in comp:
             if len(_key) == 1:
-                if _current.has_key(_key):
+                if _key in _current:
                     impl(_key, _current[_key], candidate)
             elif len(_key) == 2:
-                if _current.has_key(_key[0]):
-                    if _current[_key[0]].has_key(_key[1]):
+                if _key[0] in _current:
+                    if _key[1] in _current[_key[0]]:
                         impl(_key, _current[_key[0]][_key[1]], candidate)
     return candidate
 
 
-################################################################################
+###############################################################################
 #
 # Clause
 #
@@ -212,7 +226,8 @@ class Clause():
     def select(self, index):
         self._index = index
 
-################################################################################
+
+###############################################################################
 #
 # Clauses
 #
@@ -302,34 +317,46 @@ class Clauses:
 
         self._retry_google(words)
 
-import urllib, urllib2, json
+import urllib
+import urllib2
+import json
+
+
 def call_cgi_api(key):
     try:
-        params = urllib.urlencode({'langpair' : 'ja-Hira|ja',
-                                   'text' : key.encode("UTF-8")})
+        params = urllib.urlencode({'langpair': 'ja-Hira|ja',
+                                   'text': key.encode("UTF-8")})
         url = 'http://www.google.com/transliterate?'
-        json_response = urllib2.urlopen(url, params, _TIMEOUT).read()
+        response = urllib2.urlopen(url, params)
+        json_response = response.read()
+        if json_response:
+            logging.exception("call_cgi_api failed. %s" % url+params)
+            return None
         response = json.loads(json_response)
 
     except:
+        logging.exception("call_cgi_api failed. key: %s" % key)
         return None
     return response
 
+
 def get_from_google_cgi_api(clauses, key):
+    response = call_cgi_api(key)
+    if not response:
+        return None
     try:
-        response = call_cgi_api(key)
-        if not response:
-            return None
         for clauseinfo in response:
             key, candidates = clauseinfo
             clause = Clause(key, candidates)
             clauses.add(clause)
     except:
+        logging.exception("get_from_google_cgi_api failed. key: %s" % key)
         return None
     return clauses
 
 thread.start_new_thread(_load, ())
 #_load()
+
 
 def test():
     import doctest
@@ -337,4 +364,3 @@ def test():
 
 if __name__ == "__main__":
     test()
-

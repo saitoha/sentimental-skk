@@ -18,7 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
-import thread
+#import thread
 
 _kanadb = ((u'あ', u'ア', u'ｱ'),
            (u'い', u'イ', u'ｲ'),

@@ -18,8 +18,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
+
 def main():
-    import sys, os, optparse, codecs
+    import sys
+    import os
+    import optparse
+    import codecs
     import logging
     import tff
     import __init__
@@ -189,7 +193,8 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                       outputhandler=multiplexer)
     except:
         logging.exception("Aborted by exception.")
-        print "sskk aborted by an uncaught exception. see $HOME/.sskk/log/log.txt."
+        print ("sskk aborted by an uncaught exception."
+               " see $HOME/.sskk/log/log.txt.")
     finally:
         tty.restore_term()
         output.write(u"\x1b]0;\x1b\\")
@@ -199,4 +204,3 @@ along with this program. If not, see http://www.gnu.org/licenses/.
 ''' main '''
 if __name__ == '__main__':
     main()
-

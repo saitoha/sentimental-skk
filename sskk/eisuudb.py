@@ -18,7 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
-import thread
+#import thread
 
 _eisuudb = ((u'0', u'０'), (u'1', u'１'), (u'2', u'２'),
             (u'3', u'３'), (u'4', u'４'), (u'5', u'５'),

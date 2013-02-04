@@ -20,7 +20,6 @@
 
 import dictionary
 import kanadb
-import re
 
 _SKK_WORD_NONE = 0
 _SKK_WORD_MAIN = 1
