@@ -109,14 +109,12 @@ def _get_fallback_dict_path(name):
 
 def _load():
     dict_list = os.listdir(dictdir)
-    if not dict_list:
-        _load_dict(_get_fallback_dict_path('SKK-JISYO.L'))
-        _load_dict(_get_fallback_dict_path('SKK-JISYO.JIS2'))
-        _load_dict(_get_fallback_dict_path('SKK-JISYO.assoc'))
-        _load_dict(_get_fallback_dict_path('SKK-JISYO.edict'))
-        _load_dict(_get_fallback_dict_path('SKK-JISYO.geo'))
-        _load_dict(_get_fallback_dict_path('SKK-JISYO.jinmei'))
-    else:
+    _load_dict(_get_fallback_dict_path('SKK-JISYO.L'))
+    _load_dict(_get_fallback_dict_path('SKK-JISYO.JIS2'))
+    _load_dict(_get_fallback_dict_path('SKK-JISYO.assoc'))
+    _load_dict(_get_fallback_dict_path('SKK-JISYO.geo'))
+    _load_dict(_get_fallback_dict_path('SKK-JISYO.jinmei'))
+    if dict_list:
         for f in dict_list:
             _load_dict(os.path.join(dictdir, f))
 
