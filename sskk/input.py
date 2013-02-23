@@ -360,6 +360,8 @@ class InputHandler(tff.DefaultHandler,
         import urllib
         url = "http://ja.wikipedia.org/wiki/"
         url += urllib.quote_plus(word.encode('utf-8'))
+        command = "w3m '%s'" % url
+        #command = "emacs -nw"
 
         screen = self._screen
 
@@ -382,7 +384,7 @@ class InputHandler(tff.DefaultHandler,
                                   inputhandler,
                                   screen,
                                   top, left, height, width,
-                                  "w3m '%s'" % url,
+                                  command,
                                   self._termenc,
                                   self._termprop,
                                   self._mousemode,
@@ -640,30 +642,21 @@ class InputHandler(tff.DefaultHandler,
                             self._convert_okuri()
 
             #elif (0x61 <= c and c <= 0x7a) or c == 0x2d: # _, a - z, z*
-            else:
-                if charbuf.put(c):
-                    if wordbuf.isempty():
-                        s = charbuf.drain()
-                        context.putu(s)
-                        self._complete()
-                    elif wordbuf.has_okuri():
-                        # 送り仮名変換
-                        self._convert_okuri()
-                    else:
-                        s = charbuf.drain()
-                        wordbuf.append(s)
-                        self._complete()
-                else:
-                    wordbuf.append(chr(c))
+            elif charbuf.put(c):
+                if wordbuf.isempty():
+                    s = charbuf.drain()
+                    context.putu(s)
                     self._complete()
-            # else:
-            #    if self._iscooking():
-            #        self._settle(context)
-            #    if self._charbuf.put(c):
-            #        s = self._charbuf.drain()
-            #        context.write(ord(s))
-            #    else:
-            #        context.write(c)
+                elif wordbuf.has_okuri():
+                    # 送り仮名変換
+                    self._convert_okuri()
+                else:
+                    s = charbuf.drain()
+                    wordbuf.append(s)
+                    self._complete()
+            else:
+                wordbuf.append(unichr(c))
+                self._complete()
 
         return True  # handled
 
