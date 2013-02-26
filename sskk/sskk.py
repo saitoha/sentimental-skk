@@ -192,6 +192,10 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                       inputhandler=inputhandler,
                       outputhandler=multiplexer)
     except:
+        output.write(u"\x1b[?1006l")
+        output.write(u"\x1b[?1003l")
+        output.write(u"\x1b[?1002l")
+        output.write(u"\x1b[?1000l")
         logging.exception("Aborted by exception.")
         print ("sskk aborted by an uncaught exception."
                " see $HOME/.sskk/log/log.txt.")
