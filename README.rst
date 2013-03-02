@@ -9,7 +9,7 @@ What is this?
     Canossa makes application enable to restore specified screen region on demand!!
     So this SKK service can provide cool popup feature.
 
-.. image:: http://zuse.jp/misc/canossa.png 
+.. image:: http://zuse.jp/misc/canossa.png
    :width: 640
 
 
@@ -51,69 +51,41 @@ Usage
 
 How It Works
 ------------
+This program works as a terminal filter application and
+creates a PTY. It hooks I/O stream between terminal and applications running on it.
+The output stream which is recognized as STDOUT handle for applications,
+is duplicated and processed with the terminal emulation engine called as
+"Canossa". Canossa has a virtual terminal screen buffer which consists with a
+couple of character cell objects, and behave as another terminal emulator.
 
-- PTY and Normal Terminal/Application::
+- ::
 
-       +---------------------------------------------+                           
-       |                  Terminal                   |                           
-       +---------+-----------------------------------+                           
-                 |                                    
-       +---------|-----------------------------------+
-       |  +------+-------+        +---------------+  |
-       |  |    Master    |========|     Slave     |  |
-       |  +--------------+        +-------+-------+  |
-       +----------------------------------|----------+
-                                          |           
-       +----------------------------------+----------+ 
-       |                Application                  |
-       +---------------------------------------------+
-
-
-- TFF (Terminal Filter Framework)::
-
-                                                                                
-                        Scanner                    Event Driven Parser         Event Dispatcher 
-                        +-----+                         +-----+                     +-----+         
-      << I/O Stream >>  |     | << CodePoint Stream >>  |     | << Event Stream >>  |     |      << I/O Stream >>
-    ------------------->|     |------------------------>|     |-------------------->|     |---||-------------------->
-      (Raw Sequences)   |     |    (Unicode Points)     |     |   (Function Call)   |     |       (Raw Sequences)
-                        +-----+                         +-----+                     +--+--+
-                                                   ISO-2022 ISO-6429                   |     
-                                                   Compatible Parsing                  |       
-                                                                                       v     
-                                                                                    +-----+
-                                                                     Event Observer |     |      << I/O Stream >>
-                                                                      (I/O Handler) |     |---||-------------------->
-                                                                                    |     |       (Raw Sequences)
-                                                                                    +-----+
-- sskk ::
-
-    +---------------------------------------------+                             
-    |                                             |                             
-    |                  Terminal                   |                             
-    |                                             |                             
-    +---------------------------------------------+                             
-           |                       ^                               
-           |                       |                               
-       < input >               < output >                          
-           |                       |                               
-           |      +----------------+                               
-           |      |                      [ PTY 1 ]                 
-    +------|------|-------------------------------+                
-    |      v      |                               |                
-    |  +----------+---+       +----------------+  |                
-    |  |    Master    |=======|      Slave     |  |                
-    |  +--------------+       +--+-------------+  |                
-    |                            |        ^       |                
-    +----------------------------|--------|-------+                
-                                 |        |                        
-                             < input >    |                        
-                                 |        |                        
-                 +---------------+    < output >                   
-                 |                        |                        
-    [ sskk ]     |                        |                        
-    +------------|------------------------|---------------+        
-    |            |                        |               |        
+    +---------------------------------------------+
+    |                                             |
+    |                  Terminal                   |
+    |                                             |
+    +---------------------------------------------+
+           |                       ^
+           |                       |
+       < input >               < output >
+           |                       |
+           |      +----------------+
+           |      |                      [ PTY 1 ]
+    +------|------|-------------------------------+
+    |      v      |                               |
+    |  +----------+---+       +----------------+  |
+    |  |    Master    |=======|      Slave     |  |
+    |  +--------------+       +--+-------------+  |
+    |                            |        ^       |
+    +----------------------------|--------|-------+
+                                 |        |
+                             < input >    |
+                                 |        |
+                 +---------------+    < output >
+                 |                        |
+    [ sskk ]     |                        |
+    +------------|------------------------|---------------+
+    |            |                        |               |
     |            |                        |<--------------------------+
     |            |                        |               |           |
     |            v                        |               |           |
@@ -130,16 +102,16 @@ How It Works
     |            |              +-------------------+     |           |
     |            |              |                   |     |           |
     |            |              |  TFF Multiplexer  +-----------------+
-    |            |              |                   |     |        
-    |            |              +---------+---------+     |        
+    |            |              |                   |     |
+    |            |              +---------+---------+     |
     |            |                        |               |
     +------------|------------------------|---------------+
                  |                        |
              < input >                < output >
                  |                        |
-                 |       +----------------+                           
-                 |       |                           
-                 |       | [ PTY 2 ]                 
+                 |       +----------------+
+                 |       |
+                 |       | [ PTY 2 ]
          +-------|-------|-----------------------------+
          |       v       |                             |
          |  +------------+--+       +---------------+  |
@@ -149,8 +121,8 @@ How It Works
          +-------------------------------|------|------+
                                          |      |
                     +--------------------+      |
-                    |                           |      
-                < input >                   < output > 
+                    |                           |
+                < input >                   < output >
                     |                           |
                     v                           |
    +----------------+---------------------------------------------+
@@ -158,11 +130,30 @@ How It Works
    |                        Application Process                   |
    |                                                              |
    +--------------------------------------------------------------+
- 
+
+Components represented by above diagram, such as InputHandler, OutputHandler,
+Canossa, Multiplexer are based on TFF.
+
+- TFF (Terminal Filter Framework)::
+
+                        Scanner                    Event Driven Parser         Event Dispatcher
+                        +-----+                         +-----+                     +-----+
+      << I/O Stream >>  |     | << CodePoint Stream >>  |     | << Event Stream >>  |     |      << I/O Stream >>
+    ------------------->|     |------------------------>|     |-------------------->|     |---||-------------------->
+      (Raw Sequences)   |     |    (Unicode Points)     |     |   (Function Call)   |     |       (Raw Sequences)
+                        +-----+                         +-----+                     +--+--+
+                                                   ISO-2022 ISO-6429                   |
+                                                   Compatible Parsing                  |
+                                                                                       v
+                                                                                    +-----+
+                                                                     Event Observer |     |      << I/O Stream >>
+                                                                      (I/O Handler) |     |---||-------------------->
+                                                                                    |     |       (Raw Sequences)
+                                                                                    +-----+
 
 Dependency
 ----------
- - Masahiko Sato et al./SKK Development Team's SKK dictionaries 
+ - Masahiko Sato et al./SKK Development Team's SKK dictionaries
    http://openlab.jp/skk/skk/dic
 
  - wcwidth.py
