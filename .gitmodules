@@ -4,3 +4,6 @@
 [submodule "sskk/canossa"]
 	path = sskk/canossa
 	url = git://github.com/saitoha/canossa.git
+[submodule "sskk/tff"]
+	path = sskk/tff
+	url = git@github.com:saitoha/tff.git
