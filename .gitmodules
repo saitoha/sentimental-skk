@@ -1,6 +1,3 @@
-[submodule "sskk/tff"]
-	path = sskk/tff
-	url = git://github.com/saitoha/tff.git
 [submodule "sskk/termprop"]
 	path = sskk/termprop
 	url = git://github.com/saitoha/termprop.git
