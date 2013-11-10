@@ -9,8 +9,6 @@ filename = inspect.getfile(inspect.currentframe())
 dirpath = os.path.abspath(os.path.dirname(inspect.getfile(inspect.currentframe())))
 
 try:
-    import sskk.tff
-    import sskk.termprop
     import sskk.canossa
 except:
     print "Please do:\n git submodule update --init"
