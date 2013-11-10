@@ -26,7 +26,8 @@ import logging
 
 _TIMEOUT = 1.0
 
-rcdir = os.path.join(os.getenv("HOME"), ".sskk")
+homedir = os.path.expanduser("~")
+rcdir = os.path.join(homedir, ".sskk")
 dictdir = os.path.join(rcdir, "dict")
 if not os.path.exists(dictdir):
     os.makedirs(dictdir)
@@ -109,6 +110,7 @@ def _get_fallback_dict_path(name):
 
 def _load():
     dict_list = os.listdir(dictdir)
+    _load_dict(_get_fallback_dict_path('SKK-JISYO.builtin'))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.L'))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.JIS2'))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.assoc'))
@@ -201,15 +203,15 @@ class Clause():
     def __init__(self, key, candidates):
         self._key = _escape(key)
         self._values = []
-        self._displays = []
+        self._remarks = []
         for candidate in candidates:
             row = candidate.split(";")
             if len(row) == 2:
-                value, remarks = row
+                value, remark = row
             else:
-                value, remarks = candidate, u""
+                value, remark = candidate, u""
             self._values.append(_escape(value))
-            self._displays.append(_escape(value + " " + remarks))
+            self._remarks.append(_escape(remark))
         self._index = 0
 
     def getkey(self):
@@ -217,6 +219,9 @@ class Clause():
 
     def getcurrentvalue(self):
         return self._values[self._index]
+
+    def getcurrentremark(self):
+        return self._remarks[self._index]
 
     def getcandidates(self):
         return self._values
@@ -262,6 +267,9 @@ class Clauses:
 
     def getcurrentvalue(self):
         return self._clauses[self._index].getcurrentvalue()
+
+    def getcurrentremark(self):
+        return self._clauses[self._index].getcurrentremark()
 
     def getcandidates(self):
         return self._clauses[self._index].getcandidates()
