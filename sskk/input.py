@@ -19,19 +19,20 @@
 # ***** END LICENSE BLOCK *****
 
 import os
-import tff
 
 import title
 import kanadb
 import eisuudb
 import dictionary
 import word
+import settings
 
 from charbuf import CharacterContext
 from canossa import Listbox, IListboxListener
 from canossa import InnerFrame, IInnerFrameListener
 from canossa import IScreenListener
 from canossa import Cursor
+from canossa import tff
 
 import codecs
 import logging
@@ -41,7 +42,8 @@ _SKK_MARK_SELECT = u'▼'
 _SKK_MARK_OPEN = u'【'
 _SKK_MARK_CLOSE = u'】'
 
-rcdir = os.path.join(os.getenv("HOME"), ".sskk")
+homedir = os.path.expanduser("~")
+rcdir = os.path.join(homedir, ".sskk")
 histdir = os.path.join(rcdir, "history")
 if not os.path.exists(histdir):
     os.makedirs(histdir)
@@ -64,10 +66,8 @@ class IScreenListenerImpl(IScreenListener):
 class TitleTrait():
 
     _counter = 0
-    _use_title = False
 
-    def set_titlemode(self, use_title):
-        self._use_title = use_title
+    def set_titlemode(self):
         self._counter = 0
 
     def _getface(self):
@@ -75,8 +75,7 @@ class TitleTrait():
         return [u'三 ┗( ^o^)┓ ＜', u'三 ┏( ^o^)┛ ＜'][self._counter]
 
     def _refleshtitle(self):
-        if self._use_title:
-            title.draw(self._output)
+        title.draw(self._output)
 
     def settitle(self, value):
         face = self._getface()
@@ -142,11 +141,10 @@ class IListboxListenerImpl(IListboxListener):
         if self._clauses:
             self._clauses.getcurrentclause().select(index)
             self._remarks = remarks
-            if self._use_title:
-                if self._remarks:
-                    self.settitle(u'%s - %s' % (text, remarks))
-                else:
-                    self.settitle(text)
+            if self._remarks:
+                self.settitle(u'%s - %s' % (text, remarks))
+            else:
+                self.settitle(text)
         elif index >= 0:
             self._remarks = remarks
             self._wordbuf.reset()
@@ -178,9 +176,14 @@ class IListboxListenerImpl(IListboxListener):
 class IInnerFrameListenerImpl(IInnerFrameListener):
 
     def onclose(self, iframe, context):
-        iframe.clear()
         self._iframe = None
         self._inputhandler = None
+
+class LineBuffer():
+
+    def __init__(self, screen):
+        self._screen = screen
+        self._window = screen.create_window()
 
 
 ###############################################################################
@@ -188,7 +191,7 @@ class IInnerFrameListenerImpl(IInnerFrameListener):
 # InputHandler
 #
 class InputHandler(tff.DefaultHandler,
-                   IScreenListenerImpl,
+		   IScreenListenerImpl,
                    IListboxListenerImpl,
                    IInnerFrameListenerImpl,
                    TitleTrait):
@@ -205,7 +208,7 @@ class InputHandler(tff.DefaultHandler,
     _inputhandler = None
 
     def __init__(self, session, screen, termenc, termprop,
-                 use_title, mousemode, inputmode):
+                 mousemode, inputmode):
         self._screen = screen
         try:
             from cStringIO import StringIO
@@ -214,16 +217,15 @@ class InputHandler(tff.DefaultHandler,
             from StringIO import StringIO
             output = StringIO()
 
-        self._output = codecs.getwriter(termenc)(output, errors='ignore')
+        output = codecs.getwriter(termenc)(output, errors='ignore')
+        self._output = output
         self._termenc = termenc
         self._charbuf = CharacterContext()
         self._inputmode = inputmode
         self._wordbuf = word.WordBuffer(termprop)
-        self._listbox = Listbox(self, screen, termprop,
-                                mousemode, self._output)
+        self._listbox = Listbox(self, screen, termprop, mousemode)
         self._termprop = termprop
         self._mousemode = mousemode
-        self.set_titlemode(use_title)
         self._stack = []
         self._session = session
         self._screen.setlistener(self)
@@ -264,7 +266,7 @@ class InputHandler(tff.DefaultHandler,
             return True
         return False
 
-    def _convert_tango(self):
+    def _convert_word(self):
         key = self._wordbuf.get()
 
         if self._inputmode.iskata():
@@ -323,13 +325,27 @@ class InputHandler(tff.DefaultHandler,
         ''' 確定 '''
         clauses = self._clauses
         if clauses:
-            word = clauses.getvalue() + self._okuri
+            key = clauses.getkey()
+            remark = clauses.getcurrentremark()
+            if key.startswith(u"@") and remark.startswith(u"builtin:"):
+                self._dispatch_builtin_command(remark)
+                word = u""
+            else:
+                word = clauses.getvalue() + self._okuri
             self._clauses = None
             self._okuri = u""
         else:
             s = self._draincharacters()
             word = self._wordbuf.get()
+            if word.startswith(u"@"):
+                self._convert_word()                    
+                return
             word += s
+            if word.startswith(u"@"):
+                word = u""
+        if word.startswith("$"):
+            self.open_with_command(word[1:])
+            word = u""
         #dictionary.feedback(key, value)
         title.setmessage(u'＼(^o^)／')
         self._refleshtitle()
@@ -347,7 +363,7 @@ class InputHandler(tff.DefaultHandler,
         else:
             s = self._draincharacters()
             wordbuf.append(s)
-            self._convert_tango()
+            self._convert_word()
 
     def _complete(self):
         completions = self._wordbuf.getcompletions(self._charbuf.complete())
@@ -356,13 +372,33 @@ class InputHandler(tff.DefaultHandler,
         else:
             self._listbox.close()
 
+    def _dispatch_builtin_command(self, command):
+        self._reset()
+        if command == u"builtin:settings:romanrule:azik":
+            settings.set("romanrule", "azik")
+            self._charbuf.compile("azik")
+            settings.save()
+        elif command == u"builtin:settings:romanrule:normal":
+            settings.set("romanrule", "normal")
+            self._charbuf.compile("normal")
+            settings.save()
+        elif command == u"builtin:settings:use_title:on":
+            settings.set("use_title", True)
+            title.setenabled(True)
+            settings.save()
+        elif command == u"builtin:settings:use_title:off":
+            settings.set("use_title", False)
+            title.setenabled(False)
+            settings.save()
+
     def open_wikipedia(self, word):
         import urllib
         url = "http://ja.wikipedia.org/wiki/"
         url += urllib.quote_plus(word.encode('utf-8'))
         command = "w3m '%s'" % url
-        #command = "emacs -nw"
+        self.open_with_command(command)
 
+    def open_with_command(self, command):
         screen = self._screen
 
         height = min(20, int(screen.height * 0.7))
@@ -376,7 +412,6 @@ class InputHandler(tff.DefaultHandler,
                                     self._screen,
                                     self._termenc,
                                     self._termprop,
-                                    False,
                                     self._mousemode,
                                     inputmode)
         self._iframe = InnerFrame(self._session,
@@ -387,8 +422,7 @@ class InputHandler(tff.DefaultHandler,
                                   command,
                                   self._termenc,
                                   self._termprop,
-                                  self._mousemode,
-                                  self._output)
+                                  self._mousemode)
         self._inputhandler = inputhandler
 
     def destruct_subprocess(self):
@@ -575,11 +609,12 @@ class InputHandler(tff.DefaultHandler,
                 inputmode.reset()
                 self._reset()
             elif (c == 0x2c or c == 0x2e or c == 0x3a or
-                  c == 0x3b or c == 0x5b or c == 0x5d):  # , . ; : [ ]
+                  c == 0x5b or c == 0x5d):  # , . ; : [ ]
+#                  c == 0x3b or c == 0x5b or c == 0x5d):  # , . ; : [ ]
                 charbuf.reset()
                 if listbox.isempty():
                     if not wordbuf.isempty():
-                        self._convert_tango()
+                        self._convert_word()
                         charbuf.put(c)
                         s = charbuf.drain()
                         self._okuri += s
@@ -772,6 +807,7 @@ class InputHandler(tff.DefaultHandler,
         termprop = self._termprop
         clauses = self._clauses
         y, x = screen.getyx()
+        self._listbox.setposition(x, y)
         cur_width = 0
         selected_clause = clauses.getcurrentclause()
         for clause in clauses:
@@ -803,9 +839,7 @@ class InputHandler(tff.DefaultHandler,
             output.write(word)
         if self._okuri:
             output.write(u'\x1b[0;32m' + self._okuri)
-        output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
 
-        self._listbox.draw(output)
         self._prev_length = cur_width
 
     def _draw_word(self, output):
@@ -814,6 +848,7 @@ class InputHandler(tff.DefaultHandler,
         word = self._wordbuf.getbuffer()
         char = self._charbuf.getbuffer()
         y, x = screen.getyx()
+        self._listbox.setposition(x, y)
         cur_width = 0
         cur_width += termprop.wcswidth(word)
         cur_width += termprop.wcswidth(char)
@@ -831,13 +866,10 @@ class InputHandler(tff.DefaultHandler,
                 screen.copyline(output, 0, y, screen.width)
                 if y + 1 < screen.height:
                     screen.copyline(output, 0, y + 1, screen.width)
+
         output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
         output.write(u'\x1b[0;1;4;31m' + word)
         output.write(u'\x1b[0;1;32m' + char)
-        output.write(u'\x1b[m\x1b[%d;%dH' % (y + 1, x + 1))
-
-        if self._listbox:
-            self._listbox.draw(output)
 
         self._prev_length = cur_width
         if cur_width > 0:
@@ -876,21 +908,23 @@ class InputHandler(tff.DefaultHandler,
         output = self._output
         clauses = self._clauses
         iframe = self._iframe
+        screen = self._screen
+
         if clauses and not self._listbox.isempty():
             self._draw_clauses_with_popup(output)
-            if iframe:
-                iframe.draw(output)
         elif not self._wordbuf.isempty() or not self._charbuf.isempty():
             self._draw_word(output)
-            if iframe:
-                iframe.draw(output)
         else:
             self._draw_nothing(output)
+
+        screen.drawwindows(context)
+
         self._refleshtitle()
         buf = output.getvalue()
         if buf:
             context.puts(buf)
             output.truncate(0)
+
         if self._inputhandler:
             cursor = self._screen.cursor
             try:

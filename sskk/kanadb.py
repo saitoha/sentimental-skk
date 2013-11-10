@@ -106,7 +106,7 @@ _to_hira = {}
 _to_hankata = {}
 
 
-def _loaddb():
+def compile():
     for hira, kata, hankata in _kanadb:
         _to_kata[hira] = kata
         _to_hira[kata] = hira
@@ -141,8 +141,8 @@ def to_hankata(s):
     return ''.join([conv(c) for c in s])
 
 
-_loaddb()
-#thread.start_new_thread(_loaddb, ())
+compile()
+#thread.start_new_thread(compile, ())
 
 
 def test():

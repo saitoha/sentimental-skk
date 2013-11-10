@@ -25,7 +25,6 @@ def main():
     import optparse
     import codecs
     import logging
-    import tff
     import __init__
 
     # parse options and arguments
@@ -127,14 +126,20 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     output.write(u"       三( ^o^) 三( ^o^) 三( ^o^)\n")
     output.write(u"\x1b[1;1H")
 
-    from termprop import Termprop
-    termprop = Termprop()
+    from canossa import termprop
+    termprop = termprop.Termprop()
 
     output.write(u"\x1b]0;\x1b\\")
     output.write(u"\x1b[22;0t")
     output.flush()
 
-    rcdir = os.path.join(os.getenv("HOME"), ".sskk")
+    homedir = os.path.expanduser("~")
+    rcdir = os.path.join(homedir, ".sskk")
+
+    confdir = os.path.join(rcdir, "conf")
+    if not os.path.exists(confdir):
+        os.makedirs(confdir)
+
     logdir = os.path.join(rcdir, "log")
     if not os.path.exists(logdir):
         os.makedirs(logdir)
@@ -143,17 +148,29 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     logging.basicConfig(filename=logfile, filemode="w")
 
     os.environ["__SSKK_VERTION"] = __init__.__version__
+
+    from canossa import tff
     tty = tff.DefaultPTY(term, lang, command, sys.stdin)
 
     row, col = tty.fitsize()
 
-    use_title = options.titlebar
+    import settings
+    if settings.get("use_title"):
+        use_title = True
+    else:
+        use_title = False
 
+    if options.titlebar:
+        use_title = True
+
+    # TODO: see terminfo
     if not "xterm" in term:
         use_title = False
+	logging.warning("use_title flag is disabled by checking $TERM.")
 
     if not termprop.has_mb_title:
         use_title = False
+	logging.warning("use_title flag is disabled by checking termprop.has_mb_title.")
 
     import title
     import canossa as cano
@@ -168,7 +185,10 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     from input import InputHandler
 
     output.flush()
+
+    # push title
     output.write(u"\x1b[23;0t")
+
     output.write(u"\x1b[1;1H\x1b[J")
 
     session = tff.Session(tty)
@@ -181,7 +201,6 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                                     screen=canossa.screen,
                                     termenc=termenc,
                                     termprop=termprop,
-                                    use_title=use_title,
                                     mousemode=mode_handler,
                                     inputmode=inputmode)
 
@@ -203,6 +222,8 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         tty.restore_term()
         output.write(u"\x1b]0;\x1b\\")
         output.flush()
+
+        # pop title
         output.write(u"\x1b[23;0t")
 
 ''' main '''

@@ -32,6 +32,10 @@ def get():
         return u'%s   %s' % (_original, _message)
 
 
+def getenabled():
+    return _enabled
+
+
 def setenabled(value):
     global _enabled, _dirty
     _enabled = value
@@ -59,6 +63,6 @@ def setoriginal(value):
 
 def draw(output):
     global _dirty
-    if _dirty:
+    if _enabled and _dirty:
         output.write(u'\x1b]2;%s\x1b\\' % get())
         _dirty = False
