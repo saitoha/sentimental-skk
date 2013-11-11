@@ -992,8 +992,10 @@ def compile_azik():
     for key, value in hira_rule.items():
         kata_rule[key] = kanadb.to_kata(value)
 
-    _hira_tree = _maketree(hira_rule, 'w')
-    _kata_tree = _maketree(kata_rule, 'w')
+    _hira_tree = _maketree(hira_rule, 'bcdfghjkmprstvwxz')
+    _kata_tree = _maketree(kata_rule, 'bcdfghjkmprstvwxz')
+    #_hira_tree = _maketree(hira_rule, 'w')
+    #_kata_tree = _maketree(kata_rule, 'w')
     return (_hira_tree, _kata_tree)
 
 
