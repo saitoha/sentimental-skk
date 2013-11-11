@@ -958,20 +958,25 @@ def _maketree(rule, s):
     tree[SKK_ROMAN_PREV] = tree
     return tree
 
-
-def compile_normal():
-    ''' make hiragana/katakana input state trie-tree
-    >>> t = makekatatree()
-    >>> t[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
-    u'\u30ad\u30e3'
-    >>> t = makehiratree()
-    >>> t[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
-    u'\u304d\u3083'
-    '''
-    hira_rule = _rule_normal
+def _make_rules(rule):
+    hira_rule = rule
     kata_rule = {}
     for key, value in hira_rule.items():
         kata_rule[key] = kanadb.to_kata(value)
+    return (hira_rule, kata_rule)
+
+def compile_normal():
+    ''' make hiragana/katakana input state trie-tree
+    >>> hira_rule, kata_rule = _make_rules(_rule_normal)
+    >>> t = _maketree(kata_rule, 'bcdfghjkmprstvwxz')
+    >>> t[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
+    u'\u30ad\u30e3'
+    >>> t = _maketree(hira_rule, 'bcdfghjkmprstvwxz')
+    >>> t[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
+    u'\u304d\u3083'
+    '''
+
+    hira_rule, kata_rule = _make_rules(_rule_normal)
 
     _hira_tree = _maketree(hira_rule, 'bcdfghjkmprstvwxz')
     _kata_tree = _maketree(kata_rule, 'bcdfghjkmprstvwxz')
@@ -980,17 +985,16 @@ def compile_normal():
 
 def compile_azik():
     ''' make hiragana/katakana input state trie-tree
-    >>> t = makekatatree()
+    >>> hira_rule, kata_rule = _make_rules(_rule_normal)
+    >>> t = _maketree(kata_rule, 'bcdfghjkmprstvwxz')
     >>> t[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u30ad\u30e3'
-    >>> t = makehiratree()
+    >>> t = _maketree(hira_rule, 'bcdfghjkmprstvwxz')
     >>> t[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u304d\u3083'
     '''
-    hira_rule = _rule_azik
-    kata_rule = {}
-    for key, value in hira_rule.items():
-        kata_rule[key] = kanadb.to_kata(value)
+
+    hira_rule, kata_rule = _make_rules(_rule_normal)
 
     _hira_tree = _maketree(hira_rule, 'bcdfghjkmprstvwxz')
     _kata_tree = _maketree(kata_rule, 'bcdfghjkmprstvwxz')
