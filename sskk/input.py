@@ -31,6 +31,7 @@ from charbuf import CharacterContext
 from canossa import Listbox, IListboxListener
 from canossa import InnerFrame, IInnerFrameListener
 from canossa import IScreenListener
+from canossa import IWidget
 from canossa import Cursor
 from canossa import tff
 
@@ -179,11 +180,24 @@ class IInnerFrameListenerImpl(IInnerFrameListener):
         self._iframe = None
         self._inputhandler = None
 
-class LineBuffer():
+
+class SkkLineEditor(IWidget):
 
     def __init__(self, screen):
         self._screen = screen
-        self._window = screen.create_window()
+        self._window = screen.create_window(self)
+
+    def write(self, s):
+        self._window.write(s)
+
+    def draw(self, region):
+        pass
+
+    def handle_draw(self, context):
+        self._window.draw(context)
+
+    def close(self, context):
+        self._window.close()
 
 
 ###############################################################################
@@ -229,6 +243,10 @@ class InputHandler(tff.DefaultHandler,
         self._stack = []
         self._session = session
         self._screen.setlistener(self)
+
+#        y, x = screen.getyx()
+#        self._listbox.setposition(x, y)
+
         # detects libvte + Ambiguous=narrow environment
         if not termprop.is_cjk and termprop.is_vte():
             pad = u" "
@@ -872,7 +890,6 @@ class InputHandler(tff.DefaultHandler,
                 if y + 1 < screen.height:
                     screen.copyline(output, 0, y + 1, screen.width)
 
-        y, x = screen.getyx()
         output.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
         output.write(u'\x1b[0;1;4;31m' + word)
         output.write(u'\x1b[0;1;32m' + char)
