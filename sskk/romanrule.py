@@ -985,7 +985,7 @@ def compile_normal():
 
 def compile_azik():
     ''' make hiragana/katakana input state trie-tree
-    >>> hira_rule, kata_rule = _make_rules(_rule_normal)
+    >>> hira_rule, kata_rule = _make_rules(_rule_azik)
     >>> t = _maketree(kata_rule, 'bcdfghjkmprstvwxz')
     >>> t[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u30ad\u30e3'
@@ -994,12 +994,10 @@ def compile_azik():
     u'\u304d\u3083'
     '''
 
-    hira_rule, kata_rule = _make_rules(_rule_normal)
+    hira_rule, kata_rule = _make_rules(_rule_azik)
 
-    _hira_tree = _maketree(hira_rule, 'bcdfghjkmprstvwxz')
-    _kata_tree = _maketree(kata_rule, 'bcdfghjkmprstvwxz')
-    #_hira_tree = _maketree(hira_rule, 'w')
-    #_kata_tree = _maketree(kata_rule, 'w')
+    _hira_tree = _maketree(hira_rule, 'w')
+    _kata_tree = _maketree(kata_rule, 'w')
     return (_hira_tree, _kata_tree)
 
 

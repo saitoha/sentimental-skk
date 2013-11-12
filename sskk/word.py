@@ -31,7 +31,7 @@ _SKK_MARK_OKURI = u'*'
 
 class WordBuffer():
 
-    __main = u""
+    __main = u''
     __mode = _SKK_WORD_NONE
     __comp = None
     __comp_index = 0
@@ -41,13 +41,13 @@ class WordBuffer():
         self.reset()
         self._wcswidth = termprop.wcswidth
         if not termprop.is_cjk and termprop.is_vte():
-            self._cookmark = _SKK_MARK_COOK + u" "
+            self._cookmark = _SKK_MARK_COOK + u' '
         else:
             self._cookmark = _SKK_MARK_COOK
 
     def reset(self):
         self.__mode = _SKK_WORD_NONE
-        self.__main = u""
+        self.__main = u''
         self.__comp = None
         self.__comp_index = 0
 

@@ -155,7 +155,7 @@ class IListboxListenerImpl(IListboxListener):
     def onsettled(self, listbox, context):
         if self._clauses:
             self._settle(context)
-        elif self._wordbuf.length() > 0:
+        if self._wordbuf.length() > 0:
             self._listbox.close()
             self._showpopup()
 
@@ -327,25 +327,25 @@ class InputHandler(tff.DefaultHandler,
         if clauses:
             key = clauses.getkey()
             remark = clauses.getcurrentremark()
-            if key.startswith(u"@") and remark.startswith(u"builtin:"):
+            if key.startswith(u'@') and remark.startswith(u'builtin:'):
                 self._dispatch_builtin_command(remark)
-                word = u""
+                word = u''
             else:
                 word = clauses.getvalue() + self._okuri
             self._clauses = None
-            self._okuri = u""
+            self._okuri = u''
         else:
             s = self._draincharacters()
             word = self._wordbuf.get()
-            if word.startswith(u"@"):
+            if word.startswith(u'@'):
                 self._convert_word()                    
                 return
             word += s
-            if word.startswith(u"@"):
-                word = u""
-        if word.startswith("$"):
+            if word.startswith(u'@'):
+                word = u''
+        if word.startswith('$'):
             self.open_with_command(word[1:])
-            word = u""
+            word = u''
         #dictionary.feedback(key, value)
         title.setmessage(u'＼(^o^)／')
         self._refleshtitle()
@@ -578,13 +578,13 @@ class InputHandler(tff.DefaultHandler,
             wordbuf = self._wordbuf
             inputmode = self._inputmode
             listbox = self._listbox
+            currentbuffer = charbuf.getbuffer()
 
-            if c == 0x2f and (charbuf.isempty()
-                              or charbuf.getbuffer() != u'z'):  # /
-                if not self._iscooking():
-                    inputmode.startabbrev()
-                    wordbuf.reset()
-                    wordbuf.startedit()
+            if c == 0x2f and (charbuf.isempty() or currentbuffer != u'z'):  # /
+                    if not self._iscooking():
+                        inputmode.startabbrev()
+                        wordbuf.reset()
+                        wordbuf.startedit()
             elif c == 0x71:  # q
                 if self._iscooking():
                     s = self._draincharacters()
@@ -603,14 +603,14 @@ class InputHandler(tff.DefaultHandler,
                     elif inputmode.iskata():
                         inputmode.starthira()
                     self._reset()
-            elif c == 0x6c and charbuf.getbuffer() != "z":  # l
+            elif c == 0x6c and currentbuffer != "z":  # l
                 if listbox.isshown():
                     self._settle(context)
                 inputmode.reset()
                 self._reset()
-            elif (c == 0x2c or c == 0x2e or c == 0x3a or
-                  c == 0x5b or c == 0x5d):  # , . ; : [ ]
+            elif c in (0x2c, 0x2e, 0x3a, 0x5b): # , . : [ ]
 #                  c == 0x3b or c == 0x5b or c == 0x5d):  # , . ; : [ ]
+                # 区切り文字 ( , . : [ ]) が入力された
                 charbuf.reset()
                 if listbox.isempty():
                     if not wordbuf.isempty():
@@ -631,11 +631,12 @@ class InputHandler(tff.DefaultHandler,
                     else:
                         context.write(c)
 
-            elif (0x41 <= c and c <= 0x5a and
-                  charbuf.getbuffer() != "z"):  # A - Z
+            elif 0x41 <= c and c <= 0x5a and currentbuffer != "z":
+                # A - Z
                 # 大文字のとき
                 # 先行する入力があるか
                 if wordbuf.isempty() or not wordbuf.get():
+                    # ない
                     wordbuf.startedit()
                     charbuf.put(c)
                     if charbuf.isfinal():  # 文字バッファに溜める
@@ -650,7 +651,8 @@ class InputHandler(tff.DefaultHandler,
                     else:
                         self._complete()
                 else:
-                    s = charbuf.getbuffer()
+                    # ある
+                    s = currentbuffer
                     if s == u'n':
                         charbuf.put(0x6e)  # n
                         s = charbuf.drain()
@@ -844,20 +846,23 @@ class InputHandler(tff.DefaultHandler,
 
     def _draw_word(self, output):
         screen = self._screen
-        termprop = self._termprop
+        wcswidth = self._termprop.wcswidth
         word = self._wordbuf.getbuffer()
         char = self._charbuf.getbuffer()
         y, x = screen.getyx()
         self._listbox.setposition(x, y)
-        cur_width = 0
-        cur_width += termprop.wcswidth(word)
-        cur_width += termprop.wcswidth(char)
-        if char and not word and self._anti_optimization_flag:
-            if y < screen.height - 1:
-                screen.copyline(output, 0, y, screen.width)
-            self._anti_optimization_flag = False
-        elif len(char) == 1 and not word:
-            self._anti_optimization_flag = True
+        cur_width = wcswidth(word) + wcswidth(char)
+
+        if y < screen.height - 1:
+            screen.copyline(output, 0, y, screen.width)
+
+        #if char and not word and self._anti_optimization_flag:
+        #    if y < screen.height - 1:
+        #        screen.copyline(output, 0, y, screen.width)
+        #    self._anti_optimization_flag = False
+        #elif len(char) == 1 and not word:
+        #    self._anti_optimization_flag = True
+
         if self._prev_length > cur_width:
             length = self._prev_length - cur_width
             if x + cur_width + length < screen.width:
@@ -867,7 +872,8 @@ class InputHandler(tff.DefaultHandler,
                 if y + 1 < screen.height:
                     screen.copyline(output, 0, y + 1, screen.width)
 
-        output.write(u"\x1b[%d;%dH" % (y + 1, x + 1))
+        y, x = screen.getyx()
+        output.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
         output.write(u'\x1b[0;1;4;31m' + word)
         output.write(u'\x1b[0;1;32m' + char)
 
@@ -888,7 +894,8 @@ class InputHandler(tff.DefaultHandler,
                 screen.copyline(output, 0, y, screen.width)
                 if y + 1 < screen.height:
                     screen.copyline(output, 0, y + 1, screen.width)
-            output.write(u"\x1b[%d;%dH\x1b[?25h" % (y + 1, x + 1))
+            output.write('\x1b[%d;%dH' % (y + 1, x + 1))
+            output.write('\x1b[?25h')
             self._prev_length = 0
 
     def handle_resize(self, context, row, col):
@@ -920,20 +927,23 @@ class InputHandler(tff.DefaultHandler,
         screen.drawwindows(context)
 
         self._refleshtitle()
+
         buf = output.getvalue()
         if buf:
             context.puts(buf)
             output.truncate(0)
 
         if self._inputhandler:
-            cursor = self._screen.cursor
+            # save cursor
+            cursor = screen.cursor
             try:
                 innercursor = iframe.innerscreen.cursor
-                self._screen.cursor = Cursor(iframe.top + innercursor.row,
-                                             iframe.left + innercursor.col)
+                screen.cursor = Cursor(iframe.top + innercursor.row,
+                                       iframe.left + innercursor.col)
                 self._inputhandler.handle_draw(context)
             finally:
-                self._screen.cursor = cursor
+                # restore cursor
+                screen.cursor = cursor
 
 
 def test():
