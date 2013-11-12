@@ -924,9 +924,9 @@ class InputHandler(tff.DefaultHandler,
         else:
             self._draw_nothing(output)
 
-        screen.drawwindows(context)
-
         self._refleshtitle()
+
+        screen.drawwindows(context)
 
         buf = output.getvalue()
         if buf:
