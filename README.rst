@@ -31,6 +31,9 @@ or via pip ::
 
     $ pip install sentimental-skk
 
+upgrade install via pip ::
+
+    $ pip install sentimental-skk --upgrade
 
 Usage
 -----
@@ -52,7 +55,9 @@ Usage
 How It Works
 ------------
 This program works as a terminal filter application and
-creates a PTY. It hooks I/O stream between terminal and applications running on it.
+creates some PTYs. It hooks I/O stream between terminal and applications
+running on it.
+
 The output stream which is recognized as STDOUT handle for applications,
 is duplicated and processed with the terminal emulation engine called as
 "Canossa". Canossa has a virtual terminal screen buffer which consists with a
@@ -83,29 +88,31 @@ couple of character cell objects, and behave as another terminal emulator.
                                  |        |
                  +---------------+    < output >
                  |                        |
-    [ sskk ]     |                        |
-    +------------|------------------------|---------------+
-    |            |                        |               |
-    |            |                        |<--------------------------+
-    |            |                        |               |           |
-    |            v                        |               |           |
-    |   +-----------------+       +-------+--------+      |    +------+------+
-    |   |                 |       |                |      |    |             |
-    |   |                 |       |                |      |    |             |
-    |   |  InputHandler   |       |  OutputHandler |      |    |   Canossa   |
-    |   |                 |       |                |      |    |             |
-    |   |                 |       |                |      |    |             |
-    |   +--------+--------+       +----------------+      |    +-------------+
-    |            |                        ^               |           ^
-    |            |                        |               |           |
-    |            |                        |               |           |
-    |            |              +-------------------+     |           |
-    |            |              |                   |     |           |
-    |            |              |  TFF Multiplexer  +-----------------+
-    |            |              |                   |     |
-    |            |              +---------+---------+     |
-    |            |                        |               |
-    +------------|------------------------|---------------+
+    [ sskk ]     |                        |               [ canossa ]
+    +------------|------------------------|------------+----------------------+
+    |            |                        |            |                      |
+    |            |                        |<------------------------+         |
+    |            v                        |            |            |         |
+    |   +-----------------+     +---------+------+     |  +---------+------+  |
+    |   |                 |     |                |     |  |                |  |
+    |   |                 |     |                |     |  |                |  |
+    |   |  InputHandler   |     |  OutputHandler |     |  |    Canossa     |  |
+    |   |                 |     |                |     |  |                |  |
+    |   |                 |     |                |     |  |                |  |
+    |   +--------+---+----+     +----------------+     |  +----------------+  |
+    |            |   |                    ^            |      ^       ^       |
+    |            |   |                    |            |      |       |       |
+    |            |   |                    |            |      |       |       |
+    |            |   |        +-------------------+    |      |  +----+----+  |
+    |            |   |        |                   |    |      |  |         |  |
+    |            |   |        |  TFF Multiplexer  +-----------+  | widgets |  |
+    |            |   |        |                   |    |         |         |  |
+    |            |   |        +-----------+-------+    |         +---------+  |
+    |            |   |                    |            |              ^       |
+    |            |   |                    |            |              |       |
+    |            |   +------------------------------------------------+       |
+    |            |                        |            |                      |
+    +------------|------------------------|------------+----------------------+
                  |                        |
              < input >                < output >
                  |                        |
@@ -122,14 +129,12 @@ couple of character cell objects, and behave as another terminal emulator.
                                          |      |
                     +--------------------+      |
                     |                           |
-                < input >                   < output >
-                    |                           |
-                    v                           |
-   +----------------+---------------------------------------------+
-   |                                                              |
-   |                        Application Process                   |
-   |                                                              |
-   +--------------------------------------------------------------+
+    +---------------+----------------------------------------------+
+    |                                                              |
+    |                        Application Process                   |
+    |                                                              |
+    +--------------------------------------------------------------+
+
 
 Components represented by above diagram, such as InputHandler, OutputHandler,
 Canossa, Multiplexer are based on TFF.
