@@ -34,6 +34,7 @@ from canossa import IScreenListener
 from canossa import IWidget
 from canossa import Cursor
 from canossa import tff
+from canossa import mouse
 
 import codecs
 import logging
@@ -205,7 +206,7 @@ class SkkLineEditor(IWidget):
 # InputHandler
 #
 class InputHandler(tff.DefaultHandler,
-		   IScreenListenerImpl,
+                   IScreenListenerImpl,
                    IListboxListenerImpl,
                    IInnerFrameListenerImpl,
                    TitleTrait):
@@ -221,8 +222,7 @@ class InputHandler(tff.DefaultHandler,
     _iframe = None
     _inputhandler = None
 
-    def __init__(self, session, screen, termenc, termprop,
-                 mousemode, inputmode):
+    def __init__(self, session, screen, termenc, termprop, mousemode, inputmode):
         self._screen = screen
         try:
             from cStringIO import StringIO
@@ -231,13 +231,14 @@ class InputHandler(tff.DefaultHandler,
             from StringIO import StringIO
             output = StringIO()
 
+        self._mouse_decoder = mouse.MouseDecoder(screen, termprop, mousemode)
         output = codecs.getwriter(termenc)(output, errors='ignore')
         self._output = output
         self._termenc = termenc
         self._charbuf = CharacterContext()
         self._inputmode = inputmode
         self._wordbuf = word.WordBuffer(termprop)
-        self._listbox = Listbox(self, screen, termprop, mousemode)
+        self._listbox = Listbox(self, screen, termprop, mousemode, self._mouse_decoder)
         self._termprop = termprop
         self._mousemode = mousemode
         self._stack = []
@@ -434,13 +435,13 @@ class InputHandler(tff.DefaultHandler,
                                     inputmode)
         self._iframe = InnerFrame(self._session,
                                   self,
-                                  inputhandler,
+                                  #inputhandler,
+                                  self._mouse_decoder,
                                   screen,
                                   top, left, height, width,
                                   command,
                                   self._termenc,
-                                  self._termprop,
-                                  self._mousemode)
+                                  self._termprop)
         self._inputhandler = inputhandler
 
     def destruct_subprocess(self):
@@ -452,6 +453,9 @@ class InputHandler(tff.DefaultHandler,
 
         if not self._inputmode.getenabled():
             return False
+
+        if self._mouse_decoder.handle_char(context, c):
+            return True
 
         if self._clauses and self._listbox.handle_char(context, c):
             return True
@@ -784,6 +788,8 @@ class InputHandler(tff.DefaultHandler,
     def handle_csi(self, context, parameter, intermediate, final):
         if not self._inputmode.getenabled():
             return False
+        if self._listbox.isshown() and self._mouse_decoder.handle_csi(context, parameter, intermediate, final):
+            return True
         if self._listbox.handle_csi(context, parameter, intermediate, final):
             return True
         if self._handle_csi_cursor(context, parameter, intermediate, final):
