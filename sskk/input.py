@@ -166,10 +166,14 @@ class IListboxListenerImpl(IListboxListener):
             listbox.close()
         text = self._clauses.getkey()
         self._clauses = None
-        self._wordbuf.reset()
-        self._wordbuf.startedit()
-        self._wordbuf.append(text + self._okuri)
+        wordbuf = self._wordbuf
+        wordbuf.reset()
+        wordbuf.startedit()
+        wordbuf.append(text + self._okuri)
         self._complete()
+        if self._iframe:
+            self._iframe.close()
+            self._iframe = None
 
     def onrepeat(self, listbox):
         return False
@@ -373,6 +377,9 @@ class InputHandler(tff.DefaultHandler,
         self._wordbuf.reset()
         self._anti_optimization_flag = False
         context.putu(word)
+        if self._iframe:
+            self._iframe.close()
+            self._iframe = None
 
     def _showpopup(self):
         ''' 次候補 '''
@@ -530,11 +537,12 @@ class InputHandler(tff.DefaultHandler,
             if self._listbox.isshown():
                 self._listbox.close()
             if self._inputmode.isabbrev():
-                word = self._wordbuf.get()
+                wordbuf = self._wordbuf
+                word = wordbuf.get()
                 word = eisuudb.to_zenkaku(word)
                 context.putu(word)
                 self._inputmode.endabbrev()
-                self._wordbuf.reset()
+                wordbuf.reset()
             elif not self._wordbuf.isempty():
                 s = self._draincharacters()
                 word = self._wordbuf.get()
@@ -730,11 +738,13 @@ class InputHandler(tff.DefaultHandler,
         return False
 
     def _movenextclause(self):
-        if self._clauses:
-            self._clauses.movenext()
-            result = self._clauses.getcandidates()
-            self._listbox.close()
+        clauses = self._clauses
+        if clauses:
+            clauses.movenext()
+            result = clauses.getcandidates()
+
             self._listbox.assign(result)
+
             return True
         return False
 
@@ -960,9 +970,8 @@ class InputHandler(tff.DefaultHandler,
             # save cursor
             cursor = screen.cursor
             try:
-                innercursor = iframe.innerscreen.cursor
-                screen.cursor = Cursor(iframe.top + innercursor.row,
-                                       iframe.left + innercursor.col)
+                screen.cursor = Cursor(iframe.top + iframe.innerscreen.cursor.row,
+                                       iframe.left + iframe.innerscreen.cursor.col)
                 self._inputhandler.handle_draw(context)
             finally:
                 # restore cursor
