@@ -166,11 +166,11 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     # TODO: see terminfo
     if not "xterm" in term:
         use_title = False
-	logging.warning("use_title flag is disabled by checking $TERM.")
+        logging.warning("use_title flag is disabled by checking $TERM.")
 
     if not termprop.has_mb_title:
         use_title = False
-	logging.warning("use_title flag is disabled by checking termprop.has_mb_title.")
+        logging.warning("use_title flag is disabled by checking termprop.has_mb_title.")
 
     import title
     import canossa as cano
