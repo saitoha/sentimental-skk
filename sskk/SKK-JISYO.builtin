@@ -1,0 +1,5 @@
+;; okuri-nasi entries.
+@ローマ字ルール /標準;builtin:settings:romanrule:normal/
+@ローマ字ルール /AZIK;builtin:settings:romanrule:azik/
+@タイトルバーメッセージ /有効;builtin:settings:use_title:on/
+@タイトルバーメッセージ /無効;builtin:settings:use_title:off/
