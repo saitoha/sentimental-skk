@@ -392,11 +392,14 @@ class InputHandler(tff.DefaultHandler,
             self._convert_word()
 
     def _complete(self):
-        completions = self._wordbuf.getcompletions(self._charbuf.complete())
+        charbuf = self._charbuf
+        wordbuf = self._wordbuf
+        listbox = self._listbox
+        completions = wordbuf.getcompletions(charbuf.complete())
         if completions:
-            self._listbox.assign(completions, -1)
+            listbox.assign(completions, -1)
         else:
-            self._listbox.close()
+            listbox.close()
 
     def _dispatch_builtin_command(self, command):
         self._reset()
@@ -536,8 +539,10 @@ class InputHandler(tff.DefaultHandler,
         elif c == 0x11:  # C-q
             if self._listbox.isshown():
                 self._listbox.close()
+
+            wordbuf = self._wordbuf
+
             if self._inputmode.isabbrev():
-                wordbuf = self._wordbuf
                 word = wordbuf.get()
                 word = eisuudb.to_zenkaku(word)
                 context.putu(word)
@@ -545,10 +550,10 @@ class InputHandler(tff.DefaultHandler,
                 wordbuf.reset()
             elif not self._wordbuf.isempty():
                 s = self._draincharacters()
-                word = self._wordbuf.get()
+                word = wordbuf.get()
                 str_hankata = kanadb.to_hankata(word + s)
                 context.putu(str_hankata)
-                self._wordbuf.reset()
+                wordbuf.reset()
             else:
                 context.write(c)
 
@@ -611,11 +616,17 @@ class InputHandler(tff.DefaultHandler,
             currentbuffer = charbuf.getbuffer()
 
             if c == 0x2f and (charbuf.isempty() or currentbuffer != u'z'):  # /
-                    if not self._iscooking():
-                        inputmode.startabbrev()
-                        wordbuf.reset()
-                        wordbuf.startedit()
+                #
+                # / が入力されたとき
+                #
+                if not self._iscooking():
+                    inputmode.startabbrev()
+                    wordbuf.reset()
+                    wordbuf.startedit()
             elif c == 0x71:  # q
+                #
+                # q が入力されたとき
+                #
                 if self._iscooking():
                     s = self._draincharacters()
                     wordbuf.append(s)
@@ -634,13 +645,18 @@ class InputHandler(tff.DefaultHandler,
                         inputmode.starthira()
                     self._reset()
             elif c == 0x6c and currentbuffer != "z":  # l
+                #
+                # l が入力されたとき
+                #
                 if listbox.isshown():
                     self._settle(context)
                 inputmode.reset()
                 self._reset()
             elif c in (0x2c, 0x2e, 0x3a, 0x5b): # , . : [ ]
 #                  c == 0x3b or c == 0x5b or c == 0x5d):  # , . ; : [ ]
-                # 区切り文字 ( , . : [ ]) が入力された
+                #
+                # 区切り文字 ( , . : [ ]) が入力されたとき
+                #
                 charbuf.reset()
                 if listbox.isempty():
                     if not wordbuf.isempty():
@@ -710,6 +726,9 @@ class InputHandler(tff.DefaultHandler,
 
             #elif (0x61 <= c and c <= 0x7a) or c == 0x2d: # _, a - z, z*
             elif charbuf.put(c):
+                # a - z
+                # 小文字のとき
+                # 先行する入力があるか
                 if wordbuf.isempty():
                     s = charbuf.drain()
                     context.putu(s)
