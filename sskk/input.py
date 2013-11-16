@@ -97,8 +97,8 @@ class IListboxListenerImpl(IListboxListener):
         elif c == 0x08 or c == 0x7f:  # C-h BS or DEL
             if self._clauses:
                 self._clauses.shift_left()
-                listbox.close()
                 candidates = self._clauses.getcandidates()
+
                 listbox.assign(candidates)
             else:
                 self.onsettled(listbox, context)
@@ -109,7 +109,6 @@ class IListboxListenerImpl(IListboxListener):
             clauses = self._clauses
             if clauses:
                 clauses.shift_right()
-                self._listbox.close()
                 candidates = clauses.getcandidates()
                 listbox.assign(candidates)
         elif c == 0x0e:  # C-n
@@ -158,7 +157,6 @@ class IListboxListenerImpl(IListboxListener):
         if self._clauses:
             self._settle(context)
         if self._wordbuf.length() > 0:
-            self._listbox.close()
             self._showpopup()
 
     def oncancel(self, listbox, context):
@@ -537,8 +535,10 @@ class InputHandler(tff.DefaultHandler,
                     context.write(c)
 
         elif c == 0x11:  # C-q
-            if self._listbox.isshown():
-                self._listbox.close()
+            listbox = self._listbox
+
+            if listbox.isshown():
+                listbox.close()
 
             wordbuf = self._wordbuf
 
@@ -768,10 +768,11 @@ class InputHandler(tff.DefaultHandler,
         return False
 
     def _moveprevclause(self):
-        if self._clauses:
-            self._clauses.moveprev()
-            result = self._clauses.getcandidates()
-            self._listbox.close()
+        clauses = self._clauses
+        if clauses:
+            clauses.moveprev()
+            result = clauses.getcandidates()
+
             self._listbox.assign(result)
             return True
         return False
@@ -861,16 +862,18 @@ class InputHandler(tff.DefaultHandler,
         screen = self._screen
         termprop = self._termprop
         clauses = self._clauses
+        listbox = self._listbox
+
         y, x = screen.getyx()
-        self._listbox.setposition(x, y)
+
         cur_width = 0
         selected_clause = clauses.getcurrentclause()
         for clause in clauses:
             word = clause.getcurrentvalue()
             if id(clause) == id(selected_clause):
                 cur_width += termprop.wcswidth(self._selectmark)
-                if not self._listbox.isshown():
-                    self._listbox.set_offset(cur_width, 0)
+                if listbox.is_moved():
+                    listbox.set_offset(cur_width, 0)
             cur_width += termprop.wcswidth(word)
         if self._okuri:
             cur_width += termprop.wcswidth(self._okuri)
@@ -951,9 +954,10 @@ class InputHandler(tff.DefaultHandler,
             self._prev_length = 0
 
     def handle_resize(self, context, row, col):
+        iframe = self._iframe
         try:
-            if self._iframe:
-                self._iframe.close()
+            if iframe:
+                iframe.close()
         except:
             logging.error("Resize failed")
         finally:
