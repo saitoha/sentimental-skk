@@ -1,3 +1,8 @@
+2013-11-17 Hayaki Saito <user@zuse.jp>
+
+    * Version 0.0.75
+    * "/@"による設定インターフェース、AZIK対応、ウィンドウマネージャの実装
+
 2013-10-17 Hayaki Saito <user@zuse.jp>
 
     * Version 0.0.65
