@@ -454,7 +454,7 @@ class InputHandler(tff.DefaultHandler,
 
     def destruct_subprocess(self):
         session = self._session
-        session.destruct_subprocess()
+        session.destruct_subprocesses()
 
     # override
     def handle_char(self, context, c):
