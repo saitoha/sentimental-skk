@@ -909,7 +909,7 @@ class InputHandler(tff.DefaultHandler,
         self._listbox.setposition(x, y)
         cur_width = wcswidth(word) + wcswidth(char)
 
-        if y < screen.height - 1:
+        if y < screen.height:
             screen.copyline(output, 0, y, screen.width)
 
         #if char and not word and self._anti_optimization_flag:
