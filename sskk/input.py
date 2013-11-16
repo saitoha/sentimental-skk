@@ -97,8 +97,8 @@ class IListboxListenerImpl(IListboxListener):
         elif c == 0x08 or c == 0x7f:  # C-h BS or DEL
             if self._clauses:
                 self._clauses.shift_left()
-                listbox.close()
                 candidates = self._clauses.getcandidates()
+
                 listbox.assign(candidates)
             else:
                 self.onsettled(listbox, context)
@@ -109,7 +109,6 @@ class IListboxListenerImpl(IListboxListener):
             clauses = self._clauses
             if clauses:
                 clauses.shift_right()
-                self._listbox.close()
                 candidates = clauses.getcandidates()
                 listbox.assign(candidates)
         elif c == 0x0e:  # C-n
@@ -158,7 +157,6 @@ class IListboxListenerImpl(IListboxListener):
         if self._clauses:
             self._settle(context)
         if self._wordbuf.length() > 0:
-            self._listbox.close()
             self._showpopup()
 
     def oncancel(self, listbox, context):
@@ -392,11 +390,14 @@ class InputHandler(tff.DefaultHandler,
             self._convert_word()
 
     def _complete(self):
-        completions = self._wordbuf.getcompletions(self._charbuf.complete())
+        charbuf = self._charbuf
+        wordbuf = self._wordbuf
+        listbox = self._listbox
+        completions = wordbuf.getcompletions(charbuf.complete())
         if completions:
-            self._listbox.assign(completions, -1)
+            listbox.assign(completions, -1)
         else:
-            self._listbox.close()
+            listbox.close()
 
     def _dispatch_builtin_command(self, command):
         self._reset()
@@ -534,10 +535,14 @@ class InputHandler(tff.DefaultHandler,
                     context.write(c)
 
         elif c == 0x11:  # C-q
-            if self._listbox.isshown():
-                self._listbox.close()
+            listbox = self._listbox
+
+            if listbox.isshown():
+                listbox.close()
+
+            wordbuf = self._wordbuf
+
             if self._inputmode.isabbrev():
-                wordbuf = self._wordbuf
                 word = wordbuf.get()
                 word = eisuudb.to_zenkaku(word)
                 context.putu(word)
@@ -545,10 +550,10 @@ class InputHandler(tff.DefaultHandler,
                 wordbuf.reset()
             elif not self._wordbuf.isempty():
                 s = self._draincharacters()
-                word = self._wordbuf.get()
+                word = wordbuf.get()
                 str_hankata = kanadb.to_hankata(word + s)
                 context.putu(str_hankata)
-                self._wordbuf.reset()
+                wordbuf.reset()
             else:
                 context.write(c)
 
@@ -611,11 +616,17 @@ class InputHandler(tff.DefaultHandler,
             currentbuffer = charbuf.getbuffer()
 
             if c == 0x2f and (charbuf.isempty() or currentbuffer != u'z'):  # /
-                    if not self._iscooking():
-                        inputmode.startabbrev()
-                        wordbuf.reset()
-                        wordbuf.startedit()
+                #
+                # / が入力されたとき
+                #
+                if not self._iscooking():
+                    inputmode.startabbrev()
+                    wordbuf.reset()
+                    wordbuf.startedit()
             elif c == 0x71:  # q
+                #
+                # q が入力されたとき
+                #
                 if self._iscooking():
                     s = self._draincharacters()
                     wordbuf.append(s)
@@ -634,13 +645,18 @@ class InputHandler(tff.DefaultHandler,
                         inputmode.starthira()
                     self._reset()
             elif c == 0x6c and currentbuffer != "z":  # l
+                #
+                # l が入力されたとき
+                #
                 if listbox.isshown():
                     self._settle(context)
                 inputmode.reset()
                 self._reset()
             elif c in (0x2c, 0x2e, 0x3a, 0x5b): # , . : [ ]
 #                  c == 0x3b or c == 0x5b or c == 0x5d):  # , . ; : [ ]
-                # 区切り文字 ( , . : [ ]) が入力された
+                #
+                # 区切り文字 ( , . : [ ]) が入力されたとき
+                #
                 charbuf.reset()
                 if listbox.isempty():
                     if not wordbuf.isempty():
@@ -710,6 +726,9 @@ class InputHandler(tff.DefaultHandler,
 
             #elif (0x61 <= c and c <= 0x7a) or c == 0x2d: # _, a - z, z*
             elif charbuf.put(c):
+                # a - z
+                # 小文字のとき
+                # 先行する入力があるか
                 if wordbuf.isempty():
                     s = charbuf.drain()
                     context.putu(s)
@@ -749,10 +768,11 @@ class InputHandler(tff.DefaultHandler,
         return False
 
     def _moveprevclause(self):
-        if self._clauses:
-            self._clauses.moveprev()
-            result = self._clauses.getcandidates()
-            self._listbox.close()
+        clauses = self._clauses
+        if clauses:
+            clauses.moveprev()
+            result = clauses.getcandidates()
+
             self._listbox.assign(result)
             return True
         return False
@@ -842,16 +862,18 @@ class InputHandler(tff.DefaultHandler,
         screen = self._screen
         termprop = self._termprop
         clauses = self._clauses
+        listbox = self._listbox
+
         y, x = screen.getyx()
-        self._listbox.setposition(x, y)
+
         cur_width = 0
         selected_clause = clauses.getcurrentclause()
         for clause in clauses:
             word = clause.getcurrentvalue()
             if id(clause) == id(selected_clause):
                 cur_width += termprop.wcswidth(self._selectmark)
-                if not self._listbox.isshown():
-                    self._listbox.set_offset(cur_width, 0)
+                if listbox.is_moved():
+                    listbox.set_offset(cur_width, 0)
             cur_width += termprop.wcswidth(word)
         if self._okuri:
             cur_width += termprop.wcswidth(self._okuri)
@@ -887,7 +909,7 @@ class InputHandler(tff.DefaultHandler,
         self._listbox.setposition(x, y)
         cur_width = wcswidth(word) + wcswidth(char)
 
-        if y < screen.height - 1:
+        if y < screen.height:
             screen.copyline(output, 0, y, screen.width)
 
         #if char and not word and self._anti_optimization_flag:
@@ -932,9 +954,10 @@ class InputHandler(tff.DefaultHandler,
             self._prev_length = 0
 
     def handle_resize(self, context, row, col):
+        iframe = self._iframe
         try:
-            if self._iframe:
-                self._iframe.close()
+            if iframe:
+                iframe.close()
         except:
             logging.error("Resize failed")
         finally:
