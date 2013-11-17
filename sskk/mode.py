@@ -20,6 +20,7 @@
 
 import title
 from canossa import IModeListenerImpl
+import key
 
 '''
 
@@ -90,7 +91,7 @@ class InputMode(IModeListenerImpl):
 
     def handle_char(self, context, c):
 
-        if c == 0x0a:  # LF C-j
+        if c == key.skk_j_mode:  # LF C-j
             self.endabbrev()
             if self.ishan():
                 self.starthira()

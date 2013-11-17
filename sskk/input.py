@@ -38,6 +38,7 @@ from canossa import mouse
 
 import codecs
 import logging
+import key
 
 # マーク
 _SKK_MARK_SELECT = u'▼'
@@ -90,7 +91,7 @@ class IListboxListenerImpl(IListboxListener):
     def oninput(self, listbox, context, c):
         if c == 0x0d:  # CR C-m
             self.onsettled(listbox, context)
-        elif c == 0x0a:  # LF C-j
+        elif c == key.skk_kakutei_key:  # LF C-j
             self.onsettled(listbox, context)
         elif c == 0x07:  # BEL C-g
             self.oncancel(listbox, context)
@@ -345,6 +346,7 @@ class InputHandler(tff.DefaultHandler,
     def _settle(self, context):
         ''' 確定 '''
         clauses = self._clauses
+        wordbuf = self._wordbuf
         if clauses:
             key = clauses.getkey()
             remark = clauses.getcurrentremark()
@@ -357,7 +359,7 @@ class InputHandler(tff.DefaultHandler,
             self._okuri = u''
         else:
             s = self._draincharacters()
-            word = self._wordbuf.get()
+            word = wordbuf.get()
             if word.startswith(u'@'):
                 self._convert_word()                    
                 return
@@ -374,9 +376,10 @@ class InputHandler(tff.DefaultHandler,
         self._refleshtitle()
         self._listbox.close()
         self._inputmode.endabbrev()
-        self._wordbuf.reset()
+        wordbuf.reset()
         self._anti_optimization_flag = False
         context.putu(word)
+
         if self._iframe:
             self._iframe.close()
             self._iframe = None
@@ -461,6 +464,39 @@ class InputHandler(tff.DefaultHandler,
     # override
     def handle_char(self, context, c):
 
+        # 0x00 C-SP
+        # 0x01 C-a
+        # 0x02 C-b
+        # 0x03 C-c
+        # 0x04 C-d
+        # 0x05 C-e
+        # 0x06 C-f
+        # 0x07 C-g
+        # 0x08 BS
+        # 0x09 TAB
+        # 0x0a C-j
+        # 0x0b C-k
+        # 0x0c C-l
+        # 0x0d CR
+        # 0x0e C-n
+        # 0x0f C-o
+        # 0x10 C-p
+        # 0x11 C-q
+        # 0x12 C-r
+        # 0x13 C-s
+        # 0x14 C-t
+        # 0x15 C-u
+        # 0x16 C-v
+        # 0x17 C-w
+        # 0x18 C-x
+        # 0x19 C-y
+        # 0x1a C-z
+        # 0x1b ESC
+        # 0x1c C-\
+        # 0x1d C-]
+        # 0x1e C-^
+        # 0x1f C-_
+
         if not self._inputmode.getenabled():
             return False
 
@@ -476,7 +512,11 @@ class InputHandler(tff.DefaultHandler,
         if self._charbuf.handle_char(context, c):
             return True
 
-        if c == 0x0a:  # LF C-j
+        wordbuf = self._wordbuf
+        charbuf = self._charbuf
+        listbox = self._listbox
+
+        if c == key.skk_kakutei_key:  # LF C-j
             if self._iscooking():
                 self._settle(context)
 
@@ -493,56 +533,53 @@ class InputHandler(tff.DefaultHandler,
                 context.write(c)
 
         elif c == 0x08 or c == 0x7f:  # BS or DEL
-            if not self._charbuf.isempty():
-                self._charbuf.back()
-                if not self._charbuf.getbuffer():
-                    self._listbox.close()
+            if not charbuf.isempty():
+                charbuf.back()
+                if not charbuf.getbuffer():
+                    listbox.close()
                 else:
                     self._complete()
-            elif not self._wordbuf.isempty():
-                self._wordbuf.back()
-                if not self._wordbuf.getbuffer():
-                    self._listbox.close()
+            elif not wordbuf.isempty():
+                wordbuf.back()
+                if not wordbuf.getbuffer():
+                    listbox.close()
                 else:
                     self._complete()
             else:
                 context.write(c)
 
         elif c == 0x09:  # TAB C-i
-            if not self._wordbuf.isempty():
+            if not wordbuf.isempty():
                 # ワードバッファ編集中
                 s = self._draincharacters()
-                self._wordbuf.append(s)
-                self._wordbuf.complete()
-                self._charbuf.reset()
-                self._listbox.movenext()
+                wordbuf.append(s)
+                wordbuf.complete()
+                charbuf.reset()
+                listbox.movenext()
             else:
                 context.write(c)
 
         elif c == 0x0e:  # C-n
-            if self._listbox.isshown():
-                self._listbox.movenext()
-            elif not self._wordbuf.isempty():
+            if listbox.isshown():
+                listbox.movenext()
+            elif not wordbuf.isempty():
                 self._showpopup()
-            elif not self._charbuf.isempty():
+            elif not charbuf.isempty():
                 self._showpopup()
             else:
                 context.write(c)
 
         elif c == 0x10:  # C-p
-            if self._listbox.isshown():
-                self._listbox.moveprev()
-            elif self._wordbuf.isempty():
-                if self._charbuf.isempty():
+            if listbox.isshown():
+                listbox.moveprev()
+            elif wordbuf.isempty():
+                if charbuf.isempty():
                     context.write(c)
 
         elif c == 0x11:  # C-q
-            listbox = self._listbox
 
             if listbox.isshown():
                 listbox.close()
-
-            wordbuf = self._wordbuf
 
             if self._inputmode.isabbrev():
                 word = wordbuf.get()
@@ -550,7 +587,7 @@ class InputHandler(tff.DefaultHandler,
                 context.putu(word)
                 self._inputmode.endabbrev()
                 wordbuf.reset()
-            elif not self._wordbuf.isempty():
+            elif not wordbuf.isempty():
                 s = self._draincharacters()
                 word = wordbuf.get()
                 str_hankata = kanadb.to_hankata(word + s)
@@ -560,8 +597,8 @@ class InputHandler(tff.DefaultHandler,
                 context.write(c)
 
         elif c == 0x17:  # C-w
-            if not self._wordbuf.isempty():
-                word = self._wordbuf.get()
+            if not wordbuf.isempty():
+                word = wordbuf.get()
                 self.open_wikipedia(word)
             else:
                 self._reset()
@@ -576,19 +613,19 @@ class InputHandler(tff.DefaultHandler,
                 context.write(c)
 
         elif c == 0x20:  # SP
-            word = self._wordbuf.get()
+            word = wordbuf.get()
             if word.startswith('$'):
-                self._wordbuf.append(' ')
-            elif not self._wordbuf.isempty():
+                wordbuf.append(' ')
+            elif not wordbuf.isempty():
                 s = self._draincharacters()
-                self._wordbuf.append(s)
-                if self._wordbuf.length() > 0:
+                wordbuf.append(s)
+                if wordbuf.length() > 0:
                     self._showpopup()
-            elif not self._charbuf.isempty():
+            elif not charbuf.isempty():
                 s = self._draincharacters()
-                self._wordbuf.startedit()
-                self._wordbuf.append(s)
-                if self._wordbuf.length() > 0:
+                wordbuf.startedit()
+                wordbuf.append(s)
+                if wordbuf.length() > 0:
                     self._settle(context)
             else:
                 context.write(c)
@@ -606,18 +643,15 @@ class InputHandler(tff.DefaultHandler,
             context.write(c)
 
         elif c > 0x7f:
-            self._wordbuf.append(unichr(c))
+            wordbuf.append(unichr(c))
 
         elif self._inputmode.isabbrev():
             # abbrev mode
-            self._wordbuf.append(unichr(c))
+            wordbuf.append(unichr(c))
             self._complete()
         elif self._inputmode.ishira() or self._inputmode.iskata():
             # ひらがな変換モード・カタカナ変換モード
-            charbuf = self._charbuf
-            wordbuf = self._wordbuf
             inputmode = self._inputmode
-            listbox = self._listbox
             currentbuffer = charbuf.getbuffer()
 
             if c == 0x2f and (charbuf.isempty() or currentbuffer != u'z'):  # /
@@ -763,9 +797,11 @@ class InputHandler(tff.DefaultHandler,
     def _handle_amb_report(self, context, parameter, intermediate, final):
         if not intermediate:
             if final == 0x57:  # W
-                if parameter == [0x32]:
+                if not parameter:
+                    self._termprop.set_amb_as_single()
+                elif parameter[0] == 0x32:
                     self._termprop.set_amb_as_double()
-                elif parameter == [0x31] or parameter == []:
+                elif parameter[0] == 0x31:
                     self._termprop.set_amb_as_single()
                 return True
         return False
