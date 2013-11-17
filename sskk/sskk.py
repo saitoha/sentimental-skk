@@ -211,6 +211,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                       inputhandler=inputhandler,
                       outputhandler=multiplexer)
     except:
+        output.write(u"\x1bc")
         output.write(u"\x1b[?1006l")
         output.write(u"\x1b[?1003l")
         output.write(u"\x1b[?1002l")
