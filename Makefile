@@ -7,7 +7,10 @@ all: test
 	python2.6 setup.py bdist_egg
 	python2.7 setup.py bdist_egg
 
-install:
+setuptools:
+	$(PYTHON) -c "import setuptools" || curl http://peak.telecommunity.com/dist/ez_setup.py | python
+
+install: setuptools
 	$(PYTHON) -c "import setuptools" || curl http://peak.telecommunity.com/dist/ez_setup.py | python
 	$(PYTHON) setup.py install
 
