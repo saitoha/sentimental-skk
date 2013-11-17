@@ -365,8 +365,10 @@ class InputHandler(tff.DefaultHandler,
             if word.startswith(u'@'):
                 word = u''
         if word.startswith('$'):
-            self.open_with_command(word[1:])
+            command = word[1:]
+            self.open_with_command(command)
             word = u''
+            return
         #dictionary.feedback(key, value)
         title.setmessage(u'＼(^o^)／')
         self._refleshtitle()
@@ -574,7 +576,10 @@ class InputHandler(tff.DefaultHandler,
                 context.write(c)
 
         elif c == 0x20:  # SP
-            if not self._wordbuf.isempty():
+            word = self._wordbuf.get()
+            if word.startswith('$'):
+                self._wordbuf.append(' ')
+            elif not self._wordbuf.isempty():
                 s = self._draincharacters()
                 self._wordbuf.append(s)
                 if self._wordbuf.length() > 0:
@@ -622,6 +627,15 @@ class InputHandler(tff.DefaultHandler,
                 if not self._iscooking():
                     inputmode.startabbrev()
                     wordbuf.reset()
+                    wordbuf.startedit()
+                    wordbuf.append(' ')
+
+            elif c == 0x24 and (charbuf.isempty() or currentbuffer != u'z'):  # /
+                #
+                # $ が入力されたとき
+                #
+                if not self._iscooking():
+                    inputmode.startabbrev()
                     wordbuf.startedit()
             elif c == 0x71:  # q
                 #
