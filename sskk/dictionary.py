@@ -66,7 +66,7 @@ def _decode_line(line):
     try:
         return unicode(line, [u'eucjp', u'utf-8]'][_encoding])
     except:
-        _encoding = 1 - _encoding
+        _encoding = 1 - _encoding # flip
         return unicode(line, [u'eucjp', u'utf-8]'][_encoding])
 
 
@@ -78,11 +78,10 @@ def _load_dict(filename):
             if len(line) < 4 or line[1] == ';':
                 continue
             line = _decode_line(line)
-            g = p.match(line)
-            alphakey = g.group(1)
-            key = g.group(2)
-            okuri = g.group(3)
-            value = g.group(4)
+            match = p.match(line)
+            if not match:
+                logging.message("_load_dict: can't load the entry: %s" % line)
+            alphakey, key, okuri, value = match.groups()
             if key:
                 if okuri:
                     key += okuri
@@ -99,7 +98,7 @@ def _load_dict(filename):
                 else:
                     _tangodb[alphakey] = value.split("/")
     except:
-        logging.exception("loading process failed. filename: %s" % filename)
+        logging.exception("_load_dict: loading process failed. filename: %s" % filename)
 
 
 def _get_fallback_dict_path(name):
