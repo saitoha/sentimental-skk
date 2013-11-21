@@ -235,7 +235,8 @@ class InputHandler(tff.DefaultHandler,
             output = StringIO()
 
         self._mouse_decoder = mouse.MouseDecoder(screen, termprop, mousemode)
-        output = codecs.getwriter(termenc)(output, errors='ignore')
+        writer = codecs.getwriter(termenc)
+        output = writer(output, errors='ignore')
         self._output = output
         self._termenc = termenc
         self._charbuf = CharacterContext()
@@ -371,6 +372,7 @@ class InputHandler(tff.DefaultHandler,
             self.open_with_command(command)
             word = u''
             return
+
         #dictionary.feedback(key, value)
         title.setmessage(u'＼(^o^)／')
         self._refleshtitle()
@@ -380,19 +382,23 @@ class InputHandler(tff.DefaultHandler,
         self._anti_optimization_flag = False
         context.putu(word)
 
-        if self._iframe:
-            self._iframe.close()
-            self._iframe = None
+        #word_length = self._termprop.wcswidth(word)
+        #screen = self._screen
+        #y, x = screen.getyx()
+        #screen._region.sub(x - word_length, y, word_length, 1)
+
 
     def _showpopup(self):
         ''' 次候補 '''
         wordbuf = self._wordbuf
         if wordbuf.has_okuri():
+            # 送り有り変換
             self._convert_okuri()
-        else:
-            s = self._draincharacters()
-            wordbuf.append(s)
-            self._convert_word()
+            return
+        # 送り無し変換
+        s = self._draincharacters()
+        wordbuf.append(s)
+        self._convert_word()
 
     def _complete(self):
         charbuf = self._charbuf
@@ -868,7 +874,7 @@ class InputHandler(tff.DefaultHandler,
     def handle_csi(self, context, parameter, intermediate, final):
         if not self._inputmode.getenabled():
             return False
-        if self._listbox.isshown() and self._mouse_decoder.handle_csi(context, parameter, intermediate, final):
+        if self._mouse_decoder.handle_csi(context, parameter, intermediate, final):
             return True
         if self._listbox.handle_csi(context, parameter, intermediate, final):
             return True
