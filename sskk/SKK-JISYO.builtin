@@ -55,3 +55,18 @@
 @確定キー /C-X;builtin:settings:skk_kakutei_key:C-X/
 @確定キー /C-Y;builtin:settings:skk_kakutei_key:C-Y/
 @確定キー /C-Z;builtin:settings:skk_kakutei_key:C-Z/
+@外部サービス(Google CGI API)の利用 /on;builtin:settings:cgi_api.enabled:on/
+@外部サービス(Google CGI API)の利用 /off;builtin:settings:cgi_api.enabled:off/
+@Google CGI API タイムアウト時間 /0.1;builtin:settings:cgi_api.timeout:0.1/
+@Google CGI API タイムアウト時間 /0.2;builtin:settings:cgi_api.timeout:0.2/
+@Google CGI API タイムアウト時間 /0.3;builtin:settings:cgi_api.timeout:0.3/
+@Google CGI API タイムアウト時間 /0.4;builtin:settings:cgi_api.timeout:0.4/
+@Google CGI API タイムアウト時間 /0.5;builtin:settings:cgi_api.timeout:0.5/
+@Google CGI API タイムアウト時間 /0.6;builtin:settings:cgi_api.timeout:0.6/
+@Google CGI API タイムアウト時間 /0.7;builtin:settings:cgi_api.timeout:0.7/
+@Google CGI API タイムアウト時間 /0.8;builtin:settings:cgi_api.timeout:0.8/
+@Google CGI API タイムアウト時間 /0.9;builtin:settings:cgi_api.timeout:0.9/
+@Google CGI API タイムアウト時間 /1.0;builtin:settings:cgi_api.timeout:1.0/
+@Google CGI API タイムアウト時間 /1.5;builtin:settings:cgi_api.timeout:1.5/
+@Google CGI API タイムアウト時間 /2.0;builtin:settings:cgi_api.timeout:2.0/
+@Google CGI API タイムアウト時間 /3.0;builtin:settings:cgi_api.timeout:3.0/
