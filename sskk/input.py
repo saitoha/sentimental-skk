@@ -38,7 +38,7 @@ from canossa import mouse
 
 import codecs
 import logging
-import key
+import key as keybind
 
 # マーク
 _SKK_MARK_SELECT = u'▼'
@@ -91,7 +91,7 @@ class IListboxListenerImpl(IListboxListener):
     def oninput(self, listbox, context, c):
         if c == 0x0d:  # CR C-m
             self.onsettled(listbox, context)
-        elif c == key.skk_kakutei_key:  # LF C-j
+        elif c == keybind.skk_kakutei_key:  # LF C-j
             self.onsettled(listbox, context)
         elif c == 0x07:  # BEL C-g
             self.oncancel(listbox, context)
@@ -170,9 +170,6 @@ class IListboxListenerImpl(IListboxListener):
         wordbuf.startedit()
         wordbuf.append(text + self._okuri)
         self._complete()
-        if self._iframe:
-            self._iframe.close()
-            self._iframe = None
 
     def onrepeat(self, listbox):
         return False
@@ -181,8 +178,7 @@ class IListboxListenerImpl(IListboxListener):
 class IInnerFrameListenerImpl(IInnerFrameListener):
 
     def onclose(self, iframe, context):
-        self._iframe = None
-        self._inputhandler = None
+        pass
 
 
 class SkkLineEditor(IWidget):
@@ -216,14 +212,13 @@ class InputHandler(tff.DefaultHandler,
 
     _stack = None
     _prev_length = 0
-    _anti_optimization_flag = False
     _selected_text = None
     _okuri = ""
     _bracket_left = _SKK_MARK_OPEN
     _bracket_right = _SKK_MARK_CLOSE
     _clauses = None
     _iframe = None
-    _inputhandler = None
+    _optimize = False
 
     def __init__(self, session, screen, termenc, termprop, mousemode, inputmode):
         self._screen = screen
@@ -235,7 +230,8 @@ class InputHandler(tff.DefaultHandler,
             output = StringIO()
 
         self._mouse_decoder = mouse.MouseDecoder(screen, termprop, mousemode)
-        output = codecs.getwriter(termenc)(output, errors='ignore')
+        writer = codecs.getwriter(termenc)
+        output = writer(output, errors='ignore')
         self._output = output
         self._termenc = termenc
         self._charbuf = CharacterContext()
@@ -269,7 +265,6 @@ class InputHandler(tff.DefaultHandler,
         self._charbuf.reset()
         self._okuri = u""
         self._clauses = None
-        self._anti_optimization_flag = False
 
     def _draincharacters(self):
         charbuf = self._charbuf
@@ -307,7 +302,6 @@ class InputHandler(tff.DefaultHandler,
         candidates = clauses.getcandidates()
         self._listbox.assign(candidates)
         self._clauses = clauses
-
         self.settitle(key)
         return True
 
@@ -357,11 +351,12 @@ class InputHandler(tff.DefaultHandler,
                 word = clauses.getvalue() + self._okuri
             self._clauses = None
             self._okuri = u''
+            dictionary.feedback(key, word)
         else:
             s = self._draincharacters()
             word = wordbuf.get()
             if word.startswith(u'@'):
-                self._convert_word()                    
+                self._convert_word()
                 return
             word += s
             if word.startswith(u'@'):
@@ -371,57 +366,63 @@ class InputHandler(tff.DefaultHandler,
             self.open_with_command(command)
             word = u''
             return
-        #dictionary.feedback(key, value)
+
         title.setmessage(u'＼(^o^)／')
         self._refleshtitle()
         self._listbox.close()
         self._inputmode.endabbrev()
         wordbuf.reset()
-        self._anti_optimization_flag = False
         context.putu(word)
 
-        if self._iframe:
-            self._iframe.close()
-            self._iframe = None
+        #word_length = self._termprop.wcswidth(word)
+        #screen = self._screen
+        #y, x = screen.getyx()
+        #screen._region.sub(x - word_length, y, word_length, 1)
+
 
     def _showpopup(self):
         ''' 次候補 '''
         wordbuf = self._wordbuf
         if wordbuf.has_okuri():
+            # 送り有り変換
             self._convert_okuri()
-        else:
-            s = self._draincharacters()
-            wordbuf.append(s)
-            self._convert_word()
+            return
+        # 送り無し変換
+        s = self._draincharacters()
+        wordbuf.append(s)
+        self._convert_word()
 
     def _complete(self):
         charbuf = self._charbuf
         wordbuf = self._wordbuf
         listbox = self._listbox
-        completions = wordbuf.getcompletions(charbuf.complete())
+        key = charbuf.complete()
+        completions = wordbuf.suggest(key)
         if completions:
             listbox.assign(completions, -1)
-        else:
-            listbox.close()
 
     def _dispatch_builtin_command(self, command):
         self._reset()
-        if command == u"builtin:settings:romanrule:azik":
-            settings.set("romanrule", "azik")
-            self._charbuf.compile("azik")
-            settings.save()
-        elif command == u"builtin:settings:romanrule:normal":
-            settings.set("romanrule", "normal")
-            self._charbuf.compile("normal")
-            settings.save()
-        elif command == u"builtin:settings:use_title:on":
-            settings.set("use_title", True)
-            title.setenabled(True)
-            settings.save()
-        elif command == u"builtin:settings:use_title:off":
-            settings.set("use_title", False)
-            title.setenabled(False)
-            settings.save()
+        magic, category, key, value = command.split(':')
+        if magic == 'builtin':
+            if category == 'settings':
+                if key == 'romanrule':
+                    settings.set(key, value)
+                    self._charbuf.compile(value)
+                    settings.save()
+                elif key == 'use_title':
+                    value = value == 'on'
+                    settings.set(key, value)
+                    title.setenabled(value)
+                    settings.save()
+                elif key == 'skk_j_mode':
+                    c = ord(value[-1]) - 0x40
+                    keybind.set_skk_j_mode(c)
+                elif key == 'skk_kakutei_key':
+                    c = ord(value[-1]) - 0x40
+                    keybind.set_skk_kakutei_key(c)
+                else:
+                    raise key
 
     def open_wikipedia(self, word):
         import urllib
@@ -432,6 +433,9 @@ class InputHandler(tff.DefaultHandler,
 
     def open_with_command(self, command):
         screen = self._screen
+        session = self._session
+        termprop = self._termprop
+        termenc = self._termenc
 
         height = min(20, int(screen.height * 0.7))
         width = min(60, int(screen.width * 0.7))
@@ -439,11 +443,11 @@ class InputHandler(tff.DefaultHandler,
         left = int((screen.width - width) / 2)
 
         from mode import InputMode
-        inputmode = InputMode(self._session.tty)
-        inputhandler = InputHandler(self._session,
-                                    self._screen,
-                                    self._termenc,
-                                    self._termprop,
+        inputmode = InputMode(session.tty)
+        inputhandler = InputHandler(session,
+                                    screen,
+                                    termenc,
+                                    termprop,
                                     self._mousemode,
                                     inputmode)
         self._iframe = InnerFrame(self._session,
@@ -453,9 +457,8 @@ class InputHandler(tff.DefaultHandler,
                                   screen,
                                   top, left, height, width,
                                   command,
-                                  self._termenc,
-                                  self._termprop)
-        self._inputhandler = inputhandler
+                                  termenc,
+                                  termprop)
 
     def destruct_subprocess(self):
         session = self._session
@@ -497,26 +500,29 @@ class InputHandler(tff.DefaultHandler,
         # 0x1e C-^
         # 0x1f C-_
 
-        if not self._inputmode.getenabled():
-            return False
-
-        if self._mouse_decoder.handle_char(context, c):
-            return True
-
-        if self._clauses and self._listbox.handle_char(context, c):
-            return True
-
-        if self._inputmode.handle_char(context, c):
-            return True
-
-        if self._charbuf.handle_char(context, c):
-            return True
-
         wordbuf = self._wordbuf
         charbuf = self._charbuf
         listbox = self._listbox
+        inputmode = self._inputmode
+        clauses = self._clauses
+        mouse_decoder = self._mouse_decoder
 
-        if c == key.skk_kakutei_key:  # LF C-j
+        if not inputmode.getenabled():
+            return False
+
+        if mouse_decoder.handle_char(context, c):
+            return True
+
+        if clauses and listbox.handle_char(context, c):
+            return True
+
+        if inputmode.handle_char(context, c):
+            return True
+
+        if charbuf.handle_char(context, c):
+            return True
+
+        if c == keybind.skk_kakutei_key:  # LF C-j
             if self._iscooking():
                 self._settle(context)
 
@@ -778,9 +784,12 @@ class InputHandler(tff.DefaultHandler,
                 # 小文字のとき
                 # 先行する入力があるか
                 if wordbuf.isempty():
-                    s = charbuf.drain()
-                    context.putu(s)
-                    self._complete()
+                    if clauses:
+                        self._optimize = True
+                    else:
+                        s = charbuf.drain()
+                        context.putu(s)
+                        self._complete()
                 elif wordbuf.has_okuri():
                     # 送り仮名変換
                     self._convert_okuri()
@@ -828,7 +837,8 @@ class InputHandler(tff.DefaultHandler,
         return False
 
     def _handle_csi_cursor(self, context, parameter, intermediate, final):
-        if self._listbox.isshown():
+        listbox = self._listbox
+        if listbox.isshown():
             if final == 0x43:  # C
                 self._movenextclause()
                 return True
@@ -836,17 +846,17 @@ class InputHandler(tff.DefaultHandler,
                 self._moveprevclause()
                 return True
         if final == 0x7e:  # ~
-            if parameter == [0x33] and not intermediate:
+            if parameter and parameter[0] == 0x33 and not intermediate:
                 if not self._charbuf.isempty():
                     self._charbuf.back()
                     if not self._charbuf.getbuffer():
-                        self._listbox.close()
+                        listbox.close()
                     else:
                         self._complete()
                 elif not self._wordbuf.isempty():
                     self._wordbuf.back()
                     if not self._wordbuf.getbuffer():
-                        self._listbox.close()
+                        listbox.close()
                     else:
                         self._complete()
                 else:
@@ -868,7 +878,7 @@ class InputHandler(tff.DefaultHandler,
     def handle_csi(self, context, parameter, intermediate, final):
         if not self._inputmode.getenabled():
             return False
-        if self._listbox.isshown() and self._mouse_decoder.handle_csi(context, parameter, intermediate, final):
+        if self._mouse_decoder.handle_csi(context, parameter, intermediate, final):
             return True
         if self._listbox.handle_csi(context, parameter, intermediate, final):
             return True
@@ -910,23 +920,25 @@ class InputHandler(tff.DefaultHandler,
 
     def _draw_clauses_with_popup(self, output):
         screen = self._screen
-        termprop = self._termprop
-        clauses = self._clauses
+        wcswidth = self._termprop.wcswidth
         listbox = self._listbox
-
         y, x = screen.getyx()
-
         cur_width = 0
+
+        clauses = self._clauses
         selected_clause = clauses.getcurrentclause()
         for clause in clauses:
             word = clause.getcurrentvalue()
             if id(clause) == id(selected_clause):
-                cur_width += termprop.wcswidth(self._selectmark)
+                cur_width += wcswidth(self._selectmark)
                 if listbox.is_moved():
                     listbox.set_offset(cur_width, 0)
-            cur_width += termprop.wcswidth(word)
+            cur_width += wcswidth(word)
         if self._okuri:
-            cur_width += termprop.wcswidth(self._okuri)
+            cur_width += wcswidth(self._okuri)
+        char = self._charbuf.getbuffer()
+        cur_width += wcswidth(char)
+
         if self._prev_length > cur_width:
             length = self._prev_length - cur_width
             if x + cur_width + length < screen.width:
@@ -935,6 +947,7 @@ class InputHandler(tff.DefaultHandler,
                 screen.copyline(output, 0, y, screen.width)
                 if y + 1 < screen.height:
                     screen.copyline(output, 0, y + 1, screen.width)
+        self._prev_length = cur_width
 
         output.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
         for clause in clauses:
@@ -948,26 +961,22 @@ class InputHandler(tff.DefaultHandler,
         if self._okuri:
             output.write(u'\x1b[0;32m' + self._okuri)
 
-        self._prev_length = cur_width
-
     def _draw_word(self, output):
         screen = self._screen
         wcswidth = self._termprop.wcswidth
+        listbox = self._listbox
+        y, x = screen.getyx()
+        cur_width = 0
+
         word = self._wordbuf.getbuffer()
         char = self._charbuf.getbuffer()
-        y, x = screen.getyx()
-        self._listbox.setposition(x, y)
-        cur_width = wcswidth(word) + wcswidth(char)
 
-        if y < screen.height:
-            screen.copyline(output, 0, y, screen.width)
+        cur_width += wcswidth(word)
+        cur_width += wcswidth(char)
 
-        #if char and not word and self._anti_optimization_flag:
-        #    if y < screen.height - 1:
-        #        screen.copyline(output, 0, y, screen.width)
-        #    self._anti_optimization_flag = False
-        #elif len(char) == 1 and not word:
-        #    self._anti_optimization_flag = True
+        listbox.setposition(x, y)
+        #if y < screen.height:
+        #    screen.copyline(output, 0, y, screen.width)
 
         if self._prev_length > cur_width:
             length = self._prev_length - cur_width
@@ -977,16 +986,11 @@ class InputHandler(tff.DefaultHandler,
                 screen.copyline(output, 0, y, screen.width)
                 if y + 1 < screen.height:
                     screen.copyline(output, 0, y + 1, screen.width)
+        self._prev_length = cur_width
 
         output.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
         output.write(u'\x1b[0;1;4;31m' + word)
         output.write(u'\x1b[0;1;32m' + char)
-
-        self._prev_length = cur_width
-        if cur_width > 0:
-            output.write(u'\x1b[?25l')
-        else:
-            output.write(u'\x1b[?25h')
 
     def _draw_nothing(self, output):
         screen = self._screen
@@ -1000,7 +1004,7 @@ class InputHandler(tff.DefaultHandler,
                 if y + 1 < screen.height:
                     screen.copyline(output, 0, y + 1, screen.width)
             output.write('\x1b[%d;%dH' % (y + 1, x + 1))
-            output.write('\x1b[?25h')
+#            output.write('\x1b[?25h')
             self._prev_length = 0
 
     def handle_resize(self, context, row, col):
@@ -1012,7 +1016,6 @@ class InputHandler(tff.DefaultHandler,
             logging.error("Resize failed")
         finally:
             self._iframe = None
-            self._inputhandler = None
 
     # override
     def handle_draw(self, context):
@@ -1022,10 +1025,17 @@ class InputHandler(tff.DefaultHandler,
         clauses = self._clauses
         iframe = self._iframe
         screen = self._screen
+        listbox = self._listbox
+        wordbuf = self._wordbuf
+        charbuf = self._charbuf
 
-        if clauses and not self._listbox.isempty():
+        output.write('\x1b[?25l')
+
+        if self._optimize:
+            self._optimize = False
+        elif clauses and not listbox.isempty():
             self._draw_clauses_with_popup(output)
-        elif not self._wordbuf.isempty() or not self._charbuf.isempty():
+        elif not wordbuf.isempty() or not charbuf.isempty():
             self._draw_word(output)
         else:
             self._draw_nothing(output)
@@ -1034,22 +1044,17 @@ class InputHandler(tff.DefaultHandler,
 
         screen.drawwindows(context)
 
+        if not iframe or not iframe._window.is_active():
+            y, x = screen.getyx()
+            output.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
+
+        if not self._iscooking():
+            output.write('\x1b[?25h')
+
         buf = output.getvalue()
         if buf:
             context.puts(buf)
             output.truncate(0)
-
-        if self._inputhandler:
-            # save cursor
-            cursor = screen.cursor
-            try:
-                screen.cursor = Cursor(iframe.top + iframe.innerscreen.cursor.row,
-                                       iframe.left + iframe.innerscreen.cursor.col)
-                self._inputhandler.handle_draw(context)
-            finally:
-                # restore cursor
-                screen.cursor = cursor
-
 
 def test():
     import doctest

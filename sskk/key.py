@@ -21,3 +21,11 @@
 
 skk_j_mode      = 0x0a    # C-j
 skk_kakutei_key = 0x0a    # C-j
+
+def set_skk_j_mode(c):
+    global skk_j_mode
+    skk_j_mode = c
+
+def set_skk_kakutei_key(c):
+    global skk_kakutei_key
+    skk_kakutei_key = c
