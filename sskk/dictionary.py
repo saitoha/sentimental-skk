@@ -26,20 +26,21 @@ import logging
 
 _TIMEOUT = 1.0
 
-homedir = os.path.expanduser("~")
-rcdir = os.path.join(homedir, ".sskk")
-dictdir = os.path.join(rcdir, "dict")
+homedir = os.path.expanduser('~')
+rcdir = os.path.join(homedir, '.sskk')
+dictdir = os.path.join(rcdir, 'dict')
 if not os.path.exists(dictdir):
     os.makedirs(dictdir)
 
+_userdb = {}
 _tangodb = {}
 _okuridb = {}
 _compdb = {}
 _encoding = 0
+_encoding_list = [u'eucjp', u'utf-8']
 
-
-def _register(key, value):
-    current = _compdb
+def _register(db, key, value):
+    current = db
     for c in key:
         if c in current:
             current = current[c]
@@ -48,26 +49,32 @@ def _register(key, value):
             current[c] = new_current
             current = new_current
 
-_control_chars = re.compile("[\x00-\x1f\x7f\x80-\x9f\xff]")
+_control_chars = re.compile('[\x00-\x1f\x7f\x80-\x9f\xff]')
 
+def feedback(key, value):
+    _register(_compdb, key, value)
+    if key in _userdb:
+        _userdb[key].append(value)
+    else:
+        _userdb[key] = [value]
 
 def _escape(s):
-    """
-    >>> _escape("abc")
+    '''
+    >>> _escape('abc')
     'abc'
-    >>> _escape("lda\\x1baa\x10laa")
+    >>> _escape('lda\\x1baa\x10laa')
     'ldaaalaa'
-    """
-    return _control_chars.sub("", s)
+    '''
+    return _control_chars.sub('', s)
 
 
 def _decode_line(line):
     global _encoding
     try:
-        return unicode(line, [u'eucjp', u'utf-8]'][_encoding])
+        return unicode(line, _encoding_list[_encoding])
     except:
         _encoding = 1 - _encoding # flip
-        return unicode(line, [u'eucjp', u'utf-8]'][_encoding])
+    return unicode(line, _encoding_list[_encoding])
 
 
 def _load_dict(filename):
@@ -80,25 +87,27 @@ def _load_dict(filename):
             line = _decode_line(line)
             match = p.match(line)
             if not match:
-                logging.message("_load_dict: can't load the entry: %s" % line)
+                template = '_load_dict: can\'t load the entry: %s'
+                logging.message(template % line)
             alphakey, key, okuri, value = match.groups()
             if key:
                 if okuri:
                     key += okuri
                 else:
-                    _register(key, value)
+                    _register(_compdb, key, value)
                 if key in _tangodb:
-                    _tangodb[key] += value.split("/")
+                    _tangodb[key] += value.split('/')
                 else:
-                    _tangodb[key] = value.split("/")
+                    _tangodb[key] = value.split('/')
             else:
-                _register(alphakey, value)
+                _register(_compdb, alphakey, value)
                 if alphakey in _tangodb:
-                    _tangodb[alphakey] += value.split("/")
+                    _tangodb[alphakey] += value.split('/')
                 else:
-                    _tangodb[alphakey] = value.split("/")
+                    _tangodb[alphakey] = value.split('/')
     except:
-        logging.exception("_load_dict: loading process failed. filename: %s" % filename)
+        template = '_load_dict: loading process failed. filename: %s'
+        logging.exception(template % filename)
 
 
 def _get_fallback_dict_path(name):
@@ -121,9 +130,12 @@ def _load():
 
 
 def gettango(key):
+    result = set()
+    if key in _userdb:
+        result.update(_userdb[key])
     if key in _tangodb:
-        return _tangodb[key]
-    return None
+        result.update(_tangodb[key])
+    return result
 
 
 def getokuri(key):
@@ -131,6 +143,41 @@ def getokuri(key):
         return _tangodb[key]
     return None
 
+def _expand_all(key, current, candidate):
+    for c, value in current:
+        if value == {}:
+            candidate.append(key + c)
+        else:
+            _expand_all(key + c, (x for x in value.items()), candidate)
+
+def _expand_sparse(key, current, candidate, generators):
+    for c, value in current:
+        if value == {}:
+            candidate.append(key + c)
+            return True
+        generator = (x for x in value.items())
+        if _expand_sparse(key + c, generator, candidate, generators):
+            generators.append((key, current))
+            return True
+    return False
+
+def _expand(key, current, candidate):
+    generators = []
+    for c in current:
+        generator = (x for x in current[c].items())
+        _expand_sparse(key + c, generator, candidate, generators)
+        if len(candidate) > 10:
+            break
+    else:
+        if len(candidate) < 10:
+            for k, v in generators:
+                _expand_all(k, v, candidate)
+            if len(candidate) < 10:
+                for c in current:
+                    if current[c] == {}:
+                        candidate.append(c)
+            if current == {}:
+                candidate.append(key)
 
 def getcomp(key, comp):
 
@@ -141,55 +188,20 @@ def getcomp(key, comp):
         else:
             return None
 
-    def expand_all(key, current, candidate):
-        for c, value in current:
-            if value == {}:
-                candidate.append(key + c)
-            else:
-                expand_all(key + c, (x for x in value.items()), candidate)
-
-    def expand_sparse(key, current, candidate, generators):
-        for c, value in current:
-            if value == {}:
-                candidate.append(key + c)
-                return True
-            generator = (x for x in value.items())
-            if expand_sparse(key + c, generator, candidate, generators):
-                generators.append((key + c, current))
-                return True
-        return False
-
-    def impl(key, current, candidate):
-        generators = []
-        for c in current:
-            generator = (x for x in current[c].items())
-            expand_sparse(key + c, generator, candidate, generators)
-            if len(candidate) > 10:
-                break
-        else:
-            if len(candidate) < 10:
-                for item in generators:
-                    k, v = item
-                    expand_all(k, v, candidate)
-                if len(candidate) < 10:
-                    for c in current:
-                        if current[c] == {}:
-                            candidate.append(c)
-                if current == {}:
-                    candidate.append(key)
-
     candidate = []
     if not comp:
-        impl(u"", _current, candidate)
+        _expand(u'', _current, candidate)
     else:
         for _key in comp:
-            if len(_key) == 1:
+            key_len = len(_key)
+            if key_len == 1:
                 if _key in _current:
-                    impl(_key, _current[_key], candidate)
-            elif len(_key) == 2:
-                if _key[0] in _current:
-                    if _key[1] in _current[_key[0]]:
-                        impl(_key, _current[_key[0]][_key[1]], candidate)
+                    _expand(_key, _current[_key], candidate)
+            elif key_len == 2:
+                first, second = _key[0], _key[1]
+                if first in _current:
+                    if second in _current[first]:
+                        _expand(_key, _current[first][second], candidate)
     return candidate
 
 
@@ -204,11 +216,11 @@ class Clause():
         self._values = []
         self._remarks = []
         for candidate in candidates:
-            row = candidate.split(";")
+            row = candidate.split(';')
             if len(row) == 2:
                 value, remark = row
             else:
-                value, remark = candidate, u""
+                value, remark = candidate, u''
             self._values.append(_escape(value))
             self._remarks.append(_escape(remark))
         self._index = 0
@@ -247,7 +259,7 @@ class Clauses:
         self._clauses.append(clause)
 
     def getkey(self):
-        word = u""
+        word = u''
         for clause in self._clauses:
             word += clause.getkey()
         return word
@@ -256,7 +268,7 @@ class Clauses:
         return len(self._clauses)
 
     def getvalue(self):
-        word = u""
+        word = u''
         for clause in self._clauses:
             word += clause.getcurrentvalue()
         return word
@@ -283,7 +295,7 @@ class Clauses:
         self._index = (self._index - 1) % self.length()
 
     def _retry_google(self, words):
-        response = call_cgi_api(",".join(words))
+        response = call_cgi_api(','.join(words))
         if response:
             self._clauses = []
             for clauseinfo in response:
@@ -300,7 +312,7 @@ class Clauses:
             words.append(clause.getkey())
 
         index = self._index
-        surplus = words[index][-1:] + "".join(words[index + 1:])
+        surplus = words[index][-1:] + ''.join(words[index + 1:])
         words[index] = words[index][:-1]
         words = words[0:index + 1] + [surplus]
 
@@ -317,30 +329,29 @@ class Clauses:
             words = words[:index] + [words[index][0], words[index][1:]]
         else:
             words[index] += words[index + 1][0]
-            surplus = ("".join(words[index + 1:])[1:])
+            surplus = (''.join(words[index + 1:])[1:])
             words = words[:index + 1] + [surplus]
 
         self._retry_google(words)
 
-import urllib
-import urllib2
-import json
-
 
 def call_cgi_api(key):
+    import json
+    import urllib
+    import urllib2
+    params = urllib.urlencode({'langpair': 'ja-Hira|ja',
+                               'text': key.encode('UTF-8')})
+    escaped_params = str(params)
+    url = 'http://www.google.com/transliterate?' + escaped_params
     try:
-        params = urllib.urlencode({'langpair': 'ja-Hira|ja',
-                                   'text': key.encode("UTF-8")})
-        url = 'http://www.google.com/transliterate?'
-        response = urllib2.urlopen(url + str(params))
+        response = urllib2.urlopen(url, None, 0.5)
         json_response = response.read()
         if not json_response:
-            logging.exception("call_cgi_api failed. %s" % (url + str(params)))
+            logging.exception('call_cgi_api failed. %s' % key)
             return None
         response = json.loads(json_response)
-
     except:
-        logging.exception("call_cgi_api failed. key: %s" % key)
+        logging.exception('call_cgi_api failed. key: %s' % key)
         return None
     return response
 
@@ -355,7 +366,7 @@ def get_from_google_cgi_api(clauses, key):
             clause = Clause(key, candidates)
             clauses.add(clause)
     except:
-        logging.exception("get_from_google_cgi_api failed. key: %s" % key)
+        logging.exception('get_from_google_cgi_api failed. key: %s' % key)
         return None
     return clauses
 
@@ -367,5 +378,5 @@ def test():
     import doctest
     doctest.testmod()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     test()
