@@ -20,23 +20,23 @@
 
 import title
 from canossa import IModeListenerImpl
-import key
+import settings
 
 '''
 
  既存の実装をいろいろ動かしてみたところ、
  モード遷移はおおむね以下のようになっていると理解しました。
 
- /(シングルシフト)というのは、一回のみのトグルという意味で使っています。
+ SS(シングルシフト)というのは、一回のみのトグルという意味で使っています。
  つまり、確定するなどして英数変換入力が終わると、
  元の状態(ひらがなモードまたはカタカナモード)に戻ります。
 
                    +----------+
-                   | abbrev   |  /(シングルシフト)
+                   | abbrev   |  / (SS)
                    |          | <-------------+
                    +----------+               |
                        ^                      |
-                       | /(シングルシフト)    |
+                       | / (SS)               |
                        |                      |
 +---------+  C-j   +----------+    q    +----------+
 |  ASCII  | -----> | ひらがな | ------> | カタカナ |
@@ -91,7 +91,7 @@ class InputMode(IModeListenerImpl):
 
     def handle_char(self, context, c):
 
-        if c == key.skk_j_mode:  # LF C-j
+        if c == settings.get('skk_j_mode'):  # LF C-j
             self.endabbrev()
             if self.ishan():
                 self.starthira()
