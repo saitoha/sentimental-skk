@@ -19,28 +19,38 @@
 # ***** END LICENSE BLOCK *****
 
 import os
-import thread
 import inspect
 import re
+import settings
 import logging
-
-_TIMEOUT = 1.0
+import time
 
 homedir = os.path.expanduser('~')
 rcdir = os.path.join(homedir, '.sskk')
+
+# 標準辞書ディレクトリ
 dictdir = os.path.join(rcdir, 'dict')
 if not os.path.exists(dictdir):
     os.makedirs(dictdir)
 
-_userdb = {}
+# ユーザー辞書ディレクトリ
+userdictdir = os.path.join(rcdir, 'userdict')
+if not os.path.exists(userdictdir):
+    os.makedirs(userdictdir)
+
+_user_tangodb = {}
 _tangodb = {}
 _okuridb = {}
 _compdb = {}
+_comp_value_db = {}
 _encoding = 0
 _encoding_list = [u'eucjp', u'utf-8']
 
+user_dict_file = None
+
 def _register(db, key, value):
     current = db
+    _comp_value_db[key] = value
     for c in key:
         if c in current:
             current = current[c]
@@ -52,11 +62,19 @@ def _register(db, key, value):
 _control_chars = re.compile('[\x00-\x1f\x7f\x80-\x9f\xff]')
 
 def feedback(key, value):
+    global user_dict_file
     _register(_compdb, key, value)
-    if key in _userdb:
-        _userdb[key].append(value)
+    if key in _user_tangodb:
+        _user_tangodb[key].append(value)
     else:
-        _userdb[key] = [value]
+        _user_tangodb[key] = [value]
+    if not user_dict_file:
+        filename = '%d.tmp' % int(time.time())
+        path = os.path.join(userdictdir, filename)
+        user_dict_file = open(path, 'a+')
+    record = '%s /%s/\n' % (key, value)
+    user_dict_file.write(record.encode('utf-8'))
+
 
 def _escape(s):
     '''
@@ -117,66 +135,75 @@ def _get_fallback_dict_path(name):
 
 
 def _load():
-    dict_list = os.listdir(dictdir)
     _load_dict(_get_fallback_dict_path('SKK-JISYO.builtin'))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.L'))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.JIS2'))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.assoc'))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.geo'))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.jinmei'))
-    if dict_list:
-        for f in dict_list:
-            _load_dict(os.path.join(dictdir, f))
+    for f in os.listdir(userdictdir):
+        _load_dict(os.path.join(userdictdir, f))
+    for f in os.listdir(dictdir):
+        _load_dict(os.path.join(dictdir, f))
 
 
 def gettango(key):
-    result = set()
-    if key in _userdb:
-        result.update(_userdb[key])
+    result = list()
+    if key in _user_tangodb:
+        result += _user_tangodb[key]
     if key in _tangodb:
-        result.update(_tangodb[key])
+        result += _tangodb[key]
     return result
 
 
 def getokuri(key):
+    result = list()
     if key in _tangodb:
-        return _tangodb[key]
-    return None
+        result += _tangodb[key]
+    return result
 
-def _expand_all(key, current, candidate):
+def _expand_all(key, current, candidate, limit):
     for c, value in current:
+        if len(candidate) >= limit:
+            break
         if value == {}:
             candidate.append(key + c)
         else:
-            _expand_all(key + c, (x for x in value.items()), candidate)
+            _expand_all(key + c, (x for x in value.items()), candidate, limit)
 
-def _expand_sparse(key, current, candidate, generators):
+def _expand_sparse(key, current, candidate, generators, limit):
     for c, value in current:
+        if len(candidate) >= limit:
+            break
         if value == {}:
             candidate.append(key + c)
             return True
         generator = (x for x in value.items())
-        if _expand_sparse(key + c, generator, candidate, generators):
+        if _expand_sparse(key + c, generator, candidate, generators, limit):
             generators.append((key, current))
             return True
     return False
 
-def _expand(key, current, candidate):
+def _expand(key, current, candidate, limit):
     generators = []
     for c in current:
         generator = (x for x in current[c].items())
-        _expand_sparse(key + c, generator, candidate, generators)
-        if len(candidate) > 10:
+        _expand_sparse(key + c, generator, candidate, generators, limit)
+        if len(candidate) >= limit:
             break
     else:
-        if len(candidate) < 10:
+        if len(candidate) < limit:
             for k, v in generators:
-                _expand_all(k, v, candidate)
-            if len(candidate) < 10:
+                _expand_all(k, v, candidate, limit)
+                if len(candidate) >= limit:
+                    break
+            if len(candidate) < limit:
                 for c in current:
                     if current[c] == {}:
                         candidate.append(c)
-            if current == {}:
+                        if len(candidate) >= limit:
+                            break
+            elif current == {}:
                 candidate.append(key)
 
 def suggest(key, comp):
@@ -188,21 +215,64 @@ def suggest(key, comp):
         else:
             return None
 
-    candidate = []
+    limit = settings.get('suggest.max')
+
+    candidate = list()
     if not comp:
-        _expand(u'', _current, candidate)
+        _expand(u'', _current, candidate, limit)
     else:
         for _key in comp:
             key_len = len(_key)
             if key_len == 1:
                 if _key in _current:
-                    _expand(_key, _current[_key], candidate)
+                    _expand(_key, _current[_key], candidate, limit)
+                    if len(candidate) >= limit:
+                        break
             elif key_len == 2:
                 first, second = _key[0], _key[1]
                 if first in _current:
                     if second in _current[first]:
-                        _expand(_key, _current[first][second], candidate)
+                        _expand(_key, _current[first][second], candidate, limit)
+                        if len(candidate) >= limit:
+                            break
     return candidate
+
+
+def _call_cgi_api(key):
+    import json
+    import urllib
+    import urllib2
+    params = urllib.urlencode({'langpair': 'ja-Hira|ja',
+                               'text': key.encode('UTF-8')})
+    escaped_params = str(params)
+    url = 'http://www.google.com/transliterate?' + escaped_params
+    try:
+        timeout = settings.get('cgi_api.timeout')
+        response = urllib2.urlopen(url, None, timeout)
+        json_response = response.read()
+        if not json_response:
+            logging.exception('_call_cgi_api failed. %s' % key)
+            return None
+        response = json.loads(json_response)
+    except socket.error, e:
+        logging.exception(e)
+        return None
+    return response
+
+
+def get_from_cgi_api(clauses, key):
+    response = _call_cgi_api(key)
+    if not response:
+        return None
+    try:
+        for clauseinfo in response:
+            key, candidates = clauseinfo
+            clause = Clause(key, candidates)
+            clauses.add(clause)
+    except:
+        logging.exception('get_from_cgi_api failed. key: %s' % key)
+        return None
+    return clauses
 
 
 ###############################################################################
@@ -294,17 +364,6 @@ class Clauses:
     def moveprev(self):
         self._index = (self._index - 1) % self.length()
 
-    def _retry_google(self, words):
-        response = call_cgi_api(','.join(words))
-        if response:
-            self._clauses = []
-            for clauseinfo in response:
-                key, candidates = clauseinfo
-                clause = Clause(key, candidates)
-                self.add(clause)
-            if self._index >= len(self._clauses):
-                self._index = len(self._clauses) - 1
-
     def shift_left(self):
 
         words = []
@@ -334,44 +393,24 @@ class Clauses:
 
         self._retry_google(words)
 
-
-def call_cgi_api(key):
-    import json
-    import urllib
-    import urllib2
-    params = urllib.urlencode({'langpair': 'ja-Hira|ja',
-                               'text': key.encode('UTF-8')})
-    escaped_params = str(params)
-    url = 'http://www.google.com/transliterate?' + escaped_params
-    try:
-        response = urllib2.urlopen(url, None, 0.5)
-        json_response = response.read()
-        if not json_response:
-            logging.exception('call_cgi_api failed. %s' % key)
-            return None
-        response = json.loads(json_response)
-    except:
-        logging.exception('call_cgi_api failed. key: %s' % key)
-        return None
-    return response
+    def _retry_google(self, words):
+        response = call_cgi_api(','.join(words))
+        if response:
+            self._clauses = []
+            for clauseinfo in response:
+                key, candidates = clauseinfo
+                clause = Clause(key, candidates)
+                self.add(clause)
+            if self._index >= len(self._clauses):
+                self._index = len(self._clauses) - 1
 
 
-def get_from_google_cgi_api(clauses, key):
-    response = call_cgi_api(key)
-    if not response:
-        return None
-    try:
-        for clauseinfo in response:
-            key, candidates = clauseinfo
-            clause = Clause(key, candidates)
-            clauses.add(clause)
-    except:
-        logging.exception('get_from_google_cgi_api failed. key: %s' % key)
-        return None
-    return clauses
-
-thread.start_new_thread(_load, ())
-#_load()
+# 可能なら非同期で辞書をロード
+try:
+    import thread
+    thread.start_new_thread(_load, ())
+except ImportError, e:
+    _load()
 
 
 def test():
