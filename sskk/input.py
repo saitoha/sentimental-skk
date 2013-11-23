@@ -397,7 +397,7 @@ class InputHandler(tff.DefaultHandler,
         wordbuf = self._wordbuf
         listbox = self._listbox
         key = charbuf.complete()
-        completions = wordbuf.getcompletions(key)
+        completions = wordbuf.suggest(key)
         if completions:
             listbox.assign(completions, -1)
 

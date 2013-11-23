@@ -179,7 +179,7 @@ def _expand(key, current, candidate):
             if current == {}:
                 candidate.append(key)
 
-def getcomp(key, comp):
+def suggest(key, comp):
 
     _current = _compdb
     for _c in key:
