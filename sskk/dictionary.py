@@ -65,7 +65,9 @@ def feedback(key, value):
     global user_dict_file
     _register(_compdb, key, value)
     if key in _user_tangodb:
-        _user_tangodb[key].append(value)
+        record = _user_tangodb[key]
+        record.remove(value)
+        record.insert(0, value)
     else:
         _user_tangodb[key] = [value]
     if not user_dict_file:
@@ -74,6 +76,7 @@ def feedback(key, value):
         user_dict_file = open(path, 'a+')
     record = '%s /%s/\n' % (key, value)
     user_dict_file.write(record.encode('utf-8'))
+    user_dict_file.flush()
 
 
 def _escape(s):
@@ -114,13 +117,21 @@ def _load_dict(filename):
                 else:
                     _register(_compdb, key, value)
                 if key in _tangodb:
-                    _tangodb[key] += value.split('/')
+                    values = _tangodb[key]
+                    new_values = value.split('/')
+                    for new_value in new_values:
+                        if not new_value in values:
+                            values.append(new_value)
                 else:
                     _tangodb[key] = value.split('/')
             else:
                 _register(_compdb, alphakey, value)
                 if alphakey in _tangodb:
-                    _tangodb[alphakey] += value.split('/')
+                    values = _tangodb[alphakey]
+                    new_values = value.split('/')
+                    for new_value in new_values:
+                        if not new_value in values:
+                            values.append(new_value)
                 else:
                     _tangodb[alphakey] = value.split('/')
     except:
@@ -135,25 +146,28 @@ def _get_fallback_dict_path(name):
 
 
 def _load():
+    for f in reversed(sorted(os.listdir(userdictdir))):
+        _load_dict(os.path.join(userdictdir, f))
+    for f in os.listdir(dictdir):
+        _load_dict(os.path.join(dictdir, f))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.builtin'))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.L'))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.JIS2'))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.assoc'))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.geo'))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.jinmei'))
-    for f in os.listdir(userdictdir):
-        _load_dict(os.path.join(userdictdir, f))
-    for f in os.listdir(dictdir):
-        _load_dict(os.path.join(dictdir, f))
 
 
 def gettango(key):
-    result = list()
     if key in _user_tangodb:
-        result += _user_tangodb[key]
-    if key in _tangodb:
-        result += _tangodb[key]
-    return result
+        result = _user_tangodb[key]
+        if key in _tangodb:
+            values = _tangodb[key]
+            for value in values:
+                if not value in result:
+                    result.append(value)
+        return result
+    return _tangodb[key]
 
 
 def getokuri(key):
@@ -180,7 +194,7 @@ def _expand_sparse(key, current, candidate, generators, limit):
             return True
         generator = (x for x in value.items())
         if _expand_sparse(key + c, generator, candidate, generators, limit):
-            generators.append((key, current))
+            generators.append((key + c, current))
             return True
     return False
 
@@ -199,14 +213,14 @@ def _expand(key, current, candidate, limit):
                     break
             if len(candidate) < limit:
                 for c in current:
-                    if current[c] == {}:
+                    if not current[c]:
                         candidate.append(c)
                         if len(candidate) >= limit:
                             break
-            elif current == {}:
+            elif not current:
                 candidate.append(key)
 
-def suggest(key, comp):
+def suggest(key, finals):
 
     _current = _compdb
     for _c in key:
@@ -218,10 +232,10 @@ def suggest(key, comp):
     limit = settings.get('suggest.max')
 
     candidate = list()
-    if not comp:
+    if not finals:
         _expand(u'', _current, candidate, limit)
     else:
-        for _key in comp:
+        for _key in finals:
             key_len = len(_key)
             if key_len == 1:
                 if _key in _current:

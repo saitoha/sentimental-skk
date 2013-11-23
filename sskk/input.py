@@ -792,14 +792,10 @@ class InputHandler(tff.DefaultHandler,
                 # 小文字のとき
                 # 先行する入力があるか
                 if wordbuf.isempty():
+                    s = charbuf.drain()
+                    context.putu(s)
                     if clauses:
-                        s = charbuf.drain()
-                        context.putu(s)
                         self._optimize = True
-                    else:
-                        s = charbuf.drain()
-                        context.putu(s)
-                        self._complete()
                 elif wordbuf.has_okuri():
                     # 送り仮名変換
                     self._convert_okuri()
@@ -809,7 +805,6 @@ class InputHandler(tff.DefaultHandler,
                     self._complete()
             else:
                 wordbuf.append(unichr(c))
-                self._complete()
 
         return True  # handled
 
