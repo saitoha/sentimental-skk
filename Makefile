@@ -4,6 +4,7 @@ PYTHON=python
 
 all: test
 	$(PYTHON) setup.py sdist
+	python2.5 setup.py bdist_egg
 	python2.6 setup.py bdist_egg
 	python2.7 setup.py bdist_egg
 
@@ -27,6 +28,7 @@ test:
 update: clean test
 	$(PYTHON) setup.py register
 	$(PYTHON) setup.py sdist upload
+	python2.5 setup.py bdist_egg upload
 	python2.6 setup.py bdist_egg upload
 	python2.7 setup.py bdist_egg upload
 
