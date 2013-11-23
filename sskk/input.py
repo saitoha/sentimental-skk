@@ -38,7 +38,6 @@ from canossa import mouse
 
 import codecs
 import logging
-import key as keybind
 
 # マーク
 _SKK_MARK_SELECT = u'▼'
@@ -91,7 +90,7 @@ class IListboxListenerImpl(IListboxListener):
     def oninput(self, listbox, context, c):
         if c == 0x0d:  # CR C-m
             self.onsettled(listbox, context)
-        elif c == keybind.skk_kakutei_key:  # LF C-j
+        elif c == settings.get('skk_kakutei_key'):  # LF C-j
             self.onsettled(listbox, context)
         elif c == 0x07:  # BEL C-g
             self.oncancel(listbox, context)
@@ -296,7 +295,9 @@ class InputHandler(tff.DefaultHandler,
         clauses = dictionary.Clauses()
         if result:
             clauses.add(dictionary.Clause(key, result))
-        elif not dictionary.get_from_google_cgi_api(clauses, key):
+        elif not settings.get('cgi_api.enabled'):
+            clauses.add(dictionary.Clause(key, [key]))
+        elif not dictionary.get_from_cgi_api(clauses, key):
             clauses.add(dictionary.Clause(key, [key]))
 
         candidates = clauses.getcandidates()
@@ -326,7 +327,7 @@ class InputHandler(tff.DefaultHandler,
         else:
             if self._inputmode.iskata():
                 key = kanadb.to_kata(key)
-            if not dictionary.get_from_google_cgi_api(clauses, key + okuri):
+            if not dictionary.get_from_cgi_api(clauses, key + okuri):
                 clauses.add(dictionary.Clause(key, [key]))
             else:
                 self._okuri = u""
@@ -410,19 +411,26 @@ class InputHandler(tff.DefaultHandler,
                     settings.set(key, value)
                     self._charbuf.compile(value)
                     settings.save()
-                elif key == 'use_title':
+                elif key == 'use_title' or key == 'cgi_api.enabled':
                     value = value == 'on'
+                    settings.set(key, value)
+                    title.setenabled(value)
+                    settings.save()
+                elif key == 'cgi_api.timeout':
+                    value = float(value)
                     settings.set(key, value)
                     title.setenabled(value)
                     settings.save()
                 elif key == 'skk_j_mode':
                     c = ord(value[-1]) - 0x40
-                    keybind.set_skk_j_mode(c)
+                    settings.set(key, c)
+                    settings.save()
                 elif key == 'skk_kakutei_key':
                     c = ord(value[-1]) - 0x40
-                    keybind.set_skk_kakutei_key(c)
+                    settings.set(key, c)
+                    settings.save()
                 else:
-                    raise key
+                    pass
 
     def open_wikipedia(self, word):
         import urllib
@@ -522,7 +530,7 @@ class InputHandler(tff.DefaultHandler,
         if charbuf.handle_char(context, c):
             return True
 
-        if c == keybind.skk_kakutei_key:  # LF C-j
+        if c == settings.get('skk_kakutei_key'):  # LF C-j
             if self._iscooking():
                 self._settle(context)
 
@@ -975,8 +983,6 @@ class InputHandler(tff.DefaultHandler,
         cur_width += wcswidth(char)
 
         listbox.setposition(x, y)
-        #if y < screen.height:
-        #    screen.copyline(output, 0, y, screen.width)
 
         if self._prev_length > cur_width:
             length = self._prev_length - cur_width
@@ -1004,7 +1010,6 @@ class InputHandler(tff.DefaultHandler,
                 if y + 1 < screen.height:
                     screen.copyline(output, 0, y + 1, screen.width)
             output.write('\x1b[%d;%dH' % (y + 1, x + 1))
-#            output.write('\x1b[?25h')
             self._prev_length = 0
 
     def handle_resize(self, context, row, col):
