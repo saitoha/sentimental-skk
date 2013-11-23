@@ -23,6 +23,11 @@ import os
 import sys
 
 _CONFDB = {
+    'skk_j_mode': 0x0a,
+    'skk_kakutei_key': 0x0a,
+    'suggest.max': 30,
+    'cgi_api.enabled': True,
+    'cgi_api.timeout': 0.5,
 }
 
 _DEFAULT_CONF = """
