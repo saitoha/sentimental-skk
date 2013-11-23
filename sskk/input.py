@@ -793,6 +793,8 @@ class InputHandler(tff.DefaultHandler,
                 # 先行する入力があるか
                 if wordbuf.isempty():
                     if clauses:
+                        s = charbuf.drain()
+                        context.putu(s)
                         self._optimize = True
                     else:
                         s = charbuf.drain()
