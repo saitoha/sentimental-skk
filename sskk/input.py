@@ -38,7 +38,7 @@ from canossa import mouse
 
 import codecs
 import logging
-import key
+import key as keybind
 
 # マーク
 _SKK_MARK_SELECT = u'▼'
@@ -91,7 +91,7 @@ class IListboxListenerImpl(IListboxListener):
     def oninput(self, listbox, context, c):
         if c == 0x0d:  # CR C-m
             self.onsettled(listbox, context)
-        elif c == key.skk_kakutei_key:  # LF C-j
+        elif c == keybind.skk_kakutei_key:  # LF C-j
             self.onsettled(listbox, context)
         elif c == 0x07:  # BEL C-g
             self.oncancel(listbox, context)
@@ -403,22 +403,26 @@ class InputHandler(tff.DefaultHandler,
 
     def _dispatch_builtin_command(self, command):
         self._reset()
-        if command == u"builtin:settings:romanrule:azik":
-            settings.set("romanrule", "azik")
-            self._charbuf.compile("azik")
-            settings.save()
-        elif command == u"builtin:settings:romanrule:normal":
-            settings.set("romanrule", "normal")
-            self._charbuf.compile("normal")
-            settings.save()
-        elif command == u"builtin:settings:use_title:on":
-            settings.set("use_title", True)
-            title.setenabled(True)
-            settings.save()
-        elif command == u"builtin:settings:use_title:off":
-            settings.set("use_title", False)
-            title.setenabled(False)
-            settings.save()
+        magic, category, key, value = command.split(':')
+        if magic == 'builtin':
+            if category == 'settings':
+                if key == 'romanrule':
+                    settings.set(key, value)
+                    self._charbuf.compile(value)
+                    settings.save()
+                elif key == 'use_title':
+                    value = value == 'on'
+                    settings.set(key, value)
+                    title.setenabled(value)
+                    settings.save()
+                elif key == 'skk_j_mode':
+                    c = ord(value[-1]) - 0x40
+                    keybind.set_skk_j_mode(c)
+                elif key == 'skk_kakutei_key':
+                    c = ord(value[-1]) - 0x40
+                    keybind.set_skk_kakutei_key(c)
+                else:
+                    raise key
 
     def open_wikipedia(self, word):
         import urllib
@@ -518,7 +522,7 @@ class InputHandler(tff.DefaultHandler,
         if charbuf.handle_char(context, c):
             return True
 
-        if c == key.skk_kakutei_key:  # LF C-j
+        if c == keybind.skk_kakutei_key:  # LF C-j
             if self._iscooking():
                 self._settle(context)
 
@@ -1044,7 +1048,9 @@ class InputHandler(tff.DefaultHandler,
             y, x = screen.getyx()
             output.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
 
-        output.write('\x1b[?25h')
+        if not self._iscooking():
+            output.write('\x1b[?25h')
+
         buf = output.getvalue()
         if buf:
             context.puts(buf)
