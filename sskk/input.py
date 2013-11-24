@@ -1046,19 +1046,19 @@ class InputHandler(tff.DefaultHandler,
 
         self._refleshtitle()
 
-        screen.drawwindows(context)
-
-        if not iframe or not iframe._window.is_active():
-            y, x = screen.getyx()
-            output.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
-
-        if not self._iscooking():
-            output.write('\x1b[?25h')
-
         buf = output.getvalue()
         if buf:
             context.puts(buf)
             output.truncate(0)
+
+        screen.drawwindows(context)
+
+        if not screen.has_active_windows():
+            y, x = screen.getyx()
+            context.puts('\x1b[%d;%dH' % (y + 1, x + 1))
+            context.puts('\x1b[?25h')
+
+
 
 def test():
     import doctest
