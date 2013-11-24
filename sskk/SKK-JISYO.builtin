@@ -56,32 +56,10 @@
 @確定キー(skk-kakutei-key) /C-X;builtin:settings:skk_kakutei_key:0x18/
 @確定キー(skk-kakutei-key) /C-Y;builtin:settings:skk_kakutei_key:0x19/
 @確定キー(skk-kakutei-key) /C-Z;builtin:settings:skk_kakutei_key:0x1a/
-@かなトグルキー(skk-toggle-kana) /C-A;builtin:settings:skk_toggle_kana:0x01/
-@かなトグルキー(skk-toggle-kana) /C-B;builtin:settings:skk_toggle_kana:0x02/
-@かなトグルキー(skk-toggle-kana) /C-C;builtin:settings:skk_toggle_kana:0x03/
-@かなトグルキー(skk-toggle-kana) /C-D;builtin:settings:skk_toggle_kana:0x04/
-@かなトグルキー(skk-toggle-kana) /C-E;builtin:settings:skk_toggle_kana:0x05/
-@かなトグルキー(skk-toggle-kana) /C-F;builtin:settings:skk_toggle_kana:0x06/
-@かなトグルキー(skk-toggle-kana) /C-G;builtin:settings:skk_toggle_kana:0x07/
-@かなトグルキー(skk-toggle-kana) /C-H;builtin:settings:skk_toggle_kana:0x08/
-@かなトグルキー(skk-toggle-kana) /C-I;builtin:settings:skk_toggle_kana:0x09/
-@かなトグルキー(skk-toggle-kana) /C-J;builtin:settings:skk_toggle_kana:0x0a/
-@かなトグルキー(skk-toggle-kana) /C-K;builtin:settings:skk_toggle_kana:0x0b/
-@かなトグルキー(skk-toggle-kana) /C-L;builtin:settings:skk_toggle_kana:0x0c/
-@かなトグルキー(skk-toggle-kana) /C-M;builtin:settings:skk_toggle_kana:0x0d/
-@かなトグルキー(skk-toggle-kana) /C-N;builtin:settings:skk_toggle_kana:0x0e/
-@かなトグルキー(skk-toggle-kana) /C-O;builtin:settings:skk_toggle_kana:0x0f/
-@かなトグルキー(skk-toggle-kana) /C-P;builtin:settings:skk_toggle_kana:0x10/
-@かなトグルキー(skk-toggle-kana) /C-Q;builtin:settings:skk_toggle_kana:0x11/
-@かなトグルキー(skk-toggle-kana) /C-R;builtin:settings:skk_toggle_kana:0x12/
-@かなトグルキー(skk-toggle-kana) /C-S;builtin:settings:skk_toggle_kana:0x13/
-@かなトグルキー(skk-toggle-kana) /C-T;builtin:settings:skk_toggle_kana:0x14/
-@かなトグルキー(skk-toggle-kana) /C-U;builtin:settings:skk_toggle_kana:0x15/
-@かなトグルキー(skk-toggle-kana) /C-V;builtin:settings:skk_toggle_kana:0x16/
-@かなトグルキー(skk-toggle-kana) /C-W;builtin:settings:skk_toggle_kana:0x17/
-@かなトグルキー(skk-toggle-kana) /C-X;builtin:settings:skk_toggle_kana:0x18/
-@かなトグルキー(skk-toggle-kana) /C-Y;builtin:settings:skk_toggle_kana:0x19/
-@かなトグルキー(skk-toggle-kana) /C-Z;builtin:settings:skk_toggle_kana:0x1a/
+@かなトグルキー(skk-toggle-kana) /@;builtin:settings:skk-toggle-kana:0x40/
+@かなトグルキー(skk-toggle-kana) /[;builtin:settings:skk-toggle-kana:0x5b/
+@かなトグルキー(skk-toggle-kana) /\;builtin:settings:skk-toggle-kana:0x5c/
+@かなトグルキー(skk-toggle-kana) /q;builtin:settings:skk-toggle-kana:0x71/
 @外部サービス(Google CGI API)の利用 /on;builtin:settings:cgi_api.enabled:True/
 @外部サービス(Google CGI API)の利用 /off;builtin:settings:cgi_api.enabled:False/
 @Google CGI API タイムアウト時間 /0.1;builtin:settings:cgi_api.timeout:0.1/
