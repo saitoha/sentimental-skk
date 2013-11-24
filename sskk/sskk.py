@@ -32,7 +32,7 @@ def main():
     parser = optparse.OptionParser(usage=usage)
 
     parser.add_option('--version', dest='version',
-                      action="store_true", default=False,
+                      action='store_true', default=False,
                       help='show version')
 
     parser.add_option('-t', '--term', dest='term',
@@ -45,7 +45,7 @@ def main():
                       help='set output encoding')
 
     parser.add_option('-u', '--use-titlebar', dest='titlebar',
-                      action="store_true", default=False,
+                      action='store_true', default=False,
                       help='use title bar manipulation feature')
 
     (options, args) = parser.parse_args()
@@ -73,9 +73,9 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         ''' % __init__.__version__
         return
 
-    if os.getenv("__SSKK_VERTION"):
-        print "\n＼SSKK process is already running！！！／\n"
-        print "       三 -( ^o^)-  三 -( ^o^)-\n"
+    if os.getenv('__SSKK_VERTION'):
+        print '\n＼SSKK process is already running！！！／\n'
+        print '       三 -( ^o^)-  三 -( ^o^)-\n'
         return
 
     # retrive starting command
@@ -101,53 +101,64 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         lang = os.getenv('LANG')
     else:
         import locale
-        lang = '%s.%s' % locale.getdefaultlocale()
+        try:
+            language, encoding = locale.getdefaultlocale()
+        except ValueError, e:
+            logging.exception(e)
+            language = 'Ja_JP'
+            encoding = 'utf-8'
+        lang = '%s.%s' % (language, encoding)
 
     # retrive terminal encoding setting
     if options.enc is not None:
         termenc = options.enc
     else:
         import locale
-        language, encoding = locale.getdefaultlocale()
+        try:
+            language, encoding = locale.getdefaultlocale()
+        except ValueError, e:
+            logging.exception(e)
+            encoding = 'utf-8'
+
         termenc = encoding
     if termenc is None:
         raise Exception(
-            'Invalid TERM environment is detected: "%s"' % termenc)
+            'Invalid TERM environment is detected: \'%s\'' % termenc)
 
     output = codecs.getwriter(termenc)(sys.stdout, errors='ignore')
-    output.write(u"\x1b[22;0t")
+    output.write(u'\x1b[22;0t')
     output.flush()
 
-#    output.write(u"\x1b[>2t")
-    output.write(u"\x1b[1;1H\x1b[J")
-    output.write(u"\x1b[5;5H")
-    output.write(u"      ＼ Sentimental-SKK %s ／\n" % __init__.__version__)
-    output.write(u"\x1b[7;5H")
-    output.write(u"       三( ^o^) 三( ^o^) 三( ^o^)\n")
-    output.write(u"\x1b[1;1H")
+#    output.write(u'\x1b[>2t')
+    output.write(u'\x1b[1;1H\x1b[J')
+    output.write(u'\x1b[5;5H')
+    output.write(u'      ＼ Sentimental-SKK %s ／\n' % __init__.__version__)
+    output.write(u'\x1b[7;5H')
+    output.write(u'       三( ^o^) 三( ^o^) 三( ^o^)\n')
+    output.write(u'\x1b[1;1H')
 
     from canossa import termprop
     termprop = termprop.Termprop()
 
-    output.write(u"\x1b]0;\x1b\\")
-    output.write(u"\x1b[22;0t")
+    output.write(u'\x1b]0;\x1b\\')
+    output.write(u'\x1b[22;0t')
     output.flush()
 
-    homedir = os.path.expanduser("~")
-    rcdir = os.path.join(homedir, ".sskk")
+    homedir = os.path.expanduser('~')
+    rcdir = os.path.join(homedir, '.sskk')
 
-    confdir = os.path.join(rcdir, "conf")
+    confdir = os.path.join(rcdir, 'conf')
     if not os.path.exists(confdir):
         os.makedirs(confdir)
 
-    logdir = os.path.join(rcdir, "log")
+    logdir = os.path.join(rcdir, 'log')
     if not os.path.exists(logdir):
         os.makedirs(logdir)
 
-    logfile = os.path.join(logdir, "log.txt")
-    logging.basicConfig(filename=logfile, filemode="w")
+    logfile = os.path.join(logdir, 'log.txt')
+    logging.basicConfig(filename=logfile, filemode='w')
 
-    os.environ["__SSKK_VERTION"] = __init__.__version__
+    os.environ['__SSKK_VERTION'] = __init__.__version__
 
     from canossa import tff
     tty = tff.DefaultPTY(term, lang, command, sys.stdin)
@@ -155,7 +166,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     row, col = tty.fitsize()
 
     import settings
-    if settings.get("use_title"):
+    if settings.get('use_title'):
         use_title = True
     else:
         use_title = False
@@ -164,13 +175,13 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         use_title = True
 
     # TODO: see terminfo
-    if not "xterm" in term:
+    if not 'xterm' in term:
         use_title = False
-        logging.warning("use_title flag is disabled by checking $TERM.")
+        logging.warning('use_title flag is disabled by checking $TERM.')
 
     if not termprop.has_mb_title:
         use_title = False
-        logging.warning("use_title flag is disabled by checking termprop.has_mb_title.")
+        logging.warning('use_title flag is disabled by checking termprop.has_mb_title.')
 
     import title
     import canossa as cano
@@ -187,9 +198,9 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     output.flush()
 
     # push title
-    output.write(u"\x1b[23;0t")
+    output.write(u'\x1b[23;0t')
 
-    output.write(u"\x1b[1;1H\x1b[J")
+    output.write(u'\x1b[1;1H\x1b[J')
 
     session = tff.Session(tty)
 
@@ -211,21 +222,21 @@ along with this program. If not, see http://www.gnu.org/licenses/.
                       inputhandler=inputhandler,
                       outputhandler=multiplexer)
     except:
-        output.write(u"\x1bc")
-        output.write(u"\x1b[?1006l")
-        output.write(u"\x1b[?1003l")
-        output.write(u"\x1b[?1002l")
-        output.write(u"\x1b[?1000l")
-        logging.exception("Aborted by exception.")
-        print ("sskk aborted by an uncaught exception."
-               " see $HOME/.sskk/log/log.txt.")
+        output.write(u'\x1bc')
+        output.write(u'\x1b[?1006l')
+        output.write(u'\x1b[?1003l')
+        output.write(u'\x1b[?1002l')
+        output.write(u'\x1b[?1000l')
+        logging.exception('Aborted by exception.')
+        print ('sskk aborted by an uncaught exception.'
+               ' see $HOME/.sskk/log/log.txt.')
     finally:
         tty.restore_term()
-        output.write(u"\x1b]0;\x1b\\")
+        output.write(u'\x1b]0;\x1b\\')
         output.flush()
 
         # pop title
-        output.write(u"\x1b[23;0t")
+        output.write(u'\x1b[23;0t')
 
 ''' main '''
 if __name__ == '__main__':
