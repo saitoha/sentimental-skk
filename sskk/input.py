@@ -293,7 +293,7 @@ class InputHandler(tff.DefaultHandler,
         self._okuri = u""
 
         clauses = dictionary.Clauses()
-        if result:
+        if len(result) > 5:
             clauses.add(dictionary.Clause(key, result))
         elif not settings.get('cgi_api.enabled'):
             clauses.add(dictionary.Clause(key, [key]))
@@ -408,29 +408,11 @@ class InputHandler(tff.DefaultHandler,
         if magic == 'builtin':
             if category == 'settings':
                 if key == 'romanrule':
-                    settings.set(key, value)
                     self._charbuf.compile(value)
-                    settings.save()
-                elif key == 'use_title' or key == 'cgi_api.enabled':
-                    value = value == 'on'
-                    settings.set(key, value)
+                elif key == 'use_title':
                     title.setenabled(value)
-                    settings.save()
-                elif key == 'cgi_api.timeout':
-                    value = float(value)
-                    settings.set(key, value)
-                    title.setenabled(value)
-                    settings.save()
-                elif key == 'skk_j_mode':
-                    c = ord(value[-1]) - 0x40
-                    settings.set(key, c)
-                    settings.save()
-                elif key == 'skk_kakutei_key':
-                    c = ord(value[-1]) - 0x40
-                    settings.set(key, c)
-                    settings.save()
-                else:
-                    pass
+                settings.set(key, eval(value))
+                settings.save()
 
     def open_wikipedia(self, word):
         import urllib
@@ -590,7 +572,7 @@ class InputHandler(tff.DefaultHandler,
                 if charbuf.isempty():
                     context.write(c)
 
-        elif c == 0x11:  # C-q
+        elif c == settings.get('skk-set-henkan-point-subr'):  # C-q
 
             if listbox.isshown():
                 listbox.close()
@@ -678,14 +660,22 @@ class InputHandler(tff.DefaultHandler,
                     wordbuf.startedit()
                     wordbuf.append(' ')
 
-            elif c == 0x24 and (charbuf.isempty() or currentbuffer != u'z'):  # /
+            elif c == 0x24 and (charbuf.isempty() or currentbuffer != u'z'):  # $
                 #
                 # $ が入力されたとき
                 #
                 if not self._iscooking():
                     inputmode.startabbrev()
                     wordbuf.startedit()
-            elif c == 0x71:  # q
+
+            elif c == 0x40 and (charbuf.isempty() or currentbuffer != u'z'):  # @
+                #
+                # @ が入力されたとき
+                #
+                wordbuf.append('@')
+                self._complete()
+
+            elif c == settings.get('skk-toggle-kana'):  # q
                 #
                 # q が入力されたとき
                 #
@@ -788,7 +778,7 @@ class InputHandler(tff.DefaultHandler,
 
             #elif (0x61 <= c and c <= 0x7a) or c == 0x2d: # _, a - z, z*
             elif charbuf.put(c):
-                # a - z
+                # a - z @
                 # 小文字のとき
                 # 先行する入力があるか
                 if wordbuf.isempty():
@@ -796,6 +786,8 @@ class InputHandler(tff.DefaultHandler,
                     context.putu(s)
                     if clauses:
                         self._optimize = True
+                    else:
+                        self._complete()
                 elif wordbuf.has_okuri():
                     # 送り仮名変換
                     self._convert_okuri()
