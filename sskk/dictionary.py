@@ -256,10 +256,10 @@ def suggest(key, finals):
     return candidate
 
 
-def _call_cgi_api_async(key, result):
-    result['value'] = _call_cgi_api(key)
+def _call_cgi_api_async(key, timeout, result):
+    result['value'] = _call_cgi_api(key, timeout)
 
-def _call_cgi_api(key):
+def _call_cgi_api(key, timeout):
     import json
     import socket
     import urllib
@@ -270,7 +270,6 @@ def _call_cgi_api(key):
     #url = 'http://173.194.72.105/transliterate?' + escaped_params
     url = 'http://www.google.com/transliterate?' + escaped_params
     try:
-        timeout = settings.get('cgi_api.timeout')
         response = urllib2.urlopen(url, None, timeout)
         json_response = response.read()
         if not json_response:
@@ -288,20 +287,22 @@ def _call_cgi_api(key):
 
 def get_from_cgi_api(clauses, key):
 
+    timeout = settings.get('cgi_api.timeout')
     try:
         import threading
         result = {}
-        t = threading.Thread(target=_call_cgi_api_async, args=(key, result))
+        args = (key, timeout, result)
+        t = threading.Thread(target=_call_cgi_api_async, args=args)
         t.setDaemon(True)
         t.start()
         if not t.isAlive():
             return None
-        t.join(0.5)
+        t.join(timeout)
         if not 'value' in result:
             return None
         response = result['value']
     except ImportError, e:
-        response = _call_cgi_api(key)
+        response = _call_cgi_api(key, timeout)
 
     if not response:
         return None
