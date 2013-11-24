@@ -306,6 +306,7 @@ def get_from_cgi_api(clauses, key):
 
     if not response:
         return None
+
     try:
         for clauseinfo in response:
             key, cgi_candidates = clauseinfo
@@ -451,10 +452,15 @@ class Clauses:
                 self._index = len(self._clauses) - 1
 
 
+def _create_dns_cache():
+    import socket
+    socket.gethostbyname('www.google.com')
+
 # 可能なら非同期で辞書をロード
 try:
     import thread
     thread.start_new_thread(_load, ())
+    thread.start_new_thread(_create_dns_cache, ())
 except ImportError, e:
     _load()
 
