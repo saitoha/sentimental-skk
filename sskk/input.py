@@ -293,7 +293,7 @@ class InputHandler(tff.DefaultHandler,
         self._okuri = u""
 
         clauses = dictionary.Clauses()
-        if len(result) > 5:
+        if len(result) > 5 or key[0] == '@':
             clauses.add(dictionary.Clause(key, result))
         elif not settings.get('cgi_api.enabled'):
             clauses.add(dictionary.Clause(key, [key]))
@@ -407,12 +407,20 @@ class InputHandler(tff.DefaultHandler,
         magic, category, key, value = command.split(':')
         if magic == 'builtin':
             if category == 'settings':
+                try:
+                    value = eval(value)
+                except e:
+                    logging.exception(e)
+                    return False
                 if key == 'romanrule':
                     self._charbuf.compile(value)
                 elif key == 'use_title':
                     title.setenabled(value)
-                settings.set(key, eval(value))
+                settings.set(key, value)
                 settings.save()
+                return True
+            return False
+        return False
 
     def open_wikipedia(self, word):
         import urllib

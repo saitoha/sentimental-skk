@@ -256,6 +256,9 @@ def suggest(key, finals):
     return candidate
 
 
+def _call_cgi_api_async(key, result):
+    result['value'] = _call_cgi_api(key)
+
 def _call_cgi_api(key):
     import json
     import socket
@@ -274,6 +277,9 @@ def _call_cgi_api(key):
             logging.exception('_call_cgi_api failed. %s' % key)
             return None
         response = json.loads(json_response)
+    except urllib2.URLError, e:
+        logging.exception(e)
+        return None
     except socket.error, e:
         logging.exception(e)
         return None
@@ -281,7 +287,22 @@ def _call_cgi_api(key):
 
 
 def get_from_cgi_api(clauses, key):
-    response = _call_cgi_api(key)
+
+    try:
+        import threading
+        result = {}
+        t = threading.Thread(target=_call_cgi_api_async, args=(key, result))
+        t.setDaemon(True)
+        t.start()
+        if not t.isAlive():
+            return None
+        t.join(0.5)
+        if not 'value' in result:
+            return None
+        response = result['value']
+    except ImportError, e:
+        response = _call_cgi_api(key)
+
     if not response:
         return None
     try:
@@ -399,7 +420,7 @@ class Clauses:
         words[index] = words[index][:-1]
         words = words[0:index + 1] + [surplus]
 
-        self._retry_google(words)
+        self._retry_cgi_api(words)
 
     def shift_right(self):
 
@@ -415,9 +436,9 @@ class Clauses:
             surplus = (''.join(words[index + 1:])[1:])
             words = words[:index + 1] + [surplus]
 
-        self._retry_google(words)
+        self._retry_cgi_api(words)
 
-    def _retry_google(self, words):
+    def _retry_cgi_api(self, words):
         response = _call_cgi_api(','.join(words))
         if response:
             self._clauses = []
