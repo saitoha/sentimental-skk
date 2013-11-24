@@ -453,6 +453,9 @@ class Clauses:
 
 
 def _create_dns_cache():
+    """
+    www.google.comのDNSキャシュを作成しておく
+    """
     import socket
     socket.gethostbyname('www.google.com')
 

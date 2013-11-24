@@ -1,6 +1,7 @@
 ;; okuri-nasi entries.
 @ローマ字ルール /標準;builtin:settings:romanrule:'normal'/
 @ローマ字ルール /AZIK;builtin:settings:romanrule:'azik'/
+@ローマ字ルール /ACT;builtin:settings:romanrule:'act'/
 @タイトルバーメッセージ /有効;builtin:settings:use_title:True/
 @タイトルバーメッセージ /無効;builtin:settings:use_title:False/
 @日本語モード開始キー(skk-j-mode) /C-A;builtin:settings:skk_j_mode:0x01/

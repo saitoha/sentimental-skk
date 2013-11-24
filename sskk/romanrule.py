@@ -1471,7 +1471,100 @@ _rule_act = {
                 'wm\'': u'うぁう',
                 'wmp': u'うぅう',
                 'wm.': u'うぇい',
-                'wm,': u'うぉう'}
+                'wm,': u'うぉう',
+                'cy': u'くい',
+                'sy': u'すい',
+                'ty': u'つい',
+                'ny': u'ぬい',
+                'hy': u'ふい',
+                'my': u'むい',
+                'yy': u'ゆい',
+                'ry': u'るい',
+                'wy': u'うい',
+                'gy': u'ぐい',
+                'zy': u'ずい',
+                'dy': u'づい',
+                'by': u'ぶい',
+                'py': u'ぷい',
+                'cgy': u'きゅい',
+                'shy': u'しゅい',
+                'thy': u'ちゅい',
+                'nhy': u'にゅい',
+                'hny': u'ひゅい',
+                'mvy': u'みゅい',
+                'rgy': u'りゅい',
+                'gry': u'ぎゅい',
+                'zmy': u'じゅい',
+                'dny': u'ぢゅい',
+                'bvy': u'びゅい',
+                'pny': u'ぴゅい',
+                'fy': u'ふい',
+                'vy': u'う゛い',
+                'twy': u'てゅい',
+                'dby': u'でゅい',
+                'wmy': u'うぅい',
+                'c<': u'こう',
+                's<': u'そう',
+                't<': u'とう',
+                'n<': u'のう',
+                'h<': u'ほう',
+                'm<': u'もう',
+                'y<': u'よう',
+                'r<': u'ろう',
+                'w<': u'うぉー',
+                'g<': u'ごう',
+                'z<': u'ぞう',
+                'd<': u'どう',
+                'b<': u'ぼう',
+                'p<': u'ぽう',
+                'cg<': u'きょう',
+                'sh<': u'しょう',
+                'th<': u'ちょう',
+                'nh<': u'にょう',
+                'hn<': u'ひょう',
+                'mv<': u'みょう',
+                'rg<': u'りょう',
+                'gr<': u'ぎょう',
+                'zm<': u'じょう',
+                'dn<': u'ぢょう',
+                'bv<': u'びょう',
+                'pn<': u'ぴょう',
+                'f<': u'ふぉー',
+                'v<': u'う゛ぉー',
+                'tw<': u'てょう',
+                'db<': u'でょう',
+                'wm<': u'うぉう',
+                'c>': u'けい',
+                's>': u'せい',
+                't>': u'てい',
+                'n>': u'ねい',
+                'h>': u'へい',
+                'm>': u'めい',
+                'y>': u'いう',
+                'r>': u'れい',
+                'w>': u'うぇい',
+                'g>': u'げい',
+                'z>': u'ぜい',
+                'd>': u'でい',
+                'b>': u'べい',
+                'p>': u'ぺい',
+                'cg>': u'きぇい',
+                'sh>': u'しぇい',
+                'th>': u'ちぇい',
+                'nh>': u'にぇい',
+                'hn>': u'ひぇい',
+                'mv>': u'みぇい',
+                'rg>': u'りぇい',
+                'gr>': u'ぎぇい',
+                'zm>': u'じぇい',
+                'dn>': u'ぢぇい',
+                'bv>': u'びぇい',
+                'pn>': u'ぴぇい',
+                'f>': u'ふぇい',
+                'v>': u'う゛ぇい',
+                'tw>': u'てぇい',
+                'db>': u'でぇい',
+                'wm>': u'うぇい'}
 
 SKK_ROMAN_VALUE = 0
 SKK_ROMAN_NEXT = 1
@@ -1482,6 +1575,11 @@ SKK_ROMAN_BUFFER = 3
 def _maketree(rule, s):
     """ makes try-tree """
     tree = {}
+
+    if 'xtu' in rule:
+        hatsu_onbin = rule['xtu']
+    else:
+        hatsu_onbin = rule['tU']
     for key, value in rule.items():
         buf = u''
         context = tree
@@ -1495,7 +1593,7 @@ def _maketree(rule, s):
         first = key[0]
         if first in s:
             key = first + key
-            value = rule['xtu'] + value
+            value = hatsu_onbin + value
             buf = u''
             context = tree
             for code in [ord(c) for c in key]:
@@ -1503,7 +1601,7 @@ def _maketree(rule, s):
                     context[code] = {SKK_ROMAN_PREV: context}
                 context = context[code]
                 if buf == chr(code):
-                    buf = rule['xtu']
+                    buf = hatsu_onbin
                 buf += chr(code)
                 context[SKK_ROMAN_BUFFER] = buf
 
@@ -1562,9 +1660,29 @@ def compile_azik():
     return (_hira_tree, _kata_tree)
 
 
+def compile_act():
+    ''' make hiragana/katakana input state trie-tree
+    >>> hira_rule, kata_rule = _make_rules(_rule_azik)
+    >>> t = _maketree(kata_rule, 'bcdfghjkmprstvwxz')
+    >>> t[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
+    u'\u30ad\u30e3'
+    >>> t = _maketree(hira_rule, 'bcdfghjkmprstvwxz')
+    >>> t[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
+    u'\u304d\u3083'
+    '''
+
+    hira_rule, kata_rule = _make_rules(_rule_act)
+
+    _hira_tree = _maketree(hira_rule, 'w')
+    _kata_tree = _maketree(kata_rule, 'w')
+    return (_hira_tree, _kata_tree)
+
+
 def compile(method="normal"):
     if method == "azik":
         return compile_azik()
+    elif method == "act":
+        return compile_act()
     elif method == "normal":
         return compile_normal()
     elif method is None:
