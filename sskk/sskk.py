@@ -130,11 +130,14 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     output.flush()
 
 #    output.write(u'\x1b[>2t')
+
+    version = __init__.__version__
+
     output.write(u'\x1b[1;1H\x1b[J')
     output.write(u'\x1b[5;5H')
-    output.write(u'      ＼ Sentimental-SKK %s ／\n' % __init__.__version__)
+    output.write(u'      ＼ Sentimental-SKK %s ／\n' % version)
     output.write(u'\x1b[7;5H')
-    output.write(u'       三( ^o^) 三( ^o^) 三( ^o^)\n')
+    output.write(u'               三 ( ´_ゝ`）\n')
     output.write(u'\x1b[1;1H')
 
     from canossa import termprop
@@ -177,21 +180,23 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     # TODO: see terminfo
     if not 'xterm' in term:
         use_title = False
-        logging.warning('use_title flag is disabled by checking $TERM.')
+        logging.warning('use_title flag is disabled by '
+                        'checking $TERM.')
 
     if not termprop.has_mb_title:
         use_title = False
-        logging.warning('use_title flag is disabled by checking termprop.has_mb_title.')
+        logging.warning('use_title flag is disabled by '
+                        'checking termprop.has_mb_title.')
 
     import title
     import canossa as cano
 
     title.setenabled(use_title)
 
-    canossa = cano.create(row=row, col=col, y=0, x=0,
-                          termenc=termenc,
-                          termprop=termprop,
-                          visibility=False)
+    from canossa import Screen
+    screen = Screen(row, col, 0, 0, termenc, termprop)
+    from canossa import Canossa
+    outputhandler = Canossa(screen, visibility=False)
 
     from input import InputHandler
 
@@ -205,33 +210,45 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     session = tff.Session(tty)
 
     try:
+        from canossa import Screen
+        screen = Screen(row, col, 0, 0, termenc, termprop)
+
         from mode import InputMode
+        from canossa import ModeHandler
+        from input import InputHandler
         inputmode = InputMode(tty)
-        mode_handler = cano.ModeHandler(inputmode, termprop)
+        mode_handler = ModeHandler(inputmode, termprop)
         inputhandler = InputHandler(session=session,
-                                    screen=canossa.screen,
+                                    screen=screen,
                                     termenc=termenc,
                                     termprop=termprop,
                                     mousemode=mode_handler,
                                     inputmode=inputmode)
 
-        multiplexer = tff.FilterMultiplexer(canossa, tff.DefaultHandler())
+        from canossa import Canossa
+        from output import OutputHandler
+        canossahandler = Canossa(screen, visibility=False)
+        outputhandler = OutputHandler(screen)
+
+        multiplexer = tff.FilterMultiplexer(canossahandler,
+                                            outputhandler)
         session.start(termenc=termenc,
                       stdin=sys.stdin,
                       stdout=sys.stdout,
                       inputhandler=inputhandler,
                       outputhandler=multiplexer)
+
     except:
         output.write(u'\x1bc')
-        output.write(u'\x1b[?1006l')
-        output.write(u'\x1b[?1003l')
-        output.write(u'\x1b[?1002l')
-        output.write(u'\x1b[?1000l')
         logging.exception('Aborted by exception.')
         print ('sskk aborted by an uncaught exception.'
                ' see $HOME/.sskk/log/log.txt.')
     finally:
         tty.restore_term()
+        output.write(u'\x1b[?1006l')
+        output.write(u'\x1b[?1003l')
+        output.write(u'\x1b[?1002l')
+        output.write(u'\x1b[?1000l')
         output.write(u'\x1b]0;\x1b\\')
         output.flush()
 
