@@ -90,7 +90,7 @@ class IListboxListenerImpl(IListboxListener):
     def oninput(self, listbox, context, c):
         if c == 0x0d:  # CR C-m
             self.onsettled(listbox, context)
-        elif c == settings.get('skk_kakutei_key'):  # LF C-j
+        elif c == settings.get('skk-kakutei-key'):  # LF C-j
             self.onsettled(listbox, context)
         elif c == 0x07:  # BEL C-g
             self.oncancel(listbox, context)
@@ -164,6 +164,7 @@ class IListboxListenerImpl(IListboxListener):
             listbox.close()
         text = self._clauses.getkey()
         self._clauses = None
+        self._inputmode.endabbrev()
         wordbuf = self._wordbuf
         wordbuf.reset()
         wordbuf.startedit()
@@ -295,7 +296,7 @@ class InputHandler(tff.DefaultHandler,
         clauses = dictionary.Clauses()
         if len(result) > 5 or key[0] == '@':
             clauses.add(dictionary.Clause(key, result))
-        elif not settings.get('cgi_api.enabled'):
+        elif not settings.get('cgi-api.enabled'):
             clauses.add(dictionary.Clause(key, [key]))
         elif not dictionary.get_from_cgi_api(clauses, key):
             clauses.add(dictionary.Clause(key, [key]))
@@ -520,7 +521,7 @@ class InputHandler(tff.DefaultHandler,
         if charbuf.handle_char(context, c):
             return True
 
-        if c == settings.get('skk_kakutei_key'):  # LF C-j
+        if c == settings.get('skk-kakutei-key'):  # LF C-j
             if self._iscooking():
                 self._settle(context)
 
@@ -682,6 +683,7 @@ class InputHandler(tff.DefaultHandler,
                 #
                 wordbuf.append('@')
                 self._complete()
+                self._inputmode.endabbrev()
 
             elif c == settings.get('skk-toggle-kana'):  # q
                 #
