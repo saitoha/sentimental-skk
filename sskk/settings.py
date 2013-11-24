@@ -23,13 +23,13 @@ import os
 import sys
 
 _CONFDB = {
-    'skk_j_mode': 0x0a,
-    'skk_kakutei_key': 0x0a,
+    'skk-j-mode': 0x0a,
+    'skk-kakutei-key': 0x0a,
     'skk-toggle-kana': 0x71,
     'skk-set-henkan-point-subr': 0x11,
     'suggest.max': 30,
-    'cgi_api.enabled': True,
-    'cgi_api.timeout': 0.5,
+    'cgi-api.enabled': True,
+    'cgi-api.timeout': 0.5,
 }
 
 _DEFAULT_CONF = """
