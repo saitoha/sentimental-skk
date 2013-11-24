@@ -63,10 +63,13 @@ _control_chars = re.compile('[\x00-\x1f\x7f\x80-\x9f\xff]')
 
 def feedback(key, value):
     global user_dict_file
+    if key[0] == '@':
+        return
     _register(_compdb, key, value)
     if key in _user_tangodb:
         record = _user_tangodb[key]
-        record.remove(value)
+        if value in record:
+            record.remove(value)
         record.insert(0, value)
     else:
         _user_tangodb[key] = [value]
@@ -109,7 +112,7 @@ def _load_dict(filename):
             match = p.match(line)
             if not match:
                 template = '_load_dict: can\'t load the entry: %s'
-                logging.message(template % line)
+                logging.warning(template % line)
             alphakey, key, okuri, value = match.groups()
             if key:
                 if okuri:
@@ -167,8 +170,9 @@ def gettango(key):
                 if not value in result:
                     result.append(value)
         return result
-    return _tangodb[key]
-
+    if key in _tangodb:
+        return _tangodb[key]
+    return []
 
 def getokuri(key):
     result = list()
@@ -254,11 +258,13 @@ def suggest(key, finals):
 
 def _call_cgi_api(key):
     import json
+    import socket
     import urllib
     import urllib2
     params = urllib.urlencode({'langpair': 'ja-Hira|ja',
                                'text': key.encode('UTF-8')})
     escaped_params = str(params)
+    #url = 'http://173.194.72.105/transliterate?' + escaped_params
     url = 'http://www.google.com/transliterate?' + escaped_params
     try:
         timeout = settings.get('cgi_api.timeout')
@@ -280,7 +286,11 @@ def get_from_cgi_api(clauses, key):
         return None
     try:
         for clauseinfo in response:
-            key, candidates = clauseinfo
+            key, cgi_candidates = clauseinfo
+            candidates = gettango(key)
+            for candidate in cgi_candidates:
+                if not candidate in candidates: 
+                    candidates.append(candidate)
             clause = Clause(key, candidates)
             clauses.add(clause)
     except:
@@ -408,7 +418,7 @@ class Clauses:
         self._retry_google(words)
 
     def _retry_google(self, words):
-        response = call_cgi_api(','.join(words))
+        response = _call_cgi_api(','.join(words))
         if response:
             self._clauses = []
             for clauseinfo in response:
