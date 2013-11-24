@@ -441,7 +441,8 @@ class Clauses:
         self._retry_cgi_api(words)
 
     def _retry_cgi_api(self, words):
-        response = _call_cgi_api(','.join(words))
+        timeout = settings.get('cgi_api.timeout')
+        response = _call_cgi_api(','.join(words), timeout)
         if response:
             self._clauses = []
             for clauseinfo in response:
