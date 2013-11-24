@@ -91,7 +91,7 @@ class InputMode(IModeListenerImpl):
 
     def handle_char(self, context, c):
 
-        if c == settings.get('skk_j_mode'):  # LF C-j
+        if c == settings.get('skk-j-mode'):  # LF C-j
             self.endabbrev()
             if self.ishan():
                 self.starthira()
