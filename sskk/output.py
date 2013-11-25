@@ -48,6 +48,8 @@ class OutputHandler(tff.DefaultHandler):
         return False
 
     def handle_draw(self, context):
+        y, x = self.screen.getyx()
+        context.puts('\x1b[%d;%dH' % (y + 1, x + 1))
         if self.dirty_flag:
             self.dirty_flag = False
             self.screen.drawall(context)
