@@ -1059,7 +1059,6 @@ class InputHandler(tff.DefaultHandler,
             context.puts('\x1b[%d;%dH' % (y + 1, x + 1))
             context.puts('\x1b[?25h')
 
-
 def test():
     import doctest
     doctest.testmod()
