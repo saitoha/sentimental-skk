@@ -1045,6 +1045,7 @@ class InputHandler(tff.DefaultHandler,
             self._draw_nothing(output)
 
         self._refleshtitle()
+        screen.cursor.draw(output)
 
         buf = output.getvalue()
         if buf:
@@ -1057,7 +1058,6 @@ class InputHandler(tff.DefaultHandler,
             y, x = screen.getyx()
             context.puts('\x1b[%d;%dH' % (y + 1, x + 1))
             context.puts('\x1b[?25h')
-
 
 
 def test():
