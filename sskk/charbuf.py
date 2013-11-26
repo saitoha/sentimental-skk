@@ -35,7 +35,7 @@ class CharacterContext:
 
     def compile(self, method=None):
         # makes trie trees
-        (hira_tree, kata_tree) = romanrule.compile(method)
+        hira_tree, kata_tree = romanrule.compile(method)
         self.__hira_tree = hira_tree
         self.__kata_tree = kata_tree
         self.hardreset()
