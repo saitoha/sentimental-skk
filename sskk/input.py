@@ -154,6 +154,7 @@ class IListboxListenerImpl(IListboxListener):
             self._charbuf.reset()
 
     def onsettled(self, listbox, context):
+        self._screen.setfocus()
         if self._clauses:
             self._settle(context)
         if self._wordbuf.length() > 0:
