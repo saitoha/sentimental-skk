@@ -329,10 +329,11 @@ class InputHandler(tff.DefaultHandler,
         else:
             if self._inputmode.iskata():
                 key = kanadb.to_kata(key)
-            if not dictionary.get_from_cgi_api(clauses, key + okuri):
+            if not dictionary.get_from_cgi_api(clauses, key):
                 clauses.add(dictionary.Clause(key, [key]))
             else:
                 self._okuri = u""
+            clauses.add(dictionary.Clause(okuri, [okuri]))
         self._clauses = clauses
         self._listbox.assign(clauses.getcandidates())
         self._wordbuf.startedit()
@@ -351,10 +352,13 @@ class InputHandler(tff.DefaultHandler,
                 self._dispatch_builtin_command(remark)
                 word = u''
             else:
+                for clause in clauses:
+                    key = clause.getcurrentvalue()
+                    value = clause.getcurrentvalue()
+                    dictionary.feedback(key, value)
                 word = clauses.getvalue() + self._okuri
             self._clauses = None
             self._okuri = u''
-            dictionary.feedback(key, word)
         else:
             s = self._draincharacters()
             word = wordbuf.get()
