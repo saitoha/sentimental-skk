@@ -23,25 +23,21 @@ from canossa import tff
 
 class OutputHandler(tff.DefaultHandler):
 
-    def __init__(self,
-                 screen,
-                 termenc="UTF-8",
-                 termprop=None,
-                 visibility=False):
+    def __init__(self, screen, termenc="UTF-8", termprop=None, visibility=False):
 
-        self.screen = screen
+        self._screen = screen
         self.dirty_flag = False
 
     def handle_csi(self, context, parameter, intermediate, final):
         if final == 0x4c or final == 0x4d or final == 0x53 or final == 0x54:
             if not intermediate:
-                if screen.has_visible_windows():
+                if self._screen.has_visible_windows():
                     self.dirty_flag = True
         return False
 
     def handle_char(self, context, c):
         if c == 0x0a:
-            screen = self.screen
+            screen = self._screen
             if screen.cursor.row == screen.scroll_bottom - 1:
                 if screen.has_visible_windows():
                     self.dirty_flag = True
@@ -50,7 +46,7 @@ class OutputHandler(tff.DefaultHandler):
     def handle_draw(self, context):
         if self.dirty_flag:
             self.dirty_flag = False
-            self.screen.drawall(context)
+            self._screen.drawall(context)
             #self.screen.drawwindows(context)
 
         return False
