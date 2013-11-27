@@ -46,8 +46,9 @@ class OutputHandler(tff.DefaultHandler):
     def handle_draw(self, context):
         if self.dirty_flag:
             self.dirty_flag = False
-            self._screen.drawall(context)
-            #self.screen.drawwindows(context)
+            screen = self._screen
+            screen.drawall(context)
+            screen.drawwindows(context)
 
         return False
 

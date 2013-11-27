@@ -334,6 +334,7 @@ class InputHandler(tff.DefaultHandler,
             else:
                 self._okuri = u""
             clauses.add(dictionary.Clause(okuri, [okuri]))
+
         self._clauses = clauses
         self._listbox.assign(clauses.getcandidates())
         self._wordbuf.startedit()
