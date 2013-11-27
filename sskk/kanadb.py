@@ -101,12 +101,14 @@ _kanadb = ((u'あ', u'ア', u'ｱ'),
            (u'ょ', u'ョ', u'ｮ'),
            (u'ん', u'ン', u'ﾝ'))
 
-_to_kata = {}
-_to_hira = {}
-_to_hankata = {}
-
 
 def compile():
+    global _to_kata
+    global _to_hira
+    global _to_hankata
+    _to_kata = {}
+    _to_hira = {}
+    _to_hankata = {}
     for hira, kata, hankata in _kanadb:
         _to_kata[hira] = kata
         _to_hira[kata] = hira
@@ -115,30 +117,52 @@ def compile():
 
 
 def to_kata(s):
-    ''' convert Japanese Hiragana String to Katakana '''
+    """
+    convert Japanese Hiragana String to Katakana
+
+    >>> to_kata(u"\u3042\u3044\u3046\u3048\u304a") == u'\u30a2\u30a4\u30a6\u30a8\u30aa'
+    True
+    >>> to_kata(u"\u30a2\u30a4\u30a6\u30a8\u30aa") == u'\u30a2\u30a4\u30a6\u30a8\u30aa'
+    True
+    """
+
     def conv(c):
         if c in _to_kata:
             return _to_kata[c]
         return c
-    return ''.join([conv(c) for c in s])
+    return u''.join([conv(c) for c in s])
 
 
 def to_hira(s):
-    ''' convert Japanese Katakana String to Hiragana '''
+    """
+    convert Japanese Katakana String to Hiragana
+
+    >>> to_hira(u'\u3042\u3044\u3046\u3048\u304a') == u'\u3042\u3044\u3046\u3048\u304a'
+    True
+    >>> to_hira(u'\u30a2\u30a4\u30a6\u30a8\u30aa') == u'\u3042\u3044\u3046\u3048\u304a'
+    True
+    """
     def conv(c):
         if c in _to_hira:
             return _to_hira[c]
         return c
-    return ''.join([conv(c) for c in s])
+    return u''.join([conv(c) for c in s])
 
 
 def to_hankata(s):
-    ''' convert Japanese Kana String to Half-Width-Katakana '''
+    """
+    convert Japanese Kana String to Half-Width-Katakana
+
+    >>> to_hankata(u'\u3042\u3044\u3046\u3048\u304a') == u'\uff71\uff72\uff73\uff74\uff75'
+    True
+    >>> to_hankata(u'\u30a2\u30a4\u30a6\u30a8\u30aa') == u'\uff71\uff72\uff73\uff74\uff75'
+    True
+    """
     def conv(c):
         if c in _to_hankata:
             return _to_hankata[c]
         return c
-    return ''.join([conv(c) for c in s])
+    return u''.join([conv(c) for c in s])
 
 
 compile()
