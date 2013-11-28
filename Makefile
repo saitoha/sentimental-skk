@@ -1,8 +1,10 @@
 
 PACKAGE_NAME=sentimental-skk
+DEPENDENCIES=canossa tff termprop
 PYTHON=python
+RM=rm -rf
 
-all: test
+build: test
 	$(PYTHON) setup.py sdist
 	python2.5 setup.py bdist_egg
 	python2.6 setup.py bdist_egg
@@ -12,15 +14,13 @@ setuptools:
 	$(PYTHON) -c "import setuptools" || curl http://peak.telecommunity.com/dist/ez_setup.py | python
 
 install: setuptools
-	$(PYTHON) -c "import setuptools" || curl http://peak.telecommunity.com/dist/ez_setup.py | python
 	$(PYTHON) setup.py install
 
 uninstall:
-	yes | pip uninstall $(PACKAGE_NAME)
-	$(MAKE) uninstall
+	for package in $(PACKAGE_NAME) $(DEPENDENCIES); do pip uninstall -y $package; done
 	
 clean:
-	rm -rf dist/ build/ *.egg-info *.pyc **/*.pyc
+	$(RM) dist/ build/ *.egg-info *.pyc **/*.pyc
 
 test:
 	$(PYTHON) setup.py test
