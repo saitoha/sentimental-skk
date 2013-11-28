@@ -228,7 +228,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         from canossa import Canossa
         from output import OutputHandler
         canossahandler = Canossa(screen, visibility=False)
-        outputhandler = OutputHandler(screen)
+        outputhandler = OutputHandler(screen, mode_handler)
 
         multiplexer = tff.FilterMultiplexer(canossahandler,
                                             outputhandler)

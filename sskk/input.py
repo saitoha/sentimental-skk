@@ -221,7 +221,8 @@ class InputHandler(tff.DefaultHandler,
     _iframe = None
     _optimize = False
 
-    def __init__(self, session, screen, termenc, termprop, mousemode, inputmode):
+    def __init__(self, session, screen, termenc, 
+                 termprop, mousemode, inputmode):
         self._screen = screen
         try:
             from cStringIO import StringIO

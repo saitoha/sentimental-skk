@@ -102,13 +102,10 @@ _kanadb = ((u'あ', u'ア', u'ｱ'),
            (u'ん', u'ン', u'ﾝ'))
 
 
+_to_kata = {}
+_to_hira = {}
+_to_hankata = {}
 def compile():
-    global _to_kata
-    global _to_hira
-    global _to_hankata
-    _to_kata = {}
-    _to_hira = {}
-    _to_hankata = {}
     for hira, kata, hankata in _kanadb:
         _to_kata[hira] = kata
         _to_hira[kata] = hira

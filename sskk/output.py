@@ -23,12 +23,21 @@ from canossa import tff
 
 class OutputHandler(tff.DefaultHandler):
 
-    def __init__(self, screen, termenc="UTF-8", termprop=None, visibility=False):
+    def __init__(self, screen, mode_handler, 
+                 termenc="UTF-8", termprop=None, visibility=False):
 
         self._screen = screen
+        self._mode_handler = mode_handler
         self.dirty_flag = False
 
+    def handle_esc(self, context, intermediate, final):
+        if self._mode_handler.handle_esc(context, intermediate, final):
+            return True
+        return False
+
     def handle_csi(self, context, parameter, intermediate, final):
+        if self._mode_handler.handle_csi(context, parameter, intermediate, final):
+            return True
         if final == 0x4c or final == 0x4d or final == 0x53 or final == 0x54:
             if not intermediate:
                 if self._screen.has_visible_windows():
