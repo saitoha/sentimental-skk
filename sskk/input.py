@@ -802,8 +802,6 @@ class InputHandler(tff.DefaultHandler,
                     context.putu(s)
                     if clauses:
                         self._optimize = True
-                    else:
-                        self._complete()
                 elif wordbuf.has_okuri():
                     # 送り仮名変換
                     self._convert_okuri()
