@@ -354,7 +354,7 @@ class InputHandler(tff.DefaultHandler,
                 word = u''
             else:
                 for clause in clauses:
-                    key = clause.getcurrentvalue()
+                    key = clause.getkey()
                     value = clause.getcurrentvalue()
                     dictionary.feedback(key, value)
                 word = clauses.getvalue() + self._okuri
