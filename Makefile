@@ -11,13 +11,17 @@ build: test
 	python2.7 setup.py bdist_egg
 
 setuptools:
-	$(PYTHON) -c "import setuptools" || curl http://peak.telecommunity.com/dist/ez_setup.py | python
+	$(PYTHON) -c "import setuptools" || \
+		curl http://peak.telecommunity.com/dist/ez_setup.py | $(PYTHON)
 
 install: setuptools
 	$(PYTHON) setup.py install
 
 uninstall:
-	for package in $(PACKAGE_NAME) $(DEPENDENCIES); do pip uninstall -y $package; done
+	for package in $(PACKAGE_NAME) $(DEPENDENCIES); \
+	do \
+	       	pip uninstall -y $$package; \
+       	done
 	
 clean:
 	$(RM) dist/ build/ *.egg-info *.pyc **/*.pyc
