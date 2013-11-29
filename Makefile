@@ -20,8 +20,8 @@ install: setuptools
 uninstall:
 	for package in $(PACKAGE_NAME) $(DEPENDENCIES); \
 	do \
-	       	pip uninstall -y $$package; \
-       	done
+		pip uninstall -y $$package; \
+	done
 	
 clean:
 	$(RM) dist/ build/ *.egg-info *.pyc **/*.pyc

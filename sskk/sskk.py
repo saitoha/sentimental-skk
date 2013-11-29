@@ -75,7 +75,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
 
     if os.getenv('__SSKK_VERTION'):
         print '\n＼SSKK process is already running！！！／\n'
-        print '       三 -( ^o^)-  三 -( ^o^)-\n'
+        print '       三 ( ´_ゝ`）三 ( ´_ゝ`）\n'
         return
 
     # retrive starting command
