@@ -74,14 +74,14 @@ class TitleTrait():
 
     def _getface(self):
         self._counter = 1 - self._counter
-        return [u'三 ┗( ^o^)┓ ＜', u'三 ┏( ^o^)┛ ＜'][self._counter]
+        return [u'三 ┗( ^o^)┓ ＜', u'三 ┏( ^o^)┛ ＜ '][self._counter]
 
     def _refleshtitle(self):
         title.draw(self._output)
 
     def settitle(self, value):
         face = self._getface()
-        title.setmessage(face + " " + value)
+        title.setmessage(face + value)
         self._refleshtitle()
 
 
@@ -1062,7 +1062,8 @@ class InputHandler(tff.DefaultHandler,
         if not screen.has_active_windows():
             y, x = screen.getyx()
             context.puts('\x1b[%d;%dH' % (y + 1, x + 1))
-            context.puts('\x1b[?25h')
+            if screen.dectcem:
+                context.puts('\x1b[?25h')
 
 def test():
     import doctest
