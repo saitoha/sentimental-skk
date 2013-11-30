@@ -102,7 +102,7 @@ def _decode_line(line):
 
 
 def _load_dict(filename):
-    p = re.compile('^(?:([0-9a-z.]+?)|(.+?)([a-z])?) /(.+)/')
+    p = re.compile('^(?:([0-9a-z\.\^]+?)|(.+?)([a-z])?) /(.+)/')
 
     try:
         for line in open(filename):
@@ -225,7 +225,6 @@ def _expand(key, current, candidate, limit):
                 candidate.append(key)
 
 def suggest(key, finals):
-
     _current = _compdb
     for _c in key:
         if _c in _current:
