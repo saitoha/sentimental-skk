@@ -673,7 +673,7 @@ class InputHandler(tff.DefaultHandler,
                     inputmode.startabbrev()
                     wordbuf.reset()
                     wordbuf.startedit()
-                    wordbuf.append(' ')
+                    #wordbuf.append(' ')
 
             elif c == 0x24 and (charbuf.isempty() or currentbuffer != u'z'):  # $
                 #
