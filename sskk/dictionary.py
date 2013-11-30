@@ -155,8 +155,8 @@ def _load_history(filename):
     for line in open(filename):
         value = line
         key = _escape(line)
-        if len(key) > 30:
-            key = key[:27] + '...'
+        if len(key) > 50:
+            continue
         try:
             key = unicode(key, "utf-8")
         except UnicodeDecodeError:
