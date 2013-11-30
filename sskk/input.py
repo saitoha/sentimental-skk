@@ -1038,7 +1038,7 @@ class InputHandler(tff.DefaultHandler,
         wordbuf = self._wordbuf
         charbuf = self._charbuf
 
-        output.write('\x1b[?25l')
+#        output.write('\x1b[?25l')
 
         if self._optimize:
             self._optimize = False
@@ -1064,6 +1064,7 @@ class InputHandler(tff.DefaultHandler,
             context.puts('\x1b[%d;%dH' % (y + 1, x + 1))
             if screen.dectcem:
                 context.puts('\x1b[?25h')
+#            context.puts('\x1b[?25h')
 
 def test():
     import doctest

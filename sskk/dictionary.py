@@ -38,6 +38,9 @@ userdictdir = os.path.join(rcdir, 'userdict')
 if not os.path.exists(userdictdir):
     os.makedirs(userdictdir)
 
+bash_history_path = os.path.join(homedir, '.bash_history')
+zsh_history_path = os.path.join(homedir, '.zsh_history')
+
 _user_tangodb = {}
 _tangodb = {}
 _okuridb = {}
@@ -96,7 +99,7 @@ def _decode_line(line):
     global _encoding
     try:
         return unicode(line, _encoding_list[_encoding])
-    except:
+    except UnicodeDecodeError, e:
         _encoding = 1 - _encoding # flip
     return unicode(line, _encoding_list[_encoding])
 
@@ -148,6 +151,24 @@ def _get_fallback_dict_path(name):
     return os.path.join(dirpath, name)
 
 
+def _load_history(filename):
+    for line in open(filename):
+        value = line
+        key = _escape(line)
+        if len(key) > 30:
+            key = key[:27] + '...'
+        try:
+            key = unicode(key, "utf-8")
+        except UnicodeDecodeError:
+            continue
+        key = u'$' + key
+        _register(_compdb, key, value)
+        if key in _tangodb:
+            values = _tangodb[key]
+            values.append(value)
+        else:
+            _tangodb[key] = [value]
+
 def _load():
     for f in reversed(sorted(os.listdir(userdictdir))):
         _load_dict(os.path.join(userdictdir, f))
@@ -159,6 +180,10 @@ def _load():
     _load_dict(_get_fallback_dict_path('SKK-JISYO.assoc'))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.geo'))
     _load_dict(_get_fallback_dict_path('SKK-JISYO.jinmei'))
+    if os.path.exists(bash_history_path):
+        _load_history(bash_history_path)
+    if os.path.exists(zsh_history_path):
+        _load_history(zsh_history_path)
 
 
 def gettango(key):
