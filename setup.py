@@ -23,6 +23,7 @@ import sskk.eisuudb as eisuudb
 import sskk.dictionary as dictionary
 import sskk.charbuf as charbuf
 import sskk.word as word
+import sskk.output as output
 
 import doctest
 dirty = False
@@ -34,6 +35,7 @@ for m in [mode,
           dictionary,
           charbuf,
           word,
+          output,
           ]:
     failure_count, test_count = doctest.testmod(m)
     if failure_count > 0:

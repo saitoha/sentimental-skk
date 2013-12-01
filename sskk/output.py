@@ -31,11 +31,16 @@ class OutputHandler(tff.DefaultHandler):
         self.dirty_flag = False
 
     def handle_esc(self, context, intermediate, final):
-        if self._mode_handler.handle_esc(context, intermediate, final):
-            return True
-        return False
+        return self._mode_handler.handle_esc(context, intermediate, final)
 
     def handle_csi(self, context, parameter, intermediate, final):
+        """
+        >>> mode_handler = tff.DefaultHandler()
+        >>> from canossa import Screen, termprop
+        >>> termprop = termprop.MockTermprop()
+        >>> screen = Screen(24, 80, 0, 0, "utf-8", termprop)
+        >>> output_handler = OutputHandler(screen, mode_handler)
+        """
         if self._mode_handler.handle_csi(context, parameter, intermediate, final):
             return True
         if final == 0x4c or final == 0x4d or final == 0x53 or final == 0x54:
@@ -45,7 +50,7 @@ class OutputHandler(tff.DefaultHandler):
         return False
 
     def handle_char(self, context, c):
-        if c == 0x0a:
+        if c == 0x0a:  # LF
             screen = self._screen
             if screen.cursor.row == screen.scroll_bottom - 1:
                 if screen.has_visible_windows():
@@ -61,3 +66,9 @@ class OutputHandler(tff.DefaultHandler):
 
         return False
 
+def test():
+    import doctest
+    doctest.testmod()
+
+if __name__ == "__main__":
+    test()
