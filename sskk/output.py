@@ -66,6 +66,25 @@ class OutputHandler(tff.DefaultHandler):
         return False
 
     def handle_char(self, context, c):
+        """
+        >>> mode_handler = tff.DefaultHandler()
+        >>> from canossa import MockScreenWithWindows, termprop
+        >>> termprop = termprop.MockTermprop()
+        >>> screen = MockScreenWithWindows()
+        >>> output_handler = OutputHandler(screen, mode_handler)
+        >>> context = tff.MockParseContext()
+        >>> output_handler.dirty_flag
+        False
+        >>> output_handler.handle_char(context, 0x0b)
+        False
+        >>> output_handler.dirty_flag
+        False
+        >>> screen.cursor.row = screen.scroll_bottom - 1
+        >>> output_handler.handle_char(context, 0x0a)
+        False
+        >>> output_handler.dirty_flag
+        True
+        """
         if c == 0x0a:  # LF
             screen = self._screen
             if screen.cursor.row == screen.scroll_bottom - 1:
