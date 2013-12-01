@@ -25,6 +25,15 @@ class OutputHandler(tff.DefaultHandler):
 
     def __init__(self, screen, mode_handler, 
                  termenc="UTF-8", termprop=None, visibility=False):
+        """
+        >>> mode_handler = tff.DefaultHandler()
+        >>> from canossa import Screen, termprop
+        >>> termprop = termprop.MockTermprop()
+        >>> screen = Screen(24, 80, 0, 0, "utf-8", termprop)
+        >>> output_handler = OutputHandler(screen, mode_handler)
+        >>> output_handler.dirty_flag
+        False
+        """
 
         self._screen = screen
         self._mode_handler = mode_handler
@@ -36,10 +45,17 @@ class OutputHandler(tff.DefaultHandler):
     def handle_csi(self, context, parameter, intermediate, final):
         """
         >>> mode_handler = tff.DefaultHandler()
-        >>> from canossa import Screen, termprop
+        >>> from canossa import MockScreenWithWindows, termprop
         >>> termprop = termprop.MockTermprop()
-        >>> screen = Screen(24, 80, 0, 0, "utf-8", termprop)
+        >>> screen = MockScreenWithWindows()
         >>> output_handler = OutputHandler(screen, mode_handler)
+        >>> context = tff.MockParseContext()
+        >>> output_handler.dirty_flag
+        False
+        >>> output_handler.handle_csi(context, (), (), 0x4c)
+        False
+        >>> output_handler.dirty_flag
+        True
         """
         if self._mode_handler.handle_csi(context, parameter, intermediate, final):
             return True
@@ -58,6 +74,24 @@ class OutputHandler(tff.DefaultHandler):
         return False
 
     def handle_draw(self, context):
+        """
+        >>> mode_handler = tff.DefaultHandler()
+        >>> from canossa import MockScreenWithWindows, termprop
+        >>> termprop = termprop.MockTermprop()
+        >>> screen = MockScreenWithWindows()
+        >>> output_handler = OutputHandler(screen, mode_handler)
+        >>> context = tff.MockParseContext()
+        >>> output_handler.dirty_flag
+        False
+        >>> output_handler.handle_csi(context, (), (), 0x4c)
+        False
+        >>> output_handler.dirty_flag
+        True
+        >>> output_handler.handle_draw(context)
+        False
+        >>> output_handler.dirty_flag
+        False
+        """
         if self.dirty_flag:
             self.dirty_flag = False
             screen = self._screen
