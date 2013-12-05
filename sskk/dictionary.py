@@ -44,10 +44,21 @@ zsh_history_path = os.path.join(homedir, '.zsh_history')
 _user_tangodb = {}
 _tangodb = {}
 _okuridb = {}
-_encoding = 0
-_encoding_list = [u'eucjp', u'utf-8']
 
 user_dict_file = None
+
+class LineDecoder():
+
+    _encoding = 0
+    _encoding_list = [u'eucjp', u'utf-8']
+
+    def decode_line(self, line):
+        try:
+            return unicode(line, self._encoding_list[self._encoding])
+        except UnicodeDecodeError, e:
+            self._encoding = 1 - self._encoding # flip
+        return unicode(line, self._encoding_list[self._encoding])
+
 
 class Expander():
 
@@ -108,7 +119,7 @@ class Completer():
         self._comp_value_db = {}
         self._expander = Expander()
 
-    def _register(self, key, value):
+    def register(self, key, value):
         current = self._compdb
         self._comp_value_db[key] = value
         for c in key:
@@ -185,23 +196,14 @@ def _escape(s):
     return _control_chars.sub('', s)
 
 
-def _decode_line(line):
-    global _encoding
-    try:
-        return unicode(line, _encoding_list[_encoding])
-    except UnicodeDecodeError, e:
-        _encoding = 1 - _encoding # flip
-    return unicode(line, _encoding_list[_encoding])
-
-
 def _load_dict(filename):
     p = re.compile('^(?:([0-9a-z\.\^]+?)|(.+?)([a-z])?) /(.+)/')
-
+    decoder = LineDecoder()
     try:
         for line in open(filename):
             if len(line) < 4 or line[1] == ';':
                 continue
-            line = _decode_line(line)
+            line = decoder.decode_line(line)
             match = p.match(line)
             if not match:
                 template = '_load_dict: can\'t load the entry: %s'
