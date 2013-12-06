@@ -84,7 +84,7 @@ class Expander():
                 return True
             generator = (x for x in value.items())
             if self._expand_sparse(key + c, generator, candidate, generators):
-                generators.append((key + c, current))
+                generators.append((key, current))
                 return True
         return False
     
