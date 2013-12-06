@@ -6,49 +6,28 @@ from sskk import __version__, __license__, __author__
 import inspect, os
 
 filename = inspect.getfile(inspect.currentframe())
-dirpath = os.path.abspath(os.path.dirname(inspect.getfile(inspect.currentframe())))
+dirpath = os.path.abspath(os.path.dirname(filename))
+long_description = open(os.path.join(dirpath, "README.rst")).read()
 
 try:
     import sskk.canossa
-except:
+except ImportError, e:
+    print e
     print "Please do:\n git submodule update --init"
     import sys
     sys.exit(1)
 
-import sskk.mode as mode
-import sskk.input as input
-import sskk.romanrule as romanrule
-import sskk.kanadb as kanadb
-import sskk.eisuudb as eisuudb
-import sskk.dictionary as dictionary
-import sskk.charbuf as charbuf
-import sskk.word as word
-import sskk.output as output
-
-import doctest
-dirty = False
-for m in [mode,
-          input,
-          romanrule,
-          kanadb,
-          eisuudb,
-          dictionary,
-          charbuf,
-          word,
-          output,
-          ]:
-    failure_count, test_count = doctest.testmod(m)
-    if failure_count > 0:
-        dirty = True
-if dirty:
-    raise Exception("test failed.")
-
-print "succeeded."
+try:
+    import test
+except ImportError, e:
+    print e
+    sys.exit(1)
 
 setup(name                  = 'sentimental-skk',
       version               = __version__,
-      description           = '三 三 ( ´_ゝ`）＜ Japanese Input Method SKK (Simple Kana to Kanji conversion) on your terminal',
-      long_description      = open(os.path.join(dirpath, "README.rst")).read(),
+      description           = '三 三 ( ´_ゝ`）＜ Japanese Input Method SKK '
+                              '(Simple Kana to Kanji conversion) on your terminal',
+      long_description      = long_description,
       py_modules            = ['sskk'],
       eager_resources       = ['sskk/SKK-JISYO.L',
                                'sskk/SKK-JISYO.assoc',

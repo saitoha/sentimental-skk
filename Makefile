@@ -4,6 +4,8 @@ DEPENDENCIES=canossa tff termprop
 PYTHON=python
 RM=rm -rf
 
+.PHONY: test build setuptools install uninstall clean update
+
 build: test
 	$(PYTHON) setup.py sdist
 	python2.5 setup.py bdist_egg
@@ -24,10 +26,18 @@ uninstall:
 	done
 	
 clean:
-	$(RM) dist/ build/ *.egg-info *.pyc **/*.pyc
+	$(RM) dist/ build/ htmlcov/ *.egg-info *.pyc **/*.pyc
 
 test:
-	$(PYTHON) setup.py test
+	if $$(which nosetests); \
+	then \
+	    nosetests --with-doctest \
+	              --with-coverage \
+	              --cover-html \
+	              --cover-package=sskk; \
+	else \
+	    $(PYTHON) setup.py test; \
+	fi
 
 update: clean test
 	$(PYTHON) setup.py register
