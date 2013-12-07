@@ -287,6 +287,8 @@ class InputHandler(tff.DefaultHandler,
 
     def _convert_word(self):
         key = self._wordbuf.get()
+        if not key:
+            return False
 
         if self._inputmode.iskata():
             key = kanadb.to_hira(key)
