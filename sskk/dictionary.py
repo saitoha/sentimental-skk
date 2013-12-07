@@ -44,23 +44,124 @@ zsh_history_path = os.path.join(homedir, '.zsh_history')
 _user_tangodb = {}
 _tangodb = {}
 _okuridb = {}
-_compdb = {}
-_comp_value_db = {}
-_encoding = 0
-_encoding_list = [u'eucjp', u'utf-8']
 
 user_dict_file = None
 
-def _register(db, key, value):
-    current = db
-    _comp_value_db[key] = value
-    for c in key:
-        if c in current:
-            current = current[c]
+class LineDecoder():
+
+    _encoding = 0
+    _encoding_list = [u'eucjp', u'utf-8']
+
+    def decode_line(self, line):
+        try:
+            return unicode(line, self._encoding_list[self._encoding])
+        except UnicodeDecodeError, e:
+            self._encoding = 1 - self._encoding # flip
+        return unicode(line, self._encoding_list[self._encoding])
+
+
+class Expander():
+
+    limit = 10
+
+    def _expand_all(self, key, current, candidate):
+        limit = self.limit
+        for c, value in current:
+            if len(candidate) >= limit:
+                break
+            if value == {}:
+                candidate.append(key + c)
+            else:
+                self._expand_all(key + c, (x for x in value.items()), candidate)
+    
+    def _expand_sparse(self, key, current, candidate, generators):
+        limit = self.limit
+        for c, value in current:
+            if len(candidate) >= limit:
+                break
+            if value == {}:
+                candidate.append(key + c)
+                return True
+            generator = (x for x in value.items())
+            if self._expand_sparse(key + c, generator, candidate, generators):
+                generators.append((key, current))
+                return True
+        return False
+    
+    def expand(self, key, current, candidate):
+        limit = settings.get('suggest.max')
+        self.limit = limit
+        generators = []
+        for c in current:
+            generator = (x for x in current[c].items())
+            self._expand_sparse(key + c, generator, candidate, generators)
+            if len(candidate) >= limit:
+                break
         else:
-            new_current = {}
-            current[c] = new_current
-            current = new_current
+            if len(candidate) < limit:
+                for k, v in generators:
+                    self._expand_all(k, v, candidate)
+                    if len(candidate) >= limit:
+                        break
+                if len(candidate) < limit:
+                    for c in current:
+                        if not current[c]:
+                            candidate.append(c)
+                            if len(candidate) >= limit:
+                                break
+                elif not current:
+                    candidate.append(key)
+
+class Completer():
+
+    def __init__(self):
+        self._compdb = {}
+        self._comp_value_db = {}
+        self._expander = Expander()
+
+    def register(self, key, value):
+        current = self._compdb
+        self._comp_value_db[key] = value
+        for c in key:
+            if c in current:
+                current = current[c]
+            else:
+                new_current = {}
+                current[c] = new_current
+                current = new_current
+
+    def suggest(self, key, finals):
+        _current = self._compdb
+        for _c in key:
+            if _c in _current:
+                _current = _current[_c]
+            else:
+                return None
+    
+        expander = self._expander
+    
+        candidate = list()
+        if not finals:
+            expander.expand(u'', _current, candidate)
+        else:
+            for _key in finals:
+                key_len = len(_key)
+                if key_len == 1:
+                    if _key in _current:
+                        expander.expand(_key, _current[_key], candidate)
+                        if len(candidate) >= expander.limit:
+                            break
+                elif key_len == 2:
+                    first, second = _key[0], _key[1]
+                    if first in _current:
+                        if second in _current[first]:
+                            expander.expand(_key, _current[first][second], candidate)
+                            if len(candidate) >= expander.limit:
+                                break
+        return candidate
+
+
+completer = Completer()
 
 _control_chars = re.compile('[\x00-\x1f\x7f\x80-\x9f\xff]')
 
@@ -68,7 +169,7 @@ def feedback(key, value):
     global user_dict_file
     if key[0] == '@':
         return
-    _register(_compdb, key, value)
+    completer.register(key, value)
     if key in _user_tangodb:
         record = _user_tangodb[key]
         if value in record:
@@ -95,23 +196,14 @@ def _escape(s):
     return _control_chars.sub('', s)
 
 
-def _decode_line(line):
-    global _encoding
-    try:
-        return unicode(line, _encoding_list[_encoding])
-    except UnicodeDecodeError, e:
-        _encoding = 1 - _encoding # flip
-    return unicode(line, _encoding_list[_encoding])
-
-
 def _load_dict(filename):
     p = re.compile('^(?:([0-9a-z\.\^]+?)|(.+?)([a-z])?) /(.+)/')
-
+    decoder = LineDecoder()
     try:
         for line in open(filename):
             if len(line) < 4 or line[1] == ';':
                 continue
-            line = _decode_line(line)
+            line = decoder.decode_line(line)
             match = p.match(line)
             if not match:
                 template = '_load_dict: can\'t load the entry: %s'
@@ -121,7 +213,7 @@ def _load_dict(filename):
                 if okuri:
                     key += okuri
                 else:
-                    _register(_compdb, key, value)
+                    completer.register(key, value)
                 if key in _tangodb:
                     values = _tangodb[key]
                     new_values = value.split('/')
@@ -131,7 +223,7 @@ def _load_dict(filename):
                 else:
                     _tangodb[key] = value.split('/')
             else:
-                _register(_compdb, alphakey, value)
+                completer.register(alphakey, value)
                 if alphakey in _tangodb:
                     values = _tangodb[alphakey]
                     new_values = value.split('/')
@@ -162,7 +254,7 @@ def _load_history(filename):
         except UnicodeDecodeError:
             continue
         key = u'$' + key
-        _register(_compdb, key, value)
+        completer.register(key, value)
         if key in _tangodb:
             values = _tangodb[key]
             values.append(value)
@@ -205,80 +297,8 @@ def getokuri(key):
         result += _tangodb[key]
     return result
 
-def _expand_all(key, current, candidate, limit):
-    for c, value in current:
-        if len(candidate) >= limit:
-            break
-        if value == {}:
-            candidate.append(key + c)
-        else:
-            _expand_all(key + c, (x for x in value.items()), candidate, limit)
-
-def _expand_sparse(key, current, candidate, generators, limit):
-    for c, value in current:
-        if len(candidate) >= limit:
-            break
-        if value == {}:
-            candidate.append(key + c)
-            return True
-        generator = (x for x in value.items())
-        if _expand_sparse(key + c, generator, candidate, generators, limit):
-            generators.append((key + c, current))
-            return True
-    return False
-
-def _expand(key, current, candidate, limit):
-    generators = []
-    for c in current:
-        generator = (x for x in current[c].items())
-        _expand_sparse(key + c, generator, candidate, generators, limit)
-        if len(candidate) >= limit:
-            break
-    else:
-        if len(candidate) < limit:
-            for k, v in generators:
-                _expand_all(k, v, candidate, limit)
-                if len(candidate) >= limit:
-                    break
-            if len(candidate) < limit:
-                for c in current:
-                    if not current[c]:
-                        candidate.append(c)
-                        if len(candidate) >= limit:
-                            break
-            elif not current:
-                candidate.append(key)
-
 def suggest(key, finals):
-    _current = _compdb
-    for _c in key:
-        if _c in _current:
-            _current = _current[_c]
-        else:
-            return None
-
-    limit = settings.get('suggest.max')
-
-    candidate = list()
-    if not finals:
-        _expand(u'', _current, candidate, limit)
-    else:
-        for _key in finals:
-            key_len = len(_key)
-            if key_len == 1:
-                if _key in _current:
-                    _expand(_key, _current[_key], candidate, limit)
-                    if len(candidate) >= limit:
-                        break
-            elif key_len == 2:
-                first, second = _key[0], _key[1]
-                if first in _current:
-                    if second in _current[first]:
-                        _expand(_key, _current[first][second], candidate, limit)
-                        if len(candidate) >= limit:
-                            break
-    return candidate
-
+    return completer.suggest(key, finals)
 
 def _call_cgi_api_async(key, timeout, result):
     result['value'] = _call_cgi_api(key, timeout)
@@ -291,7 +311,6 @@ def _call_cgi_api(key, timeout):
     params = urllib.urlencode({'langpair': 'ja-Hira|ja',
                                'text': key.encode('UTF-8')})
     escaped_params = str(params)
-    #url = 'http://173.194.72.105/transliterate?' + escaped_params
     url = 'http://www.google.com/transliterate?' + escaped_params
     try:
         response = urllib2.urlopen(url, None, timeout)

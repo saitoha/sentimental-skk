@@ -222,7 +222,7 @@ class InputHandler(tff.DefaultHandler,
     _optimize = False
 
     def __init__(self, session, screen, termenc, 
-                 termprop, mousemode, inputmode):
+                 termprop, mousemode, inputmode, offset_x=0, offset_y=0):
         self._screen = screen
         try:
             from cStringIO import StringIO
@@ -287,6 +287,8 @@ class InputHandler(tff.DefaultHandler,
 
     def _convert_word(self):
         key = self._wordbuf.get()
+        if not key:
+            return False
 
         if self._inputmode.iskata():
             key = kanadb.to_hira(key)
