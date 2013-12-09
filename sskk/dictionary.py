@@ -167,6 +167,8 @@ _control_chars = re.compile('[\x00-\x1f\x7f\x80-\x9f\xff]')
 
 def feedback(key, value):
     global user_dict_file
+    if not key:
+        return
     if key[0] == '@':
         return
     completer.register(key, value)
