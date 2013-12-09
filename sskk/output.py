@@ -59,7 +59,7 @@ class OutputHandler(tff.DefaultHandler):
         """
         if self._mode_handler.handle_csi(context, parameter, intermediate, final):
             return True
-        if final == 0x4c or final == 0x4d or final == 0x53 or final == 0x54:
+        if final in (0x4c, 0x4d, 0x53, 0x54):
             if not intermediate:
                 if self._screen.has_visible_windows():
                     self.dirty_flag = True

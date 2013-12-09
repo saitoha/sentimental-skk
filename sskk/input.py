@@ -265,7 +265,7 @@ class InputHandler(tff.DefaultHandler,
         self._inputmode.endabbrev()
         self._wordbuf.reset()
         self._charbuf.reset()
-        self._okuri = u""
+        self._okuri = u''
         self._clauses = None
 
     def _draincharacters(self):
@@ -295,10 +295,10 @@ class InputHandler(tff.DefaultHandler,
 
         result = dictionary.gettango(key)
 
-        self._okuri = u""
+        self._okuri = u''
 
         clauses = dictionary.Clauses()
-        if len(result) > 5 or key[0] == '@':
+        if len(result) > 5 or key[0] == u'@':
             clauses.add(dictionary.Clause(key, result))
         elif not settings.get('cgi-api.enabled'):
             clauses.add(dictionary.Clause(key, [key]))
@@ -335,7 +335,7 @@ class InputHandler(tff.DefaultHandler,
             if not dictionary.get_from_cgi_api(clauses, key):
                 clauses.add(dictionary.Clause(key, [key]))
             else:
-                self._okuri = u""
+                self._okuri = u''
             clauses.add(dictionary.Clause(okuri, [okuri]))
 
         self._clauses = clauses
@@ -622,9 +622,7 @@ class InputHandler(tff.DefaultHandler,
             if self._iscooking():
                 self._reset()
                 self._inputmode.reset()
-                context.write(c)
-            else:
-                context.write(c)
+            context.write(c)
 
         elif c == 0x20:  # SP
             word = wordbuf.get()
@@ -955,12 +953,13 @@ class InputHandler(tff.DefaultHandler,
 
         if self._prev_length > cur_width:
             length = self._prev_length - cur_width
-            if x + cur_width + length < screen.width:
+            width = screen.width
+            if x + cur_width + length < width:
                 screen.copyline(output, x + cur_width, y, length)
             else:
-                screen.copyline(output, 0, y, screen.width)
+                screen.copyline(output, 0, y, width)
                 if y + 1 < screen.height:
-                    screen.copyline(output, 0, y + 1, screen.width)
+                    screen.copyline(output, 0, y + 1, width)
         self._prev_length = cur_width
 
         output.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
@@ -992,12 +991,13 @@ class InputHandler(tff.DefaultHandler,
 
         if self._prev_length > cur_width:
             length = self._prev_length - cur_width
-            if x + cur_width + length < screen.width:
+            width = screen.width
+            if x + cur_width + length < width:
                 screen.copyline(output, x + cur_width, y, length)
             else:
-                screen.copyline(output, 0, y, screen.width)
+                screen.copyline(output, 0, y, width)
                 if y + 1 < screen.height:
-                    screen.copyline(output, 0, y + 1, screen.width)
+                    screen.copyline(output, 0, y + 1, width)
         self._prev_length = cur_width
 
         output.write(u'\x1b[%d;%dH' % (y + 1, x + 1))
@@ -1009,12 +1009,13 @@ class InputHandler(tff.DefaultHandler,
         length = self._prev_length
         if length > 0:
             y, x = screen.getyx()
-            if x + length < screen.width:
+            width = screen.width
+            if x + length < width:
                 screen.copyline(output, x, y, length)
             else:
-                screen.copyline(output, 0, y, screen.width)
+                screen.copyline(output, 0, y, width)
                 if y + 1 < screen.height:
-                    screen.copyline(output, 0, y + 1, screen.width)
+                    screen.copyline(output, 0, y + 1, width)
             output.write('\x1b[%d;%dH' % (y + 1, x + 1))
             self._prev_length = 0
 

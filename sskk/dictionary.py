@@ -289,7 +289,7 @@ def gettango(key):
         return result
     if key in _tangodb:
         return _tangodb[key]
-    return []
+    return ()
 
 def getokuri(key):
     result = list()
