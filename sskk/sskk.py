@@ -110,7 +110,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
         lang = '%s.%s' % (language, encoding)
 
     # retrive terminal encoding setting
-    if options.enc is not None:
+    if options.enc:
         termenc = options.enc
     else:
         import locale
@@ -121,9 +121,14 @@ along with this program. If not, see http://www.gnu.org/licenses/.
             encoding = 'utf-8'
 
         termenc = encoding
+
     if termenc is None:
         raise Exception(
             'Invalid TERM environment is detected: \'%s\'' % termenc)
+
+    # fix for cygwin environment, such as utf_8_cjknarrow
+    if termenc.lower().startswith("utf_8_"):
+        termenc = "UTF-8"
 
     output = codecs.getwriter(termenc)(sys.stdout, errors='ignore')
     output.write(u'\x1b[22;0t')
