@@ -15,7 +15,7 @@ What is this?
 
 Requirements
 ------------
-Python 2.6/2.7 unix/linux version
+Python 2.5/2.6/2.7 unix/linux/cygwin version
 
 
 Install
