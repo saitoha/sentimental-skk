@@ -19,6 +19,7 @@
 # ***** END LICENSE BLOCK *****
 
 import kanadb
+import rule
 import logging
 
 SKK_ROMAN_VALUE = 0
@@ -33,7 +34,8 @@ def _maketree(rule, s, txu, nn):
     for key, value in rule.items():
         buf = u''
         context = tree
-        for code in [ord(c) for c in key]:
+        for c in key:
+            code = ord(c)
             if not code in context:
                 context[code] = {SKK_ROMAN_PREV: context}
             context = context[code]
@@ -46,7 +48,8 @@ def _maketree(rule, s, txu, nn):
             value = txu + value
             buf = u''
             context = tree
-            for code in [ord(c) for c in key]:
+            for c in key:
+                code = ord(c)
                 if not code in context:
                     context[code] = {SKK_ROMAN_PREV: context}
                 context = context[code]
@@ -60,7 +63,8 @@ def _maketree(rule, s, txu, nn):
     for key, value in tree.items():
         context = tree
         if key == 0x6e:  # 'n'
-            for code in [ord(c) for c in s]:
+            for c in s:
+                code = ord(c)
                 value[code] = {SKK_ROMAN_VALUE: nn,
                                SKK_ROMAN_NEXT: tree[code]}
     tree[SKK_ROMAN_BUFFER] = ''
@@ -83,8 +87,7 @@ def compile_normal():
     u'\u304d\u3083'
     '''
 
-    import rule.normal
-    hira_rule, kata_rule = _make_rules(rule.normal.get())
+    hira_rule, kata_rule = _make_rules(rule.get('normal'))
 
     _hira_tree = _maketree(hira_rule, 'bcdfghjkmprstvwxz', u'っ', u'ん')
     _kata_tree = _maketree(kata_rule, 'bcdfghjkmprstvwxz', u'ッ', u'ン')
@@ -102,8 +105,7 @@ def compile_azik():
     u'\u304d\u3083'
     '''
 
-    import rule.azik
-    hira_rule, kata_rule = _make_rules(rule.azik.get())
+    hira_rule, kata_rule = _make_rules(rule.get('azik'))
 
     _hira_tree = _maketree(hira_rule, 'w', u'っ', u'ん')
     _kata_tree = _maketree(kata_rule, 'w', u'ッ', u'ン')
@@ -121,8 +123,7 @@ def compile_act():
     u'\u304d\u3083'
     '''
 
-    import rule.act
-    hira_rule, kata_rule = _make_rules(rule.act.get())
+    hira_rule, kata_rule = _make_rules(rule.get('act'))
 
     _hira_tree = _maketree(hira_rule, 'w', u'っ', u'ん')
     _kata_tree = _maketree(kata_rule, 'w', u'ッ', u'ン')

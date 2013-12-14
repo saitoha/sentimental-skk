@@ -18,3 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
+
+def get(s):
+    module = __import__('rule.' + s)
+    return getattr(module, s).get()
