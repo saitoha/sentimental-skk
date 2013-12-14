@@ -39,7 +39,7 @@ Consult Wikipedia
 Settings
 --------
 
-    You can configuration mode by "C-j / @".
+    You can enter configuration mode by "C-j / @".
 
 .. image:: http://zuse.jp/misc/settings.png
 
