@@ -894,7 +894,7 @@ def get():
     >>> rule['wu']
     u'\u3046'
     """
-    return _rule
+    return 'ACT', _rule
 
 
 def test():

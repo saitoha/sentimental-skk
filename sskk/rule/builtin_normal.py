@@ -244,7 +244,7 @@ def get():
     >>> rule['wu']
     u'\u3046'
     """
-    return _rule
+    return '標準', _rule
 
 
 def test():

@@ -21,6 +21,7 @@
 
 import romanrule
 import settings
+import logging
 
 
 ###############################################################################
@@ -35,7 +36,11 @@ class CharacterContext:
 
     def compile(self, method=None):
         # makes trie trees
-        hira_tree, kata_tree = romanrule.compile(method)
+        try:
+            hira_tree, kata_tree = romanrule.compile(method)
+        except ImportError, e:
+            logging.error(e)
+            hira_tree, kata_tree = romanrule.compile()
         self.__hira_tree = hira_tree
         self.__kata_tree = kata_tree
         self.hardreset()

@@ -50,7 +50,7 @@ user_dict_file = None
 class LineDecoder():
 
     _encoding = 0
-    _encoding_list = [u'eucjp', u'utf-8']
+    _encoding_list = [u'euc-jp', u'utf-8']
 
     def decode_line(self, line):
         try:
@@ -198,45 +198,51 @@ def _escape(s):
     return _control_chars.sub('', s)
 
 
+_p = re.compile('^(?:([0-9a-z\.\^]+?)|(.+?)([a-z])?) /(.+)/')
+_decoder = LineDecoder()
+
+
 def _load_dict(filename):
-    p = re.compile('^(?:([0-9a-z\.\^]+?)|(.+?)([a-z])?) /(.+)/')
-    decoder = LineDecoder()
     try:
         for line in open(filename):
-            if len(line) < 4 or line[1] == ';':
-                continue
-            line = decoder.decode_line(line)
-            match = p.match(line)
-            if not match:
-                template = '_load_dict: can\'t load the entry: %s'
-                logging.warning(template % line)
-            alphakey, key, okuri, value = match.groups()
-            if key:
-                if okuri:
-                    key += okuri
-                else:
-                    completer.register(key, value)
-                if key in _tangodb:
-                    values = _tangodb[key]
-                    new_values = value.split('/')
-                    for new_value in new_values:
-                        if not new_value in values:
-                            values.append(new_value)
-                else:
-                    _tangodb[key] = value.split('/')
-            else:
-                completer.register(alphakey, value)
-                if alphakey in _tangodb:
-                    values = _tangodb[alphakey]
-                    new_values = value.split('/')
-                    for new_value in new_values:
-                        if not new_value in values:
-                            values.append(new_value)
-                else:
-                    _tangodb[alphakey] = value.split('/')
+            _decode_line(line)
     except:
         template = '_load_dict: loading process failed. filename: %s'
         logging.exception(template % filename)
+
+
+def _decode_line(line):
+    if len(line) < 4 or line[1] == ';':
+        return
+    line = _decoder.decode_line(line)
+    match = _p.match(line)
+    if not match:
+        template = '_load_dict: can\'t load the entry: %s'
+        logging.warning(template % line)
+    alphakey, key, okuri, value = match.groups()
+    if key:
+        if okuri:
+            key += okuri
+        else:
+            completer.register(key, value)
+        if key in _tangodb:
+            values = _tangodb[key]
+            new_values = value.split('/')
+            for new_value in new_values:
+                if not new_value in values:
+                    values.append(new_value)
+        else:
+            _tangodb[key] = value.split('/')
+    else:
+        completer.register(alphakey, value)
+        if alphakey in _tangodb:
+            values = _tangodb[alphakey]
+            new_values = value.split('/')
+            for new_value in new_values:
+                if not new_value in values:
+                    values.append(new_value)
+        else:
+            _tangodb[alphakey] = value.split('/')
 
 
 def _get_fallback_dict_path(name):
@@ -271,43 +277,56 @@ def _load():
 
     try:
         _load_dict(_get_fallback_dict_path('SKK-JISYO.builtin'))
-    except e:
+    except Exception, e:
+        logging.exception(e)
+
+    import rule
+    template = "@ローマ字ルール /%s;builtin:settings:romanrule:'%s'/"
+    try:
+        for rulename in rule.list():
+            try:
+                ruledisplay, ruledict = rule.get(rulename)
+                _decode_line(template % (ruledisplay, rulename))
+            except ImportError, e:
+                logging.exception(e)
+    except Exception, e:
         logging.exception(e)
 
     try:
         _load_dict(_get_fallback_dict_path('SKK-JISYO.L'))
-    except e:
+    except Exception, e:
         logging.exception(e)
 
     try:
         _load_dict(_get_fallback_dict_path('SKK-JISYO.JIS2'))
-    except e:
+    except Exception, e:
         logging.exception(e)
 
     try:
         _load_dict(_get_fallback_dict_path('SKK-JISYO.assoc'))
-    except e:
+    except Exception, e:
         logging.exception(e)
 
     try:
         _load_dict(_get_fallback_dict_path('SKK-JISYO.geo'))
-    except e:
+    except Exception, e:
         logging.exception(e)
 
     try:
         _load_dict(_get_fallback_dict_path('SKK-JISYO.jinmei'))
-    except e:
+    except Exception, e:
         logging.exception(e)
 
     if os.path.exists(bash_history_path):
         try:
             _load_history(bash_history_path)
-        except e:
+        except Exception, e:
             logging.exception(e)
+
     if os.path.exists(zsh_history_path):
         try:
             _load_history(zsh_history_path)
-        except e:
+        except Exception, e:
             logging.exception(e)
 
 def gettango(key):

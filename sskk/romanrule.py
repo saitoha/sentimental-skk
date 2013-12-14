@@ -78,65 +78,40 @@ def _make_rules(rule):
         kata_rule[key] = kanadb.to_kata(value)
     return (hira_rule, kata_rule)
 
-def compile_normal():
+def compile(method="builtin_normal"):
     ''' make hiragana/katakana input state trie-tree
-    >>> hira_tree, kata_tree = compile_normal()
+    >>> hira_tree, kata_tree = compile('normal')
     >>> hira_tree[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u304d\u3083'
     >>> kata_tree[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u30ad\u30e3'
-    '''
-
-    hira_rule, kata_rule = _make_rules(rule.get('normal'))
-
-    _hira_tree = _maketree(hira_rule, 'bcdfghjkmprstvwxz', u'っ', u'ん')
-    _kata_tree = _maketree(kata_rule, 'bcdfghjkmprstvwxz', u'ッ', u'ン')
-    return (_hira_tree, _kata_tree)
-
-
-def compile_azik():
-    ''' make hiragana/katakana input state trie-tree
-    >>> hira_tree, kata_tree = compile_azik()
+    >>> hira_tree, kata_tree = compile('azik')
     >>> hira_tree[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u304d\u3083'
     >>> kata_tree[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u30ad\u30e3'
-    '''
-
-    hira_rule, kata_rule = _make_rules(rule.get('azik'))
-
-    _hira_tree = _maketree(hira_rule, 'w', u'っ', u'ん')
-    _kata_tree = _maketree(kata_rule, 'w', u'ッ', u'ン')
-    return (_hira_tree, _kata_tree)
-
-
-def compile_act():
-    ''' make hiragana/katakana input state trie-tree
-    >>> hira_tree, kata_tree = compile_act()
+    >>> hira_tree, kata_tree = compile('act')
     >>> hira_tree[ord('c')][ord('g')][ord('a')][SKK_ROMAN_VALUE]
     u'\u304d\u3083'
     >>> kata_tree[ord('c')][ord('g')][ord('a')][SKK_ROMAN_VALUE]
     u'\u30ad\u30e3'
     '''
 
-    hira_rule, kata_rule = _make_rules(rule.get('act'))
+    logging.info("compile roman rule: %s" % method)
 
-    _hira_tree = _maketree(hira_rule, 'w', u'っ', u'ん')
-    _kata_tree = _maketree(kata_rule, 'w', u'ッ', u'ン')
+    name, ruledict = rule.get(method)
+
+    hira_rule, kata_rule = _make_rules(ruledict)
+    if method == 'normal':
+        onbin = 'bcdfghjkmprstvwxz'
+    else:
+        onbin = 'w'
+
+    _hira_tree = _maketree(hira_rule, onbin, u'っ', u'ん')
+    _kata_tree = _maketree(kata_rule, onbin, u'ッ', u'ン')
+
     return (_hira_tree, _kata_tree)
 
-
-def compile(method="normal"):
-    if method == "azik":
-        return compile_azik()
-    elif method == "act":
-        return compile_act()
-    elif method == "normal":
-        return compile_normal()
-    elif method is None:
-        return compile_normal()
-    else:
-        logging.warning("Unknown Roman Rule: " + method)
 
 def test():
     import doctest

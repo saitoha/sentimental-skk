@@ -703,7 +703,7 @@ def get():
     >>> rule['wu']
     u'\u3046'
     """
-    return _rule
+    return 'AZIK', _rule
 
 
 def test():
