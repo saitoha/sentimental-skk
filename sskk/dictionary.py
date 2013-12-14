@@ -268,17 +268,47 @@ def _load():
         _load_dict(os.path.join(userdictdir, f))
     for f in os.listdir(dictdir):
         _load_dict(os.path.join(dictdir, f))
-    _load_dict(_get_fallback_dict_path('SKK-JISYO.builtin'))
-    _load_dict(_get_fallback_dict_path('SKK-JISYO.L'))
-    _load_dict(_get_fallback_dict_path('SKK-JISYO.JIS2'))
-    _load_dict(_get_fallback_dict_path('SKK-JISYO.assoc'))
-    _load_dict(_get_fallback_dict_path('SKK-JISYO.geo'))
-    _load_dict(_get_fallback_dict_path('SKK-JISYO.jinmei'))
-    if os.path.exists(bash_history_path):
-        _load_history(bash_history_path)
-    if os.path.exists(zsh_history_path):
-        _load_history(zsh_history_path)
 
+    try:
+        _load_dict(_get_fallback_dict_path('SKK-JISYO.builtin'))
+    except e:
+        logging.exception(e)
+
+    try:
+        _load_dict(_get_fallback_dict_path('SKK-JISYO.L'))
+    except e:
+        logging.exception(e)
+
+    try:
+        _load_dict(_get_fallback_dict_path('SKK-JISYO.JIS2'))
+    except e:
+        logging.exception(e)
+
+    try:
+        _load_dict(_get_fallback_dict_path('SKK-JISYO.assoc'))
+    except e:
+        logging.exception(e)
+
+    try:
+        _load_dict(_get_fallback_dict_path('SKK-JISYO.geo'))
+    except e:
+        logging.exception(e)
+
+    try:
+        _load_dict(_get_fallback_dict_path('SKK-JISYO.jinmei'))
+    except e:
+        logging.exception(e)
+
+    if os.path.exists(bash_history_path):
+        try:
+            _load_history(bash_history_path)
+        except e:
+            logging.exception(e)
+    if os.path.exists(zsh_history_path):
+        try:
+            _load_history(zsh_history_path)
+        except e:
+            logging.exception(e)
 
 def gettango(key):
     if key in _user_tangodb:
@@ -291,7 +321,7 @@ def gettango(key):
         return result
     if key in _tangodb:
         return _tangodb[key]
-    return ()
+    return []
 
 def getokuri(key):
     result = list()
