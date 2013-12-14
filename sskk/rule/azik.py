@@ -698,10 +698,10 @@ _rule = {'x@': u'@',
 def get():
     """
     >>> rule = get()
-    >>> rule['xa'] == u'ぁ'
-    True
-    >>> rule['wu'] == u'う'
-    True
+    >>> rule['xa']
+    u'\u3057\u3083'
+    >>> rule['wu']
+    u'\u3046'
     """
     return _rule
 

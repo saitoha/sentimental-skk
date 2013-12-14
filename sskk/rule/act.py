@@ -889,10 +889,10 @@ _rule = {'a': u'あ',
 def get():
     """
     >>> rule = get()
-    >>> rule['xa'] == u'ぁ'
-    True
-    >>> rule['wu'] == u'う'
-    True
+    >>> rule['xa']
+    u'\u3041'
+    >>> rule['wu']
+    u'\u3046'
     """
     return _rule
 

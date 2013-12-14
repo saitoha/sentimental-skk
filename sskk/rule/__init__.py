@@ -20,5 +20,14 @@
 
 
 def get(s):
-    module = __import__('rule.' + s)
-    return getattr(module, s).get()
+    try:
+        module = __import__('rule.' + s)
+        return getattr(module, s).get()
+    except ImportError, e:
+        import os, sys, inspect
+        filename = inspect.getfile(inspect.currentframe())
+        dirpath = os.path.abspath(os.path.dirname(filename))
+        sys.path.insert(0, dirpath)
+        module = __import__(s)
+        return module.get()
+        

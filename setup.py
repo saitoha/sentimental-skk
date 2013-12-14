@@ -21,6 +21,7 @@ try:
     import test
 except ImportError, e:
     print e
+    import sys
     sys.exit(1)
 
 setup(name                  = 'sentimental-skk',
