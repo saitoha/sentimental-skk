@@ -5,13 +5,43 @@ What is this?
 -------------
 
     This program provides Simple Kana Kanji conversion (SKK) input method service to your terminal.
-    It depends on Canossa(https://github.com/saitoha/canossa), which is an off-screen terminal emulation service,
-    Canossa makes application enable to restore specified screen region on demand!!
+    It depends on "Canossa"(https://github.com/saitoha/canossa), which is an off-screen terminal emulation service,
+    "Canossa" makes application enable to restore specified screen region on demand!!
     So this SKK service can provide cool popup feature.
 
 .. image:: http://zuse.jp/misc/canossa.png
    :width: 640
 
+SKK Shell
+---------
+
+    You can enter SKK-shell mode by "C-j / $".
+
+.. image:: http://zuse.jp/misc/skkshell.png
+   :width: 800
+
+When you launch console applications in SKK-shell, they run in floating windows. 
+Each programs managed by "Canossa" works asyncronously in every windows.
+You can resize and move each windows with mouse operations.
+"Canossa" includes terminal multiplexer / task switching engine.
+
+.. image:: http://zuse.jp/misc/windows.png
+   :width: 800
+
+Consult Wikipedia
+-----------------
+
+    You can consult Wikipedia by pressing C-w.
+
+.. image:: http://zuse.jp/misc/sskk_wikipedia.png
+   :width: 640
+
+Settings
+--------
+
+    You can configuration mode by "C-j / @".
+
+.. image:: http://zuse.jp/misc/settings.png
 
 Requirements
 ------------
@@ -161,10 +191,6 @@ Dependency
  - Masahiko Sato et al./SKK Development Team's SKK dictionaries
    http://openlab.jp/skk/skk/dic
 
- - wcwidth.py
-   https://svn.wso2.org/repos/wso2/carbon/platform/trunk/dependencies/cassandra/pylib/cqlshlib/wcwidth.py
-   (Licensed under Apache License 2.0)
-
  - Hayaki Saito's Canossa
    https://github.com/saitoha/canossa
 
@@ -179,6 +205,6 @@ Reference
  - Daredevil SKK (DDSKK) http://openlab.ring.gr.jp/skk/ddskk-ja.html
  - libfep https://github.com/ueno/libfep
  - uim https://code.google.com/p/uim/
+ - uobikiemukot / yaskk https://github.com/uobikiemukot/yaskk
  - Unicode Text Editor MinEd http://towo.net/mined/
-
 
