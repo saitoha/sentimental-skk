@@ -2,6 +2,7 @@
 
     * Version 0.0.106
     * .sskk/ruleディレクトリによるかなルール追加・置き替えサポート
+    * CGI API呼び出しがタイムアウトしないバグを修正
 
 2013-11-17 Hayaki Saito <user@zuse.jp>
 
