@@ -697,7 +697,7 @@ _rule = {'x@': u'@',
 
 def get():
     """
-    >>> rule = get()
+    >>> name, rule = get()
     >>> rule['xa']
     u'\u3057\u3083'
     >>> rule['wu']

@@ -888,7 +888,7 @@ _rule = {'a': u'あ',
 
 def get():
     """
-    >>> rule = get()
+    >>> name, rule = get()
     >>> rule['xa']
     u'\u3041'
     >>> rule['wu']

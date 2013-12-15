@@ -80,17 +80,17 @@ def _make_rules(rule):
 
 def compile(method="builtin_normal"):
     ''' make hiragana/katakana input state trie-tree
-    >>> hira_tree, kata_tree = compile('normal')
+    >>> hira_tree, kata_tree = compile('builtin_normal')
     >>> hira_tree[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u304d\u3083'
     >>> kata_tree[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u30ad\u30e3'
-    >>> hira_tree, kata_tree = compile('azik')
+    >>> hira_tree, kata_tree = compile('builtin_azik')
     >>> hira_tree[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u304d\u3083'
     >>> kata_tree[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u30ad\u30e3'
-    >>> hira_tree, kata_tree = compile('act')
+    >>> hira_tree, kata_tree = compile('builtin_act')
     >>> hira_tree[ord('c')][ord('g')][ord('a')][SKK_ROMAN_VALUE]
     u'\u304d\u3083'
     >>> kata_tree[ord('c')][ord('g')][ord('a')][SKK_ROMAN_VALUE]
