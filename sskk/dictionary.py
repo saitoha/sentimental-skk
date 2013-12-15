@@ -383,6 +383,10 @@ def _call_cgi_api(key, timeout):
 def get_from_cgi_api(clauses, key):
 
     timeout = settings.get('cgi-api.timeout')
+
+    if not timeout:
+        timeout = 1.0
+
     try:
         import threading
         result = {}
@@ -538,6 +542,10 @@ class Clauses:
 
     def _retry_cgi_api(self, words):
         timeout = settings.get('cgi-api.timeout')
+
+        if not timeout:
+            timeout = 1.0
+
         response = _call_cgi_api(','.join(words), timeout)
         if response:
             self._clauses = []
