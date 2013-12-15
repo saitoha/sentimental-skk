@@ -24,6 +24,7 @@ import re
 import settings
 import logging
 import time
+import socket
 
 homedir = os.path.expanduser('~')
 rcdir = os.path.join(homedir, '.sskk')
@@ -381,7 +382,7 @@ def _call_cgi_api(key, timeout):
 
 def get_from_cgi_api(clauses, key):
 
-    timeout = settings.get('cgi_api.timeout')
+    timeout = settings.get('cgi-api.timeout')
     try:
         import threading
         result = {}
@@ -392,9 +393,10 @@ def get_from_cgi_api(clauses, key):
         if not t.isAlive():
             return None
         t.join(timeout)
-        if not 'value' in result:
+        try:
+            response = result['value']
+        except KeyError:
             return None
-        response = result['value']
     except ImportError, e:
         response = _call_cgi_api(key, timeout)
 
@@ -551,7 +553,6 @@ def _create_dns_cache():
     """
     www.google.comのDNSキャシュを作成しておく
     """
-    import socket
     socket.gethostbyname('www.google.com')
 
 # 可能なら非同期で辞書をロード
@@ -561,7 +562,6 @@ try:
     thread.start_new_thread(_create_dns_cache, ())
 except ImportError, e:
     _load()
-
 
 def test():
     import doctest
