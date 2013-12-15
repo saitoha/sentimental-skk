@@ -23,7 +23,7 @@ import os
 homedir = os.path.expanduser('~')
 rcdir = os.path.join(homedir, '.sskk')
 
-# 標準辞書ディレクトリ
+# ユーザ定義かなルールディレクトリ
 ruledir = os.path.join(rcdir, 'rule')
 if not os.path.exists(ruledir):
     os.makedirs(ruledir)
