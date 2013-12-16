@@ -106,6 +106,21 @@ class CharacterContext:
         return romanrule.SKK_ROMAN_NEXT in self.context
 
     def drain(self):
+        """
+        >>> charbuf = CharacterContext()
+        >>> charbuf.drain()
+        u''
+        >>> charbuf.put(ord("k"))
+        True
+        >>> charbuf.drain()
+        u''
+        >>> charbuf.put(ord("a"))
+        True
+        >>> charbuf.drain()
+        u'\u304b'
+        >>> charbuf.drain()
+        u''
+        """
         if romanrule.SKK_ROMAN_VALUE in self.context:
             s = self.context[romanrule.SKK_ROMAN_VALUE]
             if romanrule.SKK_ROMAN_NEXT in self.context:
@@ -113,13 +128,30 @@ class CharacterContext:
             else:
                 self.reset()
             return s
-        return u""
+        return u''
 
     def getbuffer(self):
+        """
+        >>> charbuf = CharacterContext()
+        >>> charbuf.getbuffer()
+        ''
+        >>> charbuf.put(ord("k"))
+        True
+        >>> charbuf.getbuffer()
+        u'k'
+        >>> charbuf.put(ord("k"))
+        True
+        >>> charbuf.put(ord("a"))
+        False
+        >>> charbuf.getbuffer()
+        u'kk'
+        >>> charbuf.getbuffer()
+        u'kk'
+        """
         key = romanrule.SKK_ROMAN_BUFFER
         if key in self.context:
             return self.context[key]
-        return u""
+        return u''
 
     def complete(self):
         """
