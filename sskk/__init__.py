@@ -19,11 +19,10 @@
 # ***** END LICENSE BLOCK *****
 
 __author__ = "Hayaki Saito (user@zuse.jp)"
-__version__ = "0.0.106"
+__version__ = "0.0.107"
 __license__ = "GPL v3"
 
-from canossa import *
-from sskk import *
+from sskk import main
 
 ''' main '''
 if __name__ == '__main__':

@@ -30,6 +30,15 @@ if not os.path.exists(ruledir):
 
 
 def list():
+    """
+    >>> result = list()
+    >>> 'builtin_act' in result
+    True
+    >>> 'builtin_azik' in result
+    True
+    >>> 'builtin_normal' in result
+    True
+    """
     import os, sys, inspect
 
     files = []
@@ -53,6 +62,15 @@ def list():
 
 
 def get(s):
+    """
+    >>> import sys
+    >>> sys_path_backup = sys.path
+    >>> get('')
+    Traceback (most recent call last):
+    ValueError: Empty module name
+    >>> sys.path == sys_path_backup
+    True
+    """
     import os, sys, inspect
     filename = inspect.getfile(inspect.currentframe())
     dirpath = os.path.abspath(os.path.dirname(filename))

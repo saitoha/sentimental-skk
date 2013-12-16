@@ -271,6 +271,10 @@ def _load_history(filename):
             _tangodb[key] = [value]
 
 def _load():
+    """
+    >>> dictdir = os.path.join(rcdir, 'dict')
+    >>> _load()
+    """
     for f in reversed(sorted(os.listdir(userdictdir))):
         _load_dict(os.path.join(userdictdir, f))
     for f in os.listdir(dictdir):
@@ -518,7 +522,7 @@ class Clauses:
             words.append(clause.getkey())
 
         index = self._index
-        surplus = words[index][-1:] + ''.join(words[index + 1:])
+        surplus = words[index][-1:] + u''.join(words[index + 1:])
         words[index] = words[index][:-1]
         words = words[0:index + 1] + [surplus]
 

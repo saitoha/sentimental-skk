@@ -31,43 +31,96 @@ import logging
 class CharacterContext:
 
     def __init__(self):
+        """
+        >>> chrbuf = CharacterContext()
+        """
         method = settings.get("romanrule")
         self.compile(method)
 
     def compile(self, method=None):
+        """
+        >>> charbuf = CharacterContext()
+        >>> charbuf.compile("builtin_normal")
+        >>> charbuf.compile()
+        >>> charbuf.compile("__abc")
+        """
         # makes trie trees
         try:
             hira_tree, kata_tree = romanrule.compile(method)
         except ImportError, e:
             logging.error(e)
             hira_tree, kata_tree = romanrule.compile()
-        self.__hira_tree = hira_tree
-        self.__kata_tree = kata_tree
+        except TypeError, e:
+            logging.error(e)
+            hira_tree, kata_tree = romanrule.compile()
+        self._hira_tree = hira_tree
+        self._kata_tree = kata_tree
         self.hardreset()
 
     def toggle(self):
-        if id(self.__current_tree) == id(self.__hira_tree):
-            self.__current_tree = self.__kata_tree
+        """
+        >>> charbuf = CharacterContext()
+        >>> id(charbuf._current_tree) == id(charbuf._hira_tree)
+        True
+        >>> charbuf.toggle()
+        >>> id(charbuf._current_tree) == id(charbuf._hira_tree)
+        False
+        >>> id(charbuf._current_tree) == id(charbuf._kata_tree)
+        True
+        >>> charbuf.hardreset()
+        >>> id(charbuf._current_tree) == id(charbuf._hira_tree)
+        True
+        """
+        if id(self._current_tree) == id(self._hira_tree):
+            self._current_tree = self._kata_tree
         else:
-            self.__current_tree = self.__hira_tree
+            self._current_tree = self._hira_tree
 
     def reset(self):
-        self.context = self.__current_tree
+        self.context = self._current_tree
 
     def hardreset(self):
-        self.__current_tree = self.__hira_tree
+        self._current_tree = self._hira_tree
         self.reset()
 
     def isempty(self):
-        return id(self.context) == id(self.__current_tree)
+        return id(self.context) == id(self._current_tree)
 
     def isfinal(self):
         return romanrule.SKK_ROMAN_VALUE in self.context
 
     def hasnext(self):
+        """
+        >>> charbuf = CharacterContext()
+        >>> charbuf.hasnext()
+        False
+        >>> charbuf.put(ord("k"))
+        True
+        >>> charbuf.hasnext()
+        False
+        >>> charbuf.put(ord("a"))
+        True
+        >>> charbuf.hasnext()
+        False
+        """
         return romanrule.SKK_ROMAN_NEXT in self.context
 
     def drain(self):
+        """
+        >>> charbuf = CharacterContext()
+        >>> charbuf.drain()
+        u''
+        >>> charbuf.put(ord("k"))
+        True
+        >>> charbuf.drain()
+        u''
+        >>> charbuf.put(ord("a"))
+        True
+        >>> charbuf.drain()
+        u'\u304b'
+        >>> charbuf.drain()
+        u''
+        """
         if romanrule.SKK_ROMAN_VALUE in self.context:
             s = self.context[romanrule.SKK_ROMAN_VALUE]
             if romanrule.SKK_ROMAN_NEXT in self.context:
@@ -75,18 +128,43 @@ class CharacterContext:
             else:
                 self.reset()
             return s
-        return u""
+        return u''
 
     def getbuffer(self):
+        """
+        >>> charbuf = CharacterContext()
+        >>> charbuf.getbuffer()
+        u''
+        >>> charbuf.put(ord("k"))
+        True
+        >>> charbuf.getbuffer()
+        u'k'
+        >>> charbuf.put(ord("k"))
+        True
+        >>> charbuf.put(ord("a"))
+        False
+        >>> charbuf.getbuffer()
+        u'kk'
+        >>> charbuf.getbuffer()
+        u'kk'
+        """
         key = romanrule.SKK_ROMAN_BUFFER
         if key in self.context:
             return self.context[key]
-        return u""
+        return u''
 
     def complete(self):
         """
-        >>> context = CharacterContext()
-        >>> context.put(ord("k"))
+        >>> charbuf = CharacterContext()
+        >>> charbuf.complete() is None
+        True
+        >>> charbuf.put(ord("k"))
+        True
+        >>> len(charbuf.complete()) > 0
+        True
+        >>> charbuf.put(ord("a"))
+        True
+        >>> len(charbuf.complete()) > 0
         True
         """
         if not self.getbuffer():
@@ -103,6 +181,11 @@ class CharacterContext:
         return list(set([c for c in expand(self.context)]))
 
     def put(self, c):
+        """
+        >>> charbuf = CharacterContext()
+        >>> charbuf.put(ord('A'))
+        True
+        """
         if c in self.context:
             self.context = self.context[c]
             return True
@@ -114,15 +197,41 @@ class CharacterContext:
         return False
 
     def back(self):
+        """
+        >>> charbuf = CharacterContext()
+        >>> charbuf.put(ord("k"))
+        True
+        >>> charbuf.put(ord("y"))
+        True
+        >>> charbuf.getbuffer()
+        u'ky'
+        >>> charbuf.back()
+        >>> charbuf.getbuffer()
+        u'k'
+        >>> charbuf.back()
+        >>> charbuf.getbuffer()
+        u''
+        """
         self.context = self.context[romanrule.SKK_ROMAN_PREV]
 
     def handle_char(self, context, c):
+        """
+        >>> charbuf = CharacterContext()
+        >>> charbuf.handle_char(None, 0x00)
+        False
+        """
         return False
 
 
 def test():
+    """
+    >>> test()
+    """
     import doctest
     doctest.testmod()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
+    """
+    __name__ == '__main__'
+    """
     test()
