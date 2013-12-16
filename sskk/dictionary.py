@@ -271,6 +271,10 @@ def _load_history(filename):
             _tangodb[key] = [value]
 
 def _load():
+    """
+    >>> dictdir = os.path.join(rcdir, 'dict')
+    >>> _load()
+    """
     for f in reversed(sorted(os.listdir(userdictdir))):
         _load_dict(os.path.join(userdictdir, f))
     for f in os.listdir(dictdir):
