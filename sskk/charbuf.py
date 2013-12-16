@@ -31,40 +31,78 @@ import logging
 class CharacterContext:
 
     def __init__(self):
+        """
+        >>> chrbuf = CharacterContext()
+        """
         method = settings.get("romanrule")
         self.compile(method)
 
     def compile(self, method=None):
+        """
+        >>> charbuf = CharacterContext()
+        >>> charbuf.compile("builtin_normal")
+        >>> charbuf.compile()
+        >>> charbuf.compile("__abc")
+        """
         # makes trie trees
         try:
             hira_tree, kata_tree = romanrule.compile(method)
         except ImportError, e:
             logging.error(e)
             hira_tree, kata_tree = romanrule.compile()
-        self.__hira_tree = hira_tree
-        self.__kata_tree = kata_tree
+        except TypeError, e:
+            logging.error(e)
+            hira_tree, kata_tree = romanrule.compile()
+        self._hira_tree = hira_tree
+        self._kata_tree = kata_tree
         self.hardreset()
 
     def toggle(self):
-        if id(self.__current_tree) == id(self.__hira_tree):
-            self.__current_tree = self.__kata_tree
+        """
+        >>> charbuf = CharacterContext()
+        >>> id(charbuf._current_tree) == id(charbuf._hira_tree)
+        True
+        >>> charbuf.toggle()
+        >>> id(charbuf._current_tree) == id(charbuf._hira_tree)
+        False
+        >>> id(charbuf._current_tree) == id(charbuf._kata_tree)
+        True
+        >>> charbuf.hardreset()
+        >>> id(charbuf._current_tree) == id(charbuf._hira_tree)
+        True
+        """
+        if id(self._current_tree) == id(self._hira_tree):
+            self._current_tree = self._kata_tree
         else:
-            self.__current_tree = self.__hira_tree
+            self._current_tree = self._hira_tree
 
     def reset(self):
-        self.context = self.__current_tree
+        self.context = self._current_tree
 
     def hardreset(self):
-        self.__current_tree = self.__hira_tree
+        self._current_tree = self._hira_tree
         self.reset()
 
     def isempty(self):
-        return id(self.context) == id(self.__current_tree)
+        return id(self.context) == id(self._current_tree)
 
     def isfinal(self):
         return romanrule.SKK_ROMAN_VALUE in self.context
 
     def hasnext(self):
+        """
+        >>> charbuf = CharacterContext()
+        >>> charbuf.hasnext()
+        False
+        >>> charbuf.put(ord("k"))
+        True
+        >>> charbuf.hasnext()
+        False
+        >>> charbuf.put(ord("a"))
+        True
+        >>> charbuf.hasnext()
+        False
+        """
         return romanrule.SKK_ROMAN_NEXT in self.context
 
     def drain(self):

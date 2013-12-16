@@ -262,4 +262,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
 
 ''' main '''
 if __name__ == '__main__':
+    """
+    >>> main()
+    """
     main()
