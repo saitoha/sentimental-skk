@@ -67,7 +67,7 @@ def _maketree(rule, s, txu, nn):
                 code = ord(c)
                 value[code] = {SKK_ROMAN_VALUE: nn,
                                SKK_ROMAN_NEXT: tree[code]}
-    tree[SKK_ROMAN_BUFFER] = ''
+    tree[SKK_ROMAN_BUFFER] = u''
     tree[SKK_ROMAN_PREV] = tree
     return tree
 

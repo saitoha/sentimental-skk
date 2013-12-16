@@ -134,7 +134,7 @@ class CharacterContext:
         """
         >>> charbuf = CharacterContext()
         >>> charbuf.getbuffer()
-        ''
+        u''
         >>> charbuf.put(ord("k"))
         True
         >>> charbuf.getbuffer()
@@ -155,8 +155,16 @@ class CharacterContext:
 
     def complete(self):
         """
-        >>> context = CharacterContext()
-        >>> context.put(ord("k"))
+        >>> charbuf = CharacterContext()
+        >>> charbuf.complete() is None
+        True
+        >>> charbuf.put(ord("k"))
+        True
+        >>> len(charbuf.complete()) > 0
+        True
+        >>> charbuf.put(ord("a"))
+        True
+        >>> len(charbuf.complete()) > 0
         True
         """
         if not self.getbuffer():
@@ -173,6 +181,11 @@ class CharacterContext:
         return list(set([c for c in expand(self.context)]))
 
     def put(self, c):
+        """
+        >>> charbuf = CharacterContext()
+        >>> charbuf.put(ord('A'))
+        True
+        """
         if c in self.context:
             self.context = self.context[c]
             return True
@@ -184,15 +197,41 @@ class CharacterContext:
         return False
 
     def back(self):
+        """
+        >>> charbuf = CharacterContext()
+        >>> charbuf.put(ord("k"))
+        True
+        >>> charbuf.put(ord("y"))
+        True
+        >>> charbuf.getbuffer()
+        u'ky'
+        >>> charbuf.back()
+        >>> charbuf.getbuffer()
+        u'k'
+        >>> charbuf.back()
+        >>> charbuf.getbuffer()
+        u''
+        """
         self.context = self.context[romanrule.SKK_ROMAN_PREV]
 
     def handle_char(self, context, c):
+        """
+        >>> charbuf = CharacterContext()
+        >>> charbuf.handle_char(None, 0x00)
+        False
+        """
         return False
 
 
 def test():
+    """
+    >>> test()
+    """
     import doctest
     doctest.testmod()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
+    """
+    __name__ == '__main__'
+    """
     test()

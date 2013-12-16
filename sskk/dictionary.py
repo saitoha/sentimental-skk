@@ -514,7 +514,7 @@ class Clauses:
             words.append(clause.getkey())
 
         index = self._index
-        surplus = words[index][-1:] + ''.join(words[index + 1:])
+        surplus = words[index][-1:] + u''.join(words[index + 1:])
         words[index] = words[index][:-1]
         words = words[0:index + 1] + [surplus]
 
