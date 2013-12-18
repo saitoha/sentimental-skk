@@ -114,8 +114,11 @@ class OutputHandler(tff.DefaultHandler):
         if self.dirty_flag:
             self.dirty_flag = False
             screen = self._screen
+            y, x = screen.getyx()
             screen.drawall(context)
+            #screen.update_when_scroll(context, 1)
             screen.drawwindows(context)
+            context.puts("\x1b[%d;%dH" % (y + 1, x + 1))
 
         return False
 
