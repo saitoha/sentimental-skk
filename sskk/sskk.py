@@ -19,13 +19,9 @@
 # ***** END LICENSE BLOCK *****
 
 
-def main():
-    import sys
-    import os
+def _parseopt():
+
     import optparse
-    import codecs
-    import logging
-    import __init__
 
     # parse options and arguments
     usage = 'usage: %prog [options] [command | - ]'
@@ -48,10 +44,37 @@ def main():
                       action='store_true', default=False,
                       help='use title bar manipulation feature')
 
-    (options, args) = parser.parse_args()
+    return parser.parse_args()
 
-    if options.version:
-        print '''
+
+def _showversion():
+    """
+    >>> _showversion()
+    <BLANKLINE>
+    <BLANKLINE>
+          三o-( ^o^)-o-( ^o^)-o-( ^o^)-o
+    <BLANKLINE>
+    sentimental-skk 0.0.108
+    Copyright (C) 2012-2013 Hayaki Saito <user@zuse.jp>.
+    <BLANKLINE>
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+    <BLANKLINE>
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    <BLANKLINE>
+    You should have received a copy of the GNU General Public License
+    along with this program. If not, see http://www.gnu.org/licenses/.
+    <BLANKLINE>
+    """
+
+    import __init__
+
+    print '''
 
       三o-( ^o^)-o-( ^o^)-o-( ^o^)-o
 
@@ -70,35 +93,60 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see http://www.gnu.org/licenses/.
-        ''' % __init__.__version__
-        return
+    ''' % __init__.__version__
+
+
+def main():
+
+    import os
 
     if os.getenv('__SSKK_VERTION'):
         print '\n＼SSKK process is already running！！！／\n'
         print '       三 ( ´_ゝ`）三 ( ´_ゝ`）\n'
         return
 
+    options, args = _parseopt()
+
+    _mainimpl(options, args,
+              env_shell=os.getenv('SHELL'),
+              env_term=os.getenv('TERM'),
+              env_lang=os.getenv('LANG'))
+
+
+def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
+    """
+    >>> _mainimpl({'version': '1.0.0'}, [])
+    """
+    import sys
+    import os
+    import codecs
+    import logging
+
+    if options.version:
+        _showversion()
+        return
+
     # retrive starting command
-    if len(args) > 0:
+    if args:
         command = args[0]
-    elif not os.getenv('SHELL') is None:
-        command = os.getenv('SHELL')
+    elif env_shell:
+        command = env_shell
     else:
         command = '/bin/sh'
 
     # retrive TERM setting
     if options.term:
         term = options.term
-    elif not os.getenv('TERM') is None:
-        term = os.getenv('TERM')
+    elif env_term:
+        term = env_term
     else:
         term = 'xterm'
 
     # retrive LANG setting
     if not options.lang is None:
         lang = options.lang
-    elif not os.getenv('LANG') is None:
-        lang = os.getenv('LANG')
+    elif env_lang:
+        lang = env_lang
     else:
         import locale
         try:
@@ -136,6 +184,7 @@ along with this program. If not, see http://www.gnu.org/licenses/.
 
 #    output.write(u'\x1b[>2t')
 
+    import __init__
     version = __init__.__version__
 
     output.write(u'\x1b[1;1H\x1b[J')
