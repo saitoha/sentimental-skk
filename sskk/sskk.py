@@ -96,6 +96,33 @@ along with this program. If not, see http://www.gnu.org/licenses/.
     ''' % __init__.__version__
 
 
+def _showsplash(output):
+
+    import __init__
+    from canossa import termprop
+
+    output.write(u'\x1b[22;0t')
+    output.flush()
+
+#    output.write(u'\x1b[>2t')
+    version = __init__.__version__
+
+    output.write(u'\x1b[1;1H\x1b[J')
+    output.write(u'\x1b[5;5H')
+    output.write(u'      ＼ Sentimental-SKK %s ／\n' % version)
+    output.write(u'\x1b[7;5H')
+    output.write(u'               三 ( ´_ゝ`）\n')
+    output.write(u'\x1b[1;1H')
+
+    termprop = termprop.Termprop()
+
+    output.write(u'\x1b]0;\x1b\\')
+    output.write(u'\x1b[22;0t')
+    output.flush()
+
+    return termprop
+
+
 def main():
 
     import os
@@ -179,27 +206,8 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
         termenc = "UTF-8"
 
     output = codecs.getwriter(termenc)(sys.stdout, errors='ignore')
-    output.write(u'\x1b[22;0t')
-    output.flush()
 
-#    output.write(u'\x1b[>2t')
-
-    import __init__
-    version = __init__.__version__
-
-    output.write(u'\x1b[1;1H\x1b[J')
-    output.write(u'\x1b[5;5H')
-    output.write(u'      ＼ Sentimental-SKK %s ／\n' % version)
-    output.write(u'\x1b[7;5H')
-    output.write(u'               三 ( ´_ゝ`）\n')
-    output.write(u'\x1b[1;1H')
-
-    from canossa import termprop
-    termprop = termprop.Termprop()
-
-    output.write(u'\x1b]0;\x1b\\')
-    output.write(u'\x1b[22;0t')
-    output.flush()
+    termprop = _showsplash(output)
 
     homedir = os.path.expanduser('~')
     rcdir = os.path.join(homedir, '.sskk')
@@ -215,6 +223,7 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
     logfile = os.path.join(logdir, 'log.txt')
     logging.basicConfig(filename=logfile, filemode='w')
 
+    import __init__
     os.environ['__SSKK_VERTION'] = __init__.__version__
 
     from canossa import tff
