@@ -141,9 +141,6 @@ def main():
 
 
 def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
-    """
-    >>> _mainimpl({'version': '1.0.0'}, [])
-    """
     import sys
     import os
     import codecs
@@ -226,11 +223,6 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
     import __init__
     os.environ['__SSKK_VERTION'] = __init__.__version__
 
-    from canossa import tff
-    tty = tff.DefaultPTY(term, lang, command, sys.stdin)
-
-    row, col = tty.fitsize()
-
     import settings
     if settings.get('use_title'):
         use_title = True
@@ -252,23 +244,34 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
                         'checking termprop.has_mb_title.')
 
     import title
-    import canossa as cano
-
     title.setenabled(use_title)
 
-    from canossa import Screen
-    screen = Screen(row, col, 0, 0, termenc, termprop)
-    from canossa import Canossa
-    outputhandler = Canossa(screen, visibility=False)
+    try:
+        _mainloop(termenc, termprop, command, term, lang)
+    except:
+        output.write(u'\x1bc')
+        logging.exception('Aborted by exception.')
+        print ('sskk aborted by an uncaught exception.'
+               ' see $HOME/.sskk/log/log.txt.')
+    finally:
+        output.write(u'\x1b[?1006l')
+        output.write(u'\x1b[?1003l')
+        output.write(u'\x1b[?1002l')
+        output.write(u'\x1b[?1000l')
+        output.write(u'\x1b]0;\x1b\\')
+        output.flush()
 
-    from input import InputHandler
+        # pop title
+        output.write(u'\x1b[23;0t')
 
-    output.flush()
 
-    # push title
-    output.write(u'\x1b[23;0t')
+def _mainloop(termenc, termprop, command, term, lang):
 
-    output.write(u'\x1b[1;1H\x1b[J')
+    from canossa import tff
+    import sys
+
+    tty = tff.DefaultPTY(term, lang, command, sys.stdin)
+    row, col = tty.fitsize()
 
     session = tff.Session(tty)
 
@@ -300,23 +303,9 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
                       stdout=sys.stdout,
                       inputhandler=inputhandler,
                       outputhandler=multiplexer)
-
-    except:
-        output.write(u'\x1bc')
-        logging.exception('Aborted by exception.')
-        print ('sskk aborted by an uncaught exception.'
-               ' see $HOME/.sskk/log/log.txt.')
     finally:
         tty.restore_term()
-        output.write(u'\x1b[?1006l')
-        output.write(u'\x1b[?1003l')
-        output.write(u'\x1b[?1002l')
-        output.write(u'\x1b[?1000l')
-        output.write(u'\x1b]0;\x1b\\')
-        output.flush()
 
-        # pop title
-        output.write(u'\x1b[23;0t')
 
 ''' main '''
 if __name__ == '__main__':
