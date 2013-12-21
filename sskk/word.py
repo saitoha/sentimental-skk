@@ -31,13 +31,20 @@ _SKK_MARK_OKURI = u'*'
 
 class WordBuffer():
 
-    __main = u''
-    __mode = _SKK_WORD_NONE
-    __comp = None
-    __comp_index = 0
+    _main = u''
+    _mode = _SKK_WORD_NONE
+    _comp = None
+    _comp_index = 0
     _wcswidth = None
 
     def __init__(self, termprop):
+        """
+        >>> from canossa import termprop
+        >>> termprop = termprop.MockTermprop()
+        >>> wordbuf = WordBuffer(termprop)
+        >>> termprop.set_cjk()
+        >>> wordbuf = WordBuffer(termprop)
+        """
         self.reset()
         self._wcswidth = termprop.wcswidth
         if not termprop.is_cjk and termprop.is_vte():
@@ -46,79 +53,179 @@ class WordBuffer():
             self._cookmark = _SKK_MARK_COOK
 
     def reset(self):
-        self.__mode = _SKK_WORD_NONE
-        self.__main = u''
-        self.__comp = None
-        self.__comp_index = 0
+        self._mode = _SKK_WORD_NONE
+        self._main = u''
+        self._comp = None
+        self._comp_index = 0
 
     def isempty(self):
-        return self.__mode == _SKK_WORD_NONE
+        """
+        >>> from canossa import termprop
+        >>> termprop = termprop.MockTermprop()
+        >>> wordbuf = WordBuffer(termprop)
+        >>> wordbuf.isempty()
+        True
+        >>> wordbuf.startedit()
+        >>> wordbuf.isempty()
+        False
+        """
+        return self._mode == _SKK_WORD_NONE
 
     def complete(self):
-        if self.__comp:
-            self.__comp_index = (self.__comp_index + 1) % len(self.__comp)
+        """
+        >>> from canossa import termprop
+        >>> termprop = termprop.MockTermprop()
+        >>> wordbuf = WordBuffer(termprop)
+        >>> wordbuf.startedit()
+        >>> wordbuf.append(u'\u3060\u3057\u3083')
+        >>> wordbuf.complete()
+        >>> wordbuf._comp
+        [u'\u3059\u3046', u'\u305d\u3046\u3057\u3083']
+        >>> wordbuf._comp_index
+        0
+        >>> wordbuf.complete()
+        >>> wordbuf._comp_index
+        1
+        >>> wordbuf.complete()
+        >>> wordbuf._comp_index
+        0
+        """
+        if self._comp:
+            self._comp_index = (self._comp_index + 1) % len(self._comp)
         else:
-            key = kanadb.to_hira(self.__main)
-            self.__comp = dictionary.suggest(key, None)
+            key = kanadb.to_hira(self._main)
+            self._comp = dictionary.suggest(key, None)
 
     def suggest(self, finals=None):
-        if self.__main or finals:
-            key = kanadb.to_hira(self.__main)
+        """
+        >>> from canossa import termprop
+        >>> termprop = termprop.MockTermprop()
+        >>> wordbuf = WordBuffer(termprop)
+        >>> wordbuf.startedit()
+        >>> wordbuf.append(u'\u3060\u3057\u3083\u3059')
+        >>> wordbuf.suggest()
+        [u'\u3060\u3057\u3083\u3059\u3046']
+        """
+        if self._main or finals:
+            key = kanadb.to_hira(self._main)
             completions = dictionary.suggest(key, finals)
             if completions:
-                return map(lambda word: self.__main + word, completions)
+                return map(lambda word: self._main + word, completions)
         return None
 
     def get(self):
-        if self.__mode == _SKK_WORD_NONE:
-            return u""
-        elif self.__mode == _SKK_WORD_MAIN:
-            if self.__comp:
-                return self.__main + self.__comp[self.__comp_index]
-            return self.__main
+        """
+        >>> from canossa import termprop
+        >>> termprop = termprop.MockTermprop()
+        >>> wordbuf = WordBuffer(termprop)
+        >>> wordbuf.startedit()
+        >>> wordbuf.append(u'\u3060\u3057\u3083\u3059')
+        >>> wordbuf.get()
+        u'\u3060\u3057\u3083\u3059'
+        >>> wordbuf.startokuri()
+        >>> wordbuf.append(u'\u3060')
+        >>> wordbuf.get()
+        u'\u3060\u3057\u3083\u3059\u3060'
+        """
+        if self._mode == _SKK_WORD_NONE:
+            return u''
+        elif self._mode == _SKK_WORD_MAIN:
+            if self._comp:
+                return self._main + self._comp[self._comp_index]
+            return self._main
         else:
-            assert self.__mode == _SKK_WORD_OKURI
-            return self.__main
+            assert self._mode == _SKK_WORD_OKURI
+            return self._main
 
     def append(self, value):
-        if self.__mode == _SKK_WORD_NONE:
+        """
+        >>> from canossa import termprop
+        >>> termprop = termprop.MockTermprop()
+        >>> wordbuf = WordBuffer(termprop)
+        >>> wordbuf.append(u'\u3060')
+        >>> wordbuf.get()
+        u''
+        """
+        if self._mode == _SKK_WORD_NONE:
             self.startedit()
-        elif self.__mode == _SKK_WORD_MAIN:
-            self.__main += value
+        elif self._mode == _SKK_WORD_MAIN:
+            self._main += value
         else:
-            assert self.__mode == _SKK_WORD_OKURI
-            self.__main += value
+            assert self._mode == _SKK_WORD_OKURI
+            self._main += value
 
     def back(self):
-        if len(self.__main) == 0:
-            self.__mode = _SKK_WORD_NONE
-        elif self.__mode == _SKK_WORD_MAIN:
-            self.__main = self.__main[:-1]
+        if not self._main:
+            self._mode = _SKK_WORD_NONE
+        elif self._mode == _SKK_WORD_MAIN:
+            self._main = self._main[:-1]
         else:
-            assert self.__mode == _SKK_WORD_OKURI
-            self.__mode = _SKK_WORD_MAIN
+            assert self._mode == _SKK_WORD_OKURI
+            self._mode = _SKK_WORD_MAIN
 
     def startedit(self):
-        self.__mode = _SKK_WORD_MAIN
+        self._mode = _SKK_WORD_MAIN
 
     def startokuri(self):
-        self.__mode = _SKK_WORD_OKURI
+        self._mode = _SKK_WORD_OKURI
 
     def has_okuri(self):
-        return self.__mode == _SKK_WORD_OKURI
+        return self._mode == _SKK_WORD_OKURI
 
     def length(self):
-        if self.__mode == _SKK_WORD_NONE:
+        """
+        >>> from canossa import termprop
+        >>> termprop = termprop.MockTermprop()
+        >>> wordbuf = WordBuffer(termprop)
+        >>> wordbuf.length()
+        0
+        >>> wordbuf.startedit()
+        >>> wordbuf.length()
+        0
+        >>> wordbuf.append(u'\u3060')
+        >>> wordbuf.length()
+        2
+        >>> wordbuf.startokuri()
+        >>> wordbuf.length()
+        2
+        >>> wordbuf.append(u'\u3060')
+        >>> wordbuf.length()
+        4
+        """
+        if self._mode == _SKK_WORD_NONE:
             return 0
-        elif self.__mode == _SKK_WORD_MAIN:
-            return self._wcswidth(self.__main)
+        elif self._mode == _SKK_WORD_MAIN:
+            return self._wcswidth(self._main)
         else:
-            assert self.__mode == _SKK_WORD_OKURI
-            return self._wcswidth(self.__main)
+            assert self._mode == _SKK_WORD_OKURI
+            return self._wcswidth(self._main)
 
     def getbuffer(self):
+        """
+        >>> from canossa import termprop
+        >>> termprop = termprop.MockTermprop()
+        >>> wordbuf = WordBuffer(termprop)
+        >>> wordbuf.getbuffer()
+        u''
+        >>> wordbuf.startedit()
+        >>> wordbuf.getbuffer()
+        u'\u25bd'
+        >>> wordbuf.append(u'\u3060')
+        >>> wordbuf.getbuffer()
+        u'\u25bd\u3060'
+        >>> wordbuf.startokuri()
+        >>> wordbuf.getbuffer()
+        u'\u25bd\u3060*'
+        """
         if self.isempty():
             return u''
         elif self.has_okuri():
             return self._cookmark + self.get() + _SKK_MARK_OKURI
         return self._cookmark + self.get()
+
+def test():
+    import doctest
+    doctest.testmod()
+
+if __name__ == "__main__":
+    test()
