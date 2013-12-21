@@ -48,29 +48,6 @@ def _parseopt():
 
 
 def _showversion():
-    """
-    >>> _showversion()
-    <BLANKLINE>
-    <BLANKLINE>
-          三o-( ^o^)-o-( ^o^)-o-( ^o^)-o
-    <BLANKLINE>
-    sentimental-skk 0.0.108
-    Copyright (C) 2012-2013 Hayaki Saito <user@zuse.jp>.
-    <BLANKLINE>
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-    <BLANKLINE>
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    <BLANKLINE>
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see http://www.gnu.org/licenses/.
-    <BLANKLINE>
-    """
 
     import __init__
 
