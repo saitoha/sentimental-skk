@@ -568,13 +568,16 @@ def _create_dns_cache():
     """
     www.google.comのDNSキャシュを作成しておく
     """
-    socket.gethostbyname('www.google.com')
+    try:
+        socket.gethostbyname('www.google.com')
+    except socket.gaierror, e:
+        logging.warning(e)
 
 # 可能なら非同期で辞書をロード
 try:
     import thread
-    thread.start_new_thread(_load, ())
     thread.start_new_thread(_create_dns_cache, ())
+    thread.start_new_thread(_load, ())
 except ImportError, e:
     _load()
 
