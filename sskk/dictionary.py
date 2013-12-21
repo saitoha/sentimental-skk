@@ -476,6 +476,9 @@ class Clauses:
         for clause in self._clauses:
             yield clause
 
+    def __len__(self):
+        return len(self._clauses)
+
     def add(self, clause):
         self._clauses.append(clause)
 

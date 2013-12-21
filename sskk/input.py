@@ -298,7 +298,7 @@ class InputHandler(tff.DefaultHandler,
         self._okuri = u''
 
         clauses = dictionary.Clauses()
-        if len(result) > 5 or key[0] == u'@':
+        if result or key[0] == u'@':
             clauses.add(dictionary.Clause(key, result))
         elif not settings.get('cgi-api.enabled'):
             clauses.add(dictionary.Clause(key, [key]))
@@ -314,6 +314,7 @@ class InputHandler(tff.DefaultHandler,
     def _convert_okuri(self):
 
         clauses = self._clauses
+        wordbuf = self._wordbuf
 
         buf = self._charbuf.getbuffer()
         if not buf:
@@ -321,7 +322,7 @@ class InputHandler(tff.DefaultHandler,
         okuri = self._draincharacters()
         self._okuri = okuri
         buf = buf[0]
-        key = self._wordbuf.get()
+        key = wordbuf.get()
 
         if self._inputmode.iskata():
             key = kanadb.to_hira(key)
@@ -340,7 +341,7 @@ class InputHandler(tff.DefaultHandler,
 
         self._clauses = clauses
         self._listbox.assign(clauses.getcandidates())
-        self._wordbuf.startedit()
+        wordbuf.startedit()
 
         self.settitle(u'%s - %s' % (key, buf))
         return True
@@ -360,7 +361,12 @@ class InputHandler(tff.DefaultHandler,
                     key = clause.getkey()
                     value = clause.getcurrentvalue()
                     dictionary.feedback(key, value)
-                word = clauses.getvalue() + self._okuri
+                okuri = self._okuri
+                if len(clauses) > 1:
+                    key = clauses.getkey() + okuri
+                    value = clauses.getvalue()
+                    dictionary.feedback(key, value)
+                word = clauses.getvalue() + okuri
             self._clauses = None
             self._okuri = u''
         else:
