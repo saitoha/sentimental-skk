@@ -107,12 +107,12 @@ def _showsplash(output):
 #    output.write(u'\x1b[>2t')
     version = __init__.__version__
 
-    output.write(u'\x1b[1;1H\x1b[J')
-    output.write(u'\x1b[5;5H')
-    output.write(u'      ＼ Sentimental-SKK %s ／\n' % version)
-    output.write(u'\x1b[7;5H')
-    output.write(u'               三 ( ´_ゝ`）\n')
-    output.write(u'\x1b[1;1H')
+    output.write(u'\x1b[1;1H\x1b[J'
+                 u'\x1b[5;5H'
+                 u'      ＼ Sentimental-SKK %s ／\n'
+                 u'\x1b[7;5H'
+                 u'               三 ( ´_ゝ`）\n'
+                 u'\x1b[1;1H' % version)
 
     termprop = termprop.Termprop()
 
@@ -123,23 +123,6 @@ def _showsplash(output):
     return termprop
 
 
-def main():
-
-    import os
-
-    if os.getenv('__SSKK_VERTION'):
-        print '\n＼SSKK process is already running！！！／\n'
-        print '       三 ( ´_ゝ`）三 ( ´_ゝ`）\n'
-        return
-
-    options, args = _parseopt()
-
-    _mainimpl(options, args,
-              env_shell=os.getenv('SHELL'),
-              env_term=os.getenv('TERM'),
-              env_lang=os.getenv('LANG'))
-
-
 def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
     import sys
     import os
@@ -148,6 +131,11 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
 
     if options.version:
         _showversion()
+        return
+
+    if os.getenv('__SSKK_VERTION'):
+        print '\n＼SSKK process is already running！！！／\n'
+        print '       三 ( ´_ゝ`）三 ( ´_ゝ`）\n'
         return
 
     # retrive starting command
@@ -305,6 +293,17 @@ def _mainloop(termenc, termprop, command, term, lang):
                       outputhandler=multiplexer)
     finally:
         tty.restore_term()
+
+def main():
+
+    import os
+
+    options, args = _parseopt()
+
+    _mainimpl(options, args,
+              env_shell=os.getenv('SHELL'),
+              env_term=os.getenv('TERM'),
+              env_lang=os.getenv('LANG'))
 
 
 ''' main '''
