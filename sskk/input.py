@@ -375,7 +375,7 @@ class InputHandler(tff.DefaultHandler,
                     dictionary.feedback(key, value)
                 okuri = self._okuri
                 if len(clauses) > 1:
-                    key = clauses.getkey() + okuri
+                    key = clauses.getkey()
                     value = clauses.getvalue()
                     dictionary.feedback(key, value)
                 word = clauses.getvalue() + okuri
