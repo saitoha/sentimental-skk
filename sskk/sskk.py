@@ -50,8 +50,9 @@ def _parseopt():
 def _showversion():
 
     import __init__
+    version = __init__.__version__
 
-    print '''
+    template = """
 
       三o-( ^o^)-o-( ^o^)-o-( ^o^)-o
 
@@ -70,7 +71,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see http://www.gnu.org/licenses/.
-    ''' % __init__.__version__
+        """
+    print(template % version)
 
 
 def _showsplash(output):
@@ -111,8 +113,8 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
         return
 
     if os.getenv('__SSKK_VERTION'):
-        print '\n＼SSKK process is already running！！！／\n'
-        print '       三 ( ´_ゝ`）三 ( ´_ゝ`）\n'
+        print('\n＼SSKK process is already running！！！／\n')
+        print('       三 ( ´_ゝ`）三 ( ´_ゝ`）\n')
         return
 
     # retrive starting command
@@ -216,8 +218,8 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
     except:
         output.write(u'\x1bc')
         logging.exception('Aborted by exception.')
-        print ('sskk aborted by an uncaught exception.'
-               ' see $HOME/.sskk/log/log.txt.')
+        print('sskk aborted by an uncaught exception.'
+              ' see $HOME/.sskk/log/log.txt.')
     finally:
         output.write(u'\x1b[?1006l')
         output.write(u'\x1b[?1003l')
