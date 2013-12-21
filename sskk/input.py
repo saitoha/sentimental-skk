@@ -328,16 +328,28 @@ class InputHandler(tff.DefaultHandler,
             key = kanadb.to_hira(key)
         result = dictionary.getokuri(key + buf)
         clauses = dictionary.Clauses()
-        if result:
+
+        if result or key[0] == u'@':
             clauses.add(dictionary.Clause(key, result))
-        else:
-            if self._inputmode.iskata():
-                key = kanadb.to_kata(key)
-            if not dictionary.get_from_cgi_api(clauses, key):
+        elif not settings.get('cgi-api.enabled'):
+            pass
+        elif not dictionary.get_from_cgi_api(clauses, key):
+            pass
+
+        if not clauses:
+            result = dictionary.gettango(key + buf)
+            if result or key[0] == u'@':
+                clauses.add(dictionary.Clause(key, result))
+            elif not settings.get('cgi-api.enabled'):
+                clauses.add(dictionary.Clause(key, [key]))
+            elif not dictionary.get_from_cgi_api(clauses, key):
                 clauses.add(dictionary.Clause(key, [key]))
             else:
                 self._okuri = u''
             clauses.add(dictionary.Clause(okuri, [okuri]))
+
+        if self._inputmode.iskata():
+            key = kanadb.to_kata(key)
 
         self._clauses = clauses
         self._listbox.assign(clauses.getcandidates())
