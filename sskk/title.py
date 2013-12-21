@@ -26,6 +26,10 @@ _original = u''
 
 
 def get():
+    """
+    >>> get()
+    u'   [@] '
+    """
     if _enabled:
         if _mode:
             return u'%s   [%s] %s' % (_original, _mode, _message)
@@ -33,10 +37,25 @@ def get():
 
 
 def getenabled():
+    """
+    >>> setenabled(True)
+    >>> getenabled()
+    True
+    """
     return _enabled
 
 
 def setenabled(value):
+    """
+    >>> getenabled()
+    True
+    >>> setenabled(False)
+    >>> getenabled()
+    False
+    >>> setenabled(True)
+    >>> getenabled()
+    True
+    """
     global _enabled, _dirty
     _enabled = value
     _dirty = True
@@ -66,3 +85,11 @@ def draw(output):
     if _enabled and _dirty:
         output.write(u'\x1b]2;%s\x1b\\' % get())
         _dirty = False
+
+
+def test():
+    import doctest
+    doctest.testmod()
+
+if __name__ == "__main__":
+    test()
