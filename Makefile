@@ -26,7 +26,7 @@ uninstall:
 	done
 	
 clean:
-	$(RM) dist/ build/ htmlcov/ *.egg-info *.pyc **/*.pyc
+	$(RM) **/dist/ **/build/ **/htmlcov/ **/*.egg-info **/*.pyc
 
 test:
 	if $$(which nosetests); \
