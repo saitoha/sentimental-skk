@@ -875,23 +875,6 @@ class InputHandler(tff.DefaultHandler,
             elif final == 0x44:  # D
                 self._moveprevclause()
                 return True
-        if final == 0x7e:  # ~
-            if parameter and parameter[0] == 0x33 and not intermediate:
-                if not self._charbuf.isempty():
-                    self._charbuf.back()
-                    if not self._charbuf.getbuffer():
-                        listbox.close()
-                    else:
-                        self._complete()
-                elif not self._wordbuf.isempty():
-                    self._wordbuf.back()
-                    if not self._wordbuf.getbuffer():
-                        listbox.close()
-                    else:
-                        self._complete()
-                else:
-                    return False
-            return True
         return False
 
     def _handle_ss3_cursor(self, context, final):
