@@ -29,6 +29,9 @@ clean:
 	$(RM) **/dist/ **/build/ **/htmlcov/ **/*.egg-info **/*.pyc
 
 test:
+	$(PYTHON) setup.py test; \
+
+nosetest:
 	if $$(which nosetests); \
 	then \
 	    nosetests --with-doctest \

@@ -92,6 +92,7 @@ class CharacterContext:
     def hasnext(self):
         """
         >>> charbuf = CharacterContext()
+        >>> charbuf.compile("builtin_normal")
         >>> charbuf.hasnext()
         False
         >>> charbuf.put(ord("k"))
@@ -108,6 +109,7 @@ class CharacterContext:
     def drain(self):
         """
         >>> charbuf = CharacterContext()
+        >>> charbuf.compile("builtin_normal")
         >>> charbuf.drain()
         u''
         >>> charbuf.put(ord("k"))
@@ -133,20 +135,21 @@ class CharacterContext:
     def getbuffer(self):
         """
         >>> charbuf = CharacterContext()
+        >>> charbuf.compile("builtin_normal")
         >>> charbuf.getbuffer()
         u''
         >>> charbuf.put(ord("k"))
         True
         >>> charbuf.getbuffer()
         u'k'
-        >>> charbuf.put(ord("k"))
+        >>> charbuf.put(ord("y"))
         True
         >>> charbuf.put(ord("a"))
-        False
+        True
         >>> charbuf.getbuffer()
-        u'kk'
+        u'kya'
         >>> charbuf.getbuffer()
-        u'kk'
+        u'kya'
         """
         key = romanrule.SKK_ROMAN_BUFFER
         if key in self.context:
@@ -156,6 +159,7 @@ class CharacterContext:
     def complete(self):
         """
         >>> charbuf = CharacterContext()
+        >>> charbuf.compile("builtin_normal")
         >>> charbuf.complete() is None
         True
         >>> charbuf.put(ord("k"))
@@ -183,6 +187,7 @@ class CharacterContext:
     def put(self, c):
         """
         >>> charbuf = CharacterContext()
+        >>> charbuf.compile("builtin_normal")
         >>> charbuf.put(ord('A'))
         True
         """
@@ -199,6 +204,7 @@ class CharacterContext:
     def back(self):
         """
         >>> charbuf = CharacterContext()
+        >>> charbuf.compile("builtin_normal")
         >>> charbuf.put(ord("k"))
         True
         >>> charbuf.put(ord("y"))
@@ -217,6 +223,7 @@ class CharacterContext:
     def handle_char(self, context, c):
         """
         >>> charbuf = CharacterContext()
+        >>> charbuf.compile("builtin_normal")
         >>> charbuf.handle_char(None, 0x00)
         False
         """
