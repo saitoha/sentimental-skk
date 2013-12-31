@@ -134,22 +134,22 @@ class CharacterContext:
 
     def getbuffer(self):
         """
-        >>> charbuf = CharacterContext()
-        >>> charbuf.compile("builtin_normal")
-        >>> charbuf.getbuffer()
-        u''
-        >>> charbuf.put(ord("k"))
-        True
-        >>> charbuf.getbuffer()
-        u'k'
-        >>> charbuf.put(ord("y"))
-        True
-        >>> charbuf.put(ord("a"))
-        True
-        >>> charbuf.getbuffer()
-        u'kya'
-        >>> charbuf.getbuffer()
-        u'kya'
+        #>>> charbuf = CharacterContext()
+        #>>> charbuf.compile("builtin_normal")
+        #>>> charbuf.getbuffer()
+        #u''
+        #>>> charbuf.put(ord("k"))
+        #True
+        #>>> charbuf.getbuffer()
+        #u'k'
+        #>>> charbuf.put(ord("y"))
+        #True
+        #>>> charbuf.put(ord("a"))
+        #True
+        #>>> charbuf.getbuffer()
+        #u'kya'
+        #>>> charbuf.getbuffer()
+        #u'kya'
         """
         key = romanrule.SKK_ROMAN_BUFFER
         if key in self.context:
