@@ -1,5 +1,11 @@
 2013-12-15 Hayaki Saito <user@zuse.jp>
 
+    * Version 0.0.116
+    * CanossaがCHAを解釈するようにする
+    * Kaaで日本語入力時のカーソル制御がうまく動作しないバグを修正
+
+2013-12-15 Hayaki Saito <user@zuse.jp>
+
     * Version 0.0.106
     * .sskk/ruleディレクトリによるかなルール追加・置き替えサポート
     * CGI API呼び出しがタイムアウトしないバグを修正
