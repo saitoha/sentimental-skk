@@ -4,7 +4,7 @@ DEPENDENCIES=canossa tff termprop
 PYTHON=python
 RM=rm -rf
 
-.PHONY: test build setuptools install uninstall clean update
+.PHONY: test nosetest build setuptools install uninstall clean update
 
 build: test
 	$(PYTHON) setup.py sdist
@@ -29,7 +29,7 @@ clean:
 	$(RM) **/dist/ **/build/ **/htmlcov/ **/*.egg-info **/*.pyc
 
 test:
-	$(PYTHON) setup.py test; \
+	$(PYTHON) setup.py test
 
 nosetest:
 	if $$(which nosetests); \
