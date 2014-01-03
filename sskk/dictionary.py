@@ -275,10 +275,51 @@ def _load():
     >>> dictdir = os.path.join(rcdir, 'dict')
     >>> _load()
     """
-    for f in reversed(sorted(os.listdir(userdictdir))):
-        _load_dict(os.path.join(userdictdir, f))
+    import glob
+    try:
+        tmpdict_list = glob.glob(userdictdir + '/*.tmp')
+    except Exception, e:
+        logging.exception(e)
+
+    for f in reversed(sorted(tmpdict_list)):
+        try:
+            _load_dict(os.path.join(userdictdir, f))
+        except ImportError, e:
+            logging.exception(e)
+
+    try:
+        userdict_list = glob.glob(userdictdir + '/*.dict')
+    except Exception, e:
+        logging.exception(e)
+
+    for f in reversed(sorted(userdict_list)):
+        try:
+            _load_dict(os.path.join(userdictdir, f))
+        except ImportError, e:
+            logging.exception(e)
+
+    if len(tmpdict_list) > 20:
+        filename = '%d.dict' % int(time.time())
+        f = open(os.path.join(userdictdir, filename), 'w')
+        try:
+            for key, value in _tangodb.items():
+                entry = u'%s /%s/\n' % (key, u'/'.join(value))
+                f.write(entry.encode('utf-8'))
+        except Exception, e:
+            logging.exception(e)
+        finally:
+            f.close()
+        for f in tmpdict_list:
+            try:
+                os.remove(f)
+            except OSError, e:
+                logging.exception(e)
+
     for f in os.listdir(dictdir):
-        _load_dict(os.path.join(dictdir, f))
+        try:
+            _load_dict(os.path.join(dictdir, f))
+        except ImportError, e:
+            logging.exception(e)
 
     try:
         _load_dict(_get_fallback_dict_path('SKK-JISYO.builtin'))
@@ -334,6 +375,7 @@ def _load():
         except Exception, e:
             logging.exception(e)
 
+
 def gettango(key):
     if key in _user_tangodb:
         result = _user_tangodb[key]
@@ -347,17 +389,21 @@ def gettango(key):
         return _tangodb[key]
     return []
 
+
 def getokuri(key):
     result = list()
     if key in _tangodb:
         result += _tangodb[key]
     return result
 
+
 def suggest(key, finals):
     return completer.suggest(key, finals)
 
+
 def _call_cgi_api_async(key, timeout, result):
     result['value'] = _call_cgi_api(key, timeout)
+
 
 def _call_cgi_api(key, timeout):
     import json
