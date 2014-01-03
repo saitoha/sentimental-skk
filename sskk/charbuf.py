@@ -41,8 +41,6 @@ class CharacterContext:
         """
         >>> charbuf = CharacterContext()
         >>> charbuf.compile("builtin_normal")
-        >>> charbuf.compile()
-        >>> charbuf.compile("__abc")
         """
         # makes trie trees
         try:
