@@ -26,7 +26,9 @@ uninstall:
 	done
 	
 clean:
-	$(RM) **/dist/ **/build/ **/htmlcov/ **/*.egg-info **/*.pyc
+	for name in dist build *.egg-info htmlcov *.pyc; \
+		do find . -type d -name $$name || true; \
+	done | xargs $(RM)
 
 test:
 	$(PYTHON) setup.py test
