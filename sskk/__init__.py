@@ -19,10 +19,10 @@
 # ***** END LICENSE BLOCK *****
 
 __author__ = "Hayaki Saito (user@zuse.jp)"
-__version__ = "0.0.116"
+__version__ = "0.0.117"
 __license__ = "GPL v3"
 
-from sskk import main
+from sskk import main, test_terminal
 
 ''' main '''
 if __name__ == '__main__':
