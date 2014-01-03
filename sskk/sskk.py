@@ -273,6 +273,12 @@ def _mainloop(termenc, termprop, command, term, lang):
     finally:
         tty.restore_term()
 
+
+def test_terminal():
+    from canossa import termprop
+    termprop = termprop.test()
+
+
 def main():
 
     import os
