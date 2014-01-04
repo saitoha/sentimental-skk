@@ -187,6 +187,7 @@ def feedback(key, value):
     record = '%s /%s/\n' % (key, value)
     user_dict_file.write(record.encode('utf-8'))
     user_dict_file.flush()
+    logging.info("feedback: key=%s, value=%s" % (key, value))
 
 
 def _escape(s):
@@ -204,6 +205,7 @@ _decoder = LineDecoder()
 
 
 def _load_dict(filename):
+    logging.info("load_dict: loading %s." % filename)
     try:
         for line in open(filename):
             _decode_line(line)
@@ -375,6 +377,7 @@ def _load():
         except Exception, e:
             logging.exception(e)
 
+    logging.info("Dictionary initialization processes are completed.")
 
 def gettango(key):
     if key in _user_tangodb:
@@ -612,19 +615,23 @@ class Clauses:
 
 def _create_dns_cache():
     """
-    www.google.comのDNSキャシュを作成しておく
+    create DNS cache for www.google.com
     """
     try:
         socket.gethostbyname('www.google.com')
+        logging.info("DNS cache for www.google.com is created.")
     except socket.gaierror, e:
         logging.warning(e)
 
-# 可能なら非同期で辞書をロード
+
+# load dictionaries asynchronously if possible
 try:
     import thread
     thread.start_new_thread(_create_dns_cache, ())
     thread.start_new_thread(_load, ())
-except ImportError, e:
+except Exception, e:
+    logging.warning(e)
+    logging.warning("Fallback to synchronous initialization for dictionaries.")
     _load()
 
 def test():
