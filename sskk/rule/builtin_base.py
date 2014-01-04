@@ -27,8 +27,6 @@ _rule = {
 def get():
     """
     >>> name, rule = get()
-    >>> rule['f\x09']
-    u'@task_switching'
     """
     return 'base', _rule
 
