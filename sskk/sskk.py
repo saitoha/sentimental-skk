@@ -102,6 +102,40 @@ def _showsplash(output):
     return termprop
 
 
+def _start_logging():
+    import os
+    import logging
+    import logging.handlers
+
+    homedir = os.path.expanduser('~')
+    rcdir = os.path.join(homedir, '.sskk')
+
+    confdir = os.path.join(rcdir, 'conf')
+    if not os.path.exists(confdir):
+        os.makedirs(confdir)
+
+    logdir = os.path.join(rcdir, 'log')
+    if not os.path.exists(logdir):
+        os.makedirs(logdir)
+
+    logfile = os.path.join(logdir, 'log.txt')
+
+    import datetime
+    today = datetime.datetime.today()
+    timestamp = today.strftime("%Y-%m-%d %H:%M:%S")
+
+    logging.basicConfig(filename=logfile, level=logging.DEBUG)
+
+    # Add the log message handler to the logger
+    handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=100000, backupCount=100)
+    logging.getLogger().addHandler(handler)
+
+    logging.info("\n\n"
+                 "-----------------------------------------------------\n"
+                 "               %s\n"
+                 "-----------------------------------------------------\n" % timestamp)
+
+
 def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
     import sys
     import os
@@ -116,6 +150,8 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
         print('\n＼SSKK process is already running！！！／\n')
         print('       三 ( ´_ゝ`）三 ( ´_ゝ`）\n')
         return
+
+    _start_logging()
 
     # retrive starting command
     if args:
@@ -172,20 +208,6 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
     output = codecs.getwriter(termenc)(sys.stdout, errors='ignore')
 
     termprop = _showsplash(output)
-
-    homedir = os.path.expanduser('~')
-    rcdir = os.path.join(homedir, '.sskk')
-
-    confdir = os.path.join(rcdir, 'conf')
-    if not os.path.exists(confdir):
-        os.makedirs(confdir)
-
-    logdir = os.path.join(rcdir, 'log')
-    if not os.path.exists(logdir):
-        os.makedirs(logdir)
-
-    logfile = os.path.join(logdir, 'log.txt')
-    logging.basicConfig(filename=logfile, filemode='w')
 
     import __init__
     os.environ['__SSKK_VERTION'] = __init__.__version__
