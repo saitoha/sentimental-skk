@@ -1,5 +1,5 @@
 
-PACKAGE_NAME=$(BASENAMEsentimental-skk
+PACKAGE_NAME=sentimental-skk
 DEPENDENCIES=canossa tff termprop
 PYTHON=python
 PYTHON25=python2.5
@@ -12,8 +12,10 @@ PIP=pip
 .PHONY: smoketest nosetest build setuptools install uninstall clean update
 
 setup_environment:
-	ln -f tools/gitignore .gitignore
-	ln -f tools/vimprojects .vimprojects
+	if test -d tools; do \
+		ln -f tools/gitignore .gitignore \
+		ln -f tools/vimprojects .vimprojects \
+    fi
 
 build: update_license_block smoketest
 	$(PYTHON) $(SETUP_SCRIPT) sdist
