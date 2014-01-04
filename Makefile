@@ -2,15 +2,24 @@
 PACKAGE_NAME=$(BASENAMEsentimental-skk
 DEPENDENCIES=canossa tff termprop
 PYTHON=python
+PYTHON25=python2.5
+PYTHON26=python2.6
+PYTHON27=python2.7
+SETUP_SCRIPT=setup.py
 RM=rm -rf
+PIP=pip
 
 .PHONY: smoketest nosetest build setuptools install uninstall clean update
 
+setup_environment:
+	ln -f tools/gitignore .gitignore
+	ln -f tools/vimprojects .vimprojects
+
 build: update_license_block smoketest
-	$(PYTHON) setup.py sdist
-	python2.5 setup.py bdist_egg
-	python2.6 setup.py bdist_egg
-	python2.7 setup.py bdist_egg
+	$(PYTHON) $(SETUP_SCRIPT) sdist
+	$(PYTHON25) $(SETUP_SCRIPT) bdist_egg
+	$(PYTHON26) $(SETUP_SCRIPT) bdist_egg
+	$(PYTHON27) $(SETUP_SCRIPT) bdist_egg
 
 update_license_block:
 	#chmod +x update_license
@@ -18,15 +27,15 @@ update_license_block:
 
 setuptools:
 	$(PYTHON) -c "import setuptools" || \
-		curl http://peak.telecommunity.com/dist/ez_setup.py | $(PYTHON)
+		curl http://peak.telecommunity.com/dist/ez_$(SETUP_SCRIPT) | $(PYTHON)
 
 install: smoketest setuptools
-	$(PYTHON) setup.py install
+	$(PYTHON) $(SETUP_SCRIPT) install
 
 uninstall:
 	for package in $(PACKAGE_NAME) $(DEPENDENCIES); \
 	do \
-		pip uninstall -y $$package; \
+		$(PIP) uninstall -y $$package; \
 	done
 
 clean:
@@ -34,8 +43,12 @@ clean:
 		do find . -type d -name $$name || true; \
 	done | xargs $(RM)
 
+test: smoketest nosetest
+
 smoketest:
-	$(PYTHON) setup.py test
+	$(PYTHON25) $(SETUP_SCRIPT) test
+	$(PYTHON26) $(SETUP_SCRIPT) test
+	$(PYTHON27) $(SETUP_SCRIPT) test
 
 nosetest:
 	if $$(which nosetests); \
@@ -44,14 +57,12 @@ nosetest:
 	              --with-coverage \
 	              --cover-html \
 	              --cover-package=sskk; \
-	else \
-	    $(PYTHON) setup.py test; \
 	fi
 
 update: clean smoketest
-	$(PYTHON) setup.py register
-	$(PYTHON) setup.py sdist upload
-	python2.5 setup.py bdist_egg upload
-	python2.6 setup.py bdist_egg upload
-	python2.7 setup.py bdist_egg upload
+	$(PYTHON) $(SETUP_SCRIPT) register
+	$(PYTHON) $(SETUP_SCRIPT) sdist upload
+	$(PYTHON25) $(SETUP_SCRIPT) bdist_egg upload
+	$(PYTHON26) $(SETUP_SCRIPT) bdist_egg upload
+	$(PYTHON27) $(SETUP_SCRIPT) bdist_egg upload
 
