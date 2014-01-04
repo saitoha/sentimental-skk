@@ -18,8 +18,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
-#import thread
-
 _eisuudb = ((u'0', u'０'), (u'1', u'１'), (u'2', u'２'),
             (u'3', u'３'), (u'4', u'４'), (u'5', u'５'),
             (u'6', u'６'), (u'7', u'７'), (u'8', u'８'),
@@ -95,8 +93,11 @@ def to_zenkaku_cp(code):
         return _han_to_zen_cp[code]
     return code
 
-#thread.start_new_thread(_loaddb, ())
-_loaddb()
+try:
+    import thread
+    thread.start_new_thread(_loaddb, ())
+except Exception, e:
+    _loaddb()
 
 
 def test():
