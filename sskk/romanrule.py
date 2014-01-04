@@ -99,7 +99,10 @@ def compile(method="builtin_normal"):
 
     logging.info("compile roman rule: %s" % method)
 
+    _base_name, base_ruledict = rule.get('builtin_base')
     name, ruledict = rule.get(method)
+
+    ruledict.update(base_ruledict)
 
     hira_rule, kata_rule = _make_rules(ruledict)
     if method == 'normal':
