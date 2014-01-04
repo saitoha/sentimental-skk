@@ -28,6 +28,7 @@ sskk=. CD=. {
   __init__.py
   rule=rule {
     __init__.py
+    builtin_base.py
     builtin_normal.py
     builtin_azik.py
     builtin_act.py
