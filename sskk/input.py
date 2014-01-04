@@ -392,7 +392,7 @@ class InputHandler(tff.DefaultHandler,
                 word = u''
         if word.startswith('$'):
             command = word[1:]
-            self.open_with_command(command)
+            self.open_with_command(command, context)
             word = u''
             return
 
@@ -450,14 +450,14 @@ class InputHandler(tff.DefaultHandler,
             return False
         return False
 
-    def open_wikipedia(self, word):
+    def open_wikipedia(self, word, context):
         import urllib
         url = "http://ja.wikipedia.org/wiki/"
         url += urllib.quote_plus(word.encode('utf-8'))
         command = "w3m '%s'" % url
-        self.open_with_command(command)
+        self.open_with_command(command, context)
 
-    def open_with_command(self, command):
+    def open_with_command(self, command, context):
         screen = self._screen
         session = self._session
         termprop = self._termprop
@@ -469,7 +469,7 @@ class InputHandler(tff.DefaultHandler,
         left = int((screen.width - width) / 2)
 
         from mode import InputMode
-        inputmode = InputMode(session.tty)
+        inputmode = InputMode(context)
         inputhandler = InputHandler(session,
                                     screen,
                                     termenc,
@@ -485,10 +485,6 @@ class InputHandler(tff.DefaultHandler,
                                   command,
                                   termenc,
                                   termprop)
-
-    def destruct_subprocess(self):
-        session = self._session
-        session.destruct_subprocesses()
 
     # override
     def handle_char(self, context, c):
@@ -588,8 +584,18 @@ class InputHandler(tff.DefaultHandler,
                 wordbuf.complete()
                 charbuf.reset()
                 listbox.movenext()
-            else:
+            elif charbuf.isempty():
                 context.write(c)
+            elif not charbuf.put(c):
+                context.write(c)
+            else:
+                key = charbuf.drain()
+                window_list = [u'%0 メインウィンドウ']
+                for window in self._screen.emumwindows():
+                    label = window.getlabel()
+                    if label:
+                        window_list.append(u'%%%d %s' % (window.id, label))
+                self._listbox.assign(window_list)
 
         elif c == 0x0e:  # C-n
             if listbox.isshown():
@@ -631,7 +637,7 @@ class InputHandler(tff.DefaultHandler,
         elif c == 0x17:  # C-w
             if not wordbuf.isempty():
                 word = wordbuf.get()
-                self.open_wikipedia(word)
+                self.open_wikipedia(word, context)
             else:
                 self._reset()
                 context.write(c)
