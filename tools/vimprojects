@@ -1,0 +1,128 @@
+sskk=. CD=. {
+ ChangeLog
+ COPYING
+ Makefile
+ MANIFEST.in
+ README.rst
+ setup.py
+ TODO
+ sskk=sskk {
+  charbuf.py
+  dictionary.py
+  eisuudb.py
+  input.py
+  output.py
+  kanadb.py
+  mode.py
+  romanrule.py
+  SKK-JISYO.assoc
+  SKK-JISYO.builtin
+  SKK-JISYO.geo
+  SKK-JISYO.jinmei
+  SKK-JISYO.JIS2
+  SKK-JISYO.L
+  sskk.py
+  title.py
+  word.py
+  settings.py
+  __init__.py
+  rule=rule {
+    __init__.py
+    builtin_normal.py
+    builtin_azik.py
+    builtin_act.py
+  }
+  canossa=canossa {
+   ChangeLog
+   COPYING
+   Makefile
+   MANIFEST.in
+   README.rst
+   setup.py
+   TODO
+   __init__.py
+   canossa=canossa {
+    attribute.py
+    canossa.py
+    cell.py
+    constant.py
+    cursor.py
+    iframe.py
+    interface.py
+    exception.py
+    line.py
+    logger.py
+    mouse.py
+    output.py
+    popup.py
+    screen.py
+    __init__.py
+    termprop=termprop {
+     ChangeLog
+     COPYING
+     Makefile
+     MANIFEST.in
+     README.rst
+     setup.py
+     TODO
+     __init__.py
+     termprop=termprop {
+      termprop.py
+      wcwidth.py
+      WcwidthGenerator.pl
+      __init__.py
+      db=db {
+       __init__.py
+       iterm2=iterm2 {
+        __init__.py
+       }
+       putty=putty {
+        noncjk.py
+       }
+       unicode6_2=unicode6_2 {
+        cjk.py
+        normal.py
+        __init__.py
+       }
+       urxvt=urxvt {
+        noncjk.py
+       }
+       xterm=xterm {
+        cjk.py
+        noncjk.py
+       }
+       nsterm=nsterm {
+        cjk.py
+        noncjk.py
+       }
+      }
+     }
+    }
+    tff=tff {
+     ChangeLog
+     COPYING
+     ctff.c
+     Makefile
+     MANIFEST.in
+     README.rst
+     setup.py
+     TODO
+     __init__.py
+     test=test {
+      test.py
+      test1.py
+     }
+     tff=tff {
+      exception.py
+      interface.py
+      parser.py
+      scanner.py
+      test.py
+      tff.py
+      __init__.py
+     }
+    }
+   }
+  }
+ }
+}
