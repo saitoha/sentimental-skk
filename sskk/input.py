@@ -117,7 +117,7 @@ class IListboxListenerImpl(IListboxListener):
             listbox.jumpnext()
         elif c == 0x17:  # C-w
             value = self._clauses.getvalue()
-            self.open_wikipedia(value)
+            self.open_wikipedia(value, context)
         elif c == 0x10:  # C-p
             listbox.moveprev()
         elif c == 0x1b:  # ESC C-[
