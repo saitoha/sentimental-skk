@@ -457,6 +457,12 @@ class InputHandler(tff.DefaultHandler,
         command = "w3m '%s'" % url
         self.open_with_command(command, context)
 
+    def initialize_mouse(self, window):
+        self._mouse_decoder.initialize_mouse(window)
+
+    def uninitialize_mouse(self, window):
+        self._mouse_decoder.uninitialize_mouse(window)
+
     def open_with_command(self, command, context):
         screen = self._screen
         session = self._session
