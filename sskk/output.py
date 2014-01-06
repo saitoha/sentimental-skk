@@ -20,11 +20,14 @@
 
 
 from canossa import tff
+try:
+    from cStringIO import StringIO
+except:
+    from StringIO import StringIO
 
 class OutputHandler(tff.DefaultHandler):
 
-    def __init__(self, screen, mode_handler, 
-                 termenc="UTF-8", termprop=None, visibility=False):
+    def __init__(self, screen, mode_handler):
         """
         >>> mode_handler = tff.DefaultHandler()
         >>> from canossa import Screen, termprop
@@ -35,6 +38,7 @@ class OutputHandler(tff.DefaultHandler):
         False
         """
 
+        self._output = StringIO()
         self._screen = screen
         self._mode_handler = mode_handler
         self.dirty_flag = False
@@ -111,9 +115,14 @@ class OutputHandler(tff.DefaultHandler):
         >>> output_handler.dirty_flag
         False
         """
+        screen = self._screen
+        output = self._output
+        screen.cursor.attr.draw(output)
+        context.puts(output.getvalue())
+        output.truncate(0)
+        
         if self.dirty_flag:
             self.dirty_flag = False
-            screen = self._screen
             y, x = screen.getyx()
             screen.drawall(context)
             #screen.update_when_scroll(context, 1)
