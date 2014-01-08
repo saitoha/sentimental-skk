@@ -793,8 +793,6 @@ class InputHandler(tff.DefaultHandler,
                             self._settle(context)
                         self._inputmode.startzen()
                         self._reset()
-                    else:
-                        self._complete()
                 else:
                     # ある
                     s = currentbuffer
