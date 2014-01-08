@@ -1046,6 +1046,7 @@ class InputHandler(tff.DefaultHandler,
     def handle_draw(self, context):
         if not self._inputmode.getenabled():
             return False
+
         output = self._output
         clauses = self._clauses
         iframe = self._iframe
@@ -1054,33 +1055,35 @@ class InputHandler(tff.DefaultHandler,
         wordbuf = self._wordbuf
         charbuf = self._charbuf
 
-#        output.write('\x1b[?25l')
+        output.write('\x1b[?25l')
+        try:
+            screen.drawwindows(context)
 
-        if self._optimize:
-            self._optimize = False
-        elif clauses and not listbox.isempty():
-            self._draw_clauses_with_popup(output)
-        elif not wordbuf.isempty() or not charbuf.isempty():
-            self._draw_word(output)
-        else:
-            self._draw_nothing(output)
+            if self._optimize:
+                self._optimize = False
+            elif clauses and not listbox.isempty():
+                self._draw_clauses_with_popup(output)
+            elif not wordbuf.isempty() or not charbuf.isempty():
+                self._draw_word(output)
+            else:
+                self._draw_nothing(output)
 
-        self._refleshtitle()
-        screen.cursor.draw(output)
+            self._refleshtitle()
 
-        buf = output.getvalue()
-        if buf:
-            context.puts(buf)
-            output.truncate(0)
+            widget = screen.getactivewidget()
+            if widget:
+                widget.drawcursor()
+            else:
+                screen.cursor.draw(output)
 
-        screen.drawwindows(context)
+            buf = output.getvalue()
+            if buf:
+                context.puts(buf)
+                output.truncate(0)
 
-        if not screen.has_active_windows():
-            y, x = screen.getyx()
-            context.puts('\x1b[%d;%dH' % (y + 1, x + 1))
+        finally:
             if screen.dectcem:
                 context.puts('\x1b[?25h')
-#            context.puts('\x1b[?25h')
 
 def test():
     import doctest
