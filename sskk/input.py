@@ -246,8 +246,8 @@ class InputHandler(tff.DefaultHandler,
         self._session = session
         self._screen.setlistener(self)
 
-#        y, x = screen.getyx()
-#        self._listbox.setposition(x, y)
+        y, x = screen.getyx()
+        self._listbox.setposition(x, y)
 
         # detects libvte + Ambiguous=narrow environment
         if not termprop.is_cjk and termprop.is_vte():
