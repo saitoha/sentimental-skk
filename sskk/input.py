@@ -474,6 +474,10 @@ class InputHandler(tff.DefaultHandler,
         top = int((screen.height - height) / 2)
         left = int((screen.width - width) / 2)
 
+        self._draw_nothing(self._output)
+        self._inputmode.reset()
+        self._reset()
+
         from mode import InputMode
         inputmode = InputMode(context)
         inputhandler = InputHandler(session,
