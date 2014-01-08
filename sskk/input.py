@@ -488,8 +488,6 @@ class InputHandler(tff.DefaultHandler,
                                     inputmode)
         self._iframe = InnerFrame(self._session,
                                   self,
-                                  #inputhandler,
-                                  self._mouse_decoder,
                                   screen,
                                   top, left, height, width,
                                   command,
