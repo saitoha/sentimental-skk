@@ -447,6 +447,17 @@ class InputHandler(tff.DefaultHandler,
                 settings.set(key, value)
                 settings.save()
                 return True
+            elif category == 'task':
+                if key == 'switch':
+                    window_id = int(value)
+                    if window_id == 0:
+                        self._session.blur_process()
+                    else:
+                        self._draw_nothing(self._output)
+                        self._inputmode.reset()
+                        self._reset()
+                        self._screen.taskswitch(window_id)
+
             return False
         return False
 
@@ -596,14 +607,6 @@ class InputHandler(tff.DefaultHandler,
                 context.write(c)
             elif not charbuf.put(c):
                 context.write(c)
-            else:
-                key = charbuf.drain()
-                window_list = [u'%0 メインウィンドウ']
-                for window in self._screen.emumwindows():
-                    label = window.getlabel()
-                    if label:
-                        window_list.append(u'%%%d %s' % (window.id, label))
-                self._listbox.assign(window_list)
 
         elif c == 0x0e:  # C-n
             if listbox.isshown():
@@ -830,9 +833,27 @@ class InputHandler(tff.DefaultHandler,
                 # 先行する入力があるか
                 if wordbuf.isempty():
                     s = charbuf.drain()
-                    context.putu(s)
-                    if clauses:
-                        self._optimize = True
+                    if not s.startswith('@'):
+                        context.putu(s)
+                        if clauses:
+                            self._optimize = True
+                    else:
+                        if s == '@task_switch':
+                            clauses = dictionary.Clauses()
+                            value = [u'%%0 メインウィンドウ;builtin:task:switch:%s' % 0]
+                            for window in self._screen.enumwindows():
+                                label = window.getlabel()
+                                if label:
+                                    value.append(u'%%%d %s;builtin:task:switch:%s' % (window.id, label, window.id))
+                            clauses.add(dictionary.Clause(s, value))
+                            candidates = clauses.getcandidates()
+                            self._listbox.assign(candidates)
+                            self._clauses = clauses
+                        elif s == '@task_prev':
+                            self._screen.task_prev()
+                        elif s == '@task_next':
+                            self._screen.task_next()
+
                 elif wordbuf.has_okuri():
                     # 送り仮名変換
                     self._convert_okuri()

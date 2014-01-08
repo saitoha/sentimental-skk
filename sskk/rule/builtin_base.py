@@ -20,7 +20,9 @@
 
 
 _rule = {
-    'f\x09': u'@task_switching',
+    '1s': u'@task_switch',
+    '1n': u'@task_next',
+    '1p': u'@task_prev',
 }
 
 
