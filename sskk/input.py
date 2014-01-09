@@ -1081,14 +1081,8 @@ class InputHandler(tff.DefaultHandler,
             self._prev_length = 0
 
     def handle_resize(self, context, row, col):
-        iframe = self._iframe
-        try:
-            if iframe:
-                iframe.close()
-        except:
-            logging.error("Resize failed")
-        finally:
-            self._iframe = None
+        y, x = self._screen.getyx()
+        self._listbox.setposition(x, y)
 
     # override
     def handle_draw(self, context):
