@@ -61,7 +61,7 @@ nosetest:
 	              --cover-package=sskk; \
 	fi
 
-update: clean smoketest
+update: clean test
 	$(PYTHON) $(SETUP_SCRIPT) register
 	$(PYTHON) $(SETUP_SCRIPT) sdist upload
 	$(PYTHON25) $(SETUP_SCRIPT) bdist_egg upload
