@@ -257,8 +257,7 @@ def _get_fallback_dict_path(name):
 def _load_history(filename):
     for line in open(filename):
         value = line
-        #key = _escape(line)
-        key = line
+        key = _escape(line)
         if len(key) > 70:
             continue
         try:
