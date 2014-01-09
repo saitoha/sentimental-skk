@@ -182,6 +182,21 @@ class CharacterContext:
                             yield value
         return list(set([c for c in expand(self.context)]))
 
+    def test(self, c):
+        """
+        >>> charbuf = CharacterContext()
+        >>> charbuf.compile("builtin_normal")
+        >>> charbuf.test(ord('A'))
+        True
+        """
+        if c in self.context:
+            return True
+        if 0x41 <= c and c <= 0x5a:  # A - Z
+            c += 0x20  # convert to a - z
+        if c in self.context:
+            return True
+        return False
+
     def put(self, c):
         """
         >>> charbuf = CharacterContext()
