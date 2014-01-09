@@ -833,26 +833,12 @@ class InputHandler(tff.DefaultHandler,
                 # 先行する入力があるか
                 if wordbuf.isempty():
                     s = charbuf.drain()
-                    if not s.startswith('@'):
+                    if s.startswith('@'):
+                        self._dispatch_command(s, context)
+                    else:
                         context.putu(s)
                         if clauses:
                             self._optimize = True
-                    else:
-                        if s == '@task_switch':
-                            clauses = dictionary.Clauses()
-                            value = [u'%%0 メインウィンドウ;builtin:task:switch:%s' % 0]
-                            for window in self._screen.enumwindows():
-                                label = window.getlabel()
-                                if label:
-                                    value.append(u'%%%d %s;builtin:task:switch:%s' % (window.id, label, window.id))
-                            clauses.add(dictionary.Clause(s, value))
-                            candidates = clauses.getcandidates()
-                            self._listbox.assign(candidates)
-                            self._clauses = clauses
-                        elif s == '@task_prev':
-                            self._screen.task_prev()
-                        elif s == '@task_next':
-                            self._screen.task_next()
 
                 elif wordbuf.has_okuri():
                     # 送り仮名変換
@@ -866,14 +852,55 @@ class InputHandler(tff.DefaultHandler,
 
         return True  # handled
 
+
+    def _dispatch_command(self, key, context):
+        if key == '@task_switch':
+            clauses = dictionary.Clauses()
+            value = [u'%%0 メインウィンドウ;builtin:task:switch:%d' % 0]
+            for window in self._screen.enumwindows():
+                label = window.getlabel()
+                if label:
+                    value.append(u'%%%d %s;builtin:task:switch:%d' % (window.id, label, window.id))
+            clauses.add(dictionary.Clause(key, value))
+            candidates = clauses.getcandidates()
+            self._listbox.assign(candidates)
+            self._clauses = clauses
+        elif key == '@task_prev':
+            self._screen.task_prev()
+        elif key == '@task_next':
+            self._screen.task_next()
+        elif key == '@task_blur':
+            self._session.blur_process()
+        elif key == '@shell_start':
+            self._wordbuf.startedit()
+            self._inputmode.startabbrev()
+            self._wordbuf.append(u'$')
+            self._complete()
+        else:
+            logging.warning('Unknown command: %s' % key)
+
     def _handle_amb_report(self, context, parameter, intermediate, final):
+        """
+        minttyのambiguous width reportingをハンドルする
+        http://code.google.com/p/mintty/wiki/CtrlSeqs#Ambiguous_width_reporting
+        http://code.google.com/p/mintty/issues/detail?id=88
+        """
         if not intermediate:
             if final == 0x57:  # W
                 if not parameter:
+                    """
+                    CSI W
+                    """
                     self._termprop.set_amb_as_single()
                 elif parameter[0] == 0x32:
+                    """
+                    CSI 2 W
+                    """
                     self._termprop.set_amb_as_double()
                 elif parameter[0] == 0x31:
+                    """
+                    CSI 1 W
+                    """
                     self._termprop.set_amb_as_single()
                 return True
         return False
