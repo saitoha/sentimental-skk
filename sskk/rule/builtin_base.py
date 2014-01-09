@@ -23,6 +23,8 @@ _rule = {
     '1s': u'@task_switch',
     '1n': u'@task_next',
     '1p': u'@task_prev',
+    '1d': u'@task_blur',
+    '4' : u'@shell_start',
 }
 
 
