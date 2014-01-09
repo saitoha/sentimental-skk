@@ -43,6 +43,7 @@ import logging
 _SKK_MARK_SELECT = u'▼'
 _SKK_MARK_OPEN = u'【'
 _SKK_MARK_CLOSE = u'】'
+_SKK_COMMAND_INTRODUCER = u'@'
 
 homedir = os.path.expanduser("~")
 rcdir = os.path.join(homedir, ".sskk")
@@ -390,7 +391,7 @@ class InputHandler(tff.DefaultHandler,
             word += s
             if word.startswith(u'@'):
                 word = u''
-        if word.startswith('$'):
+        if word.startswith(u'$'):
             command = word[1:]
             self.open_with_command(command, context)
             word = u''
@@ -489,14 +490,6 @@ class InputHandler(tff.DefaultHandler,
         self._inputmode.reset()
         self._reset()
 
-        from mode import InputMode
-        inputmode = InputMode(context)
-        inputhandler = InputHandler(session,
-                                    screen,
-                                    termenc,
-                                    termprop,
-                                    self._mousemode,
-                                    inputmode)
         self._iframe = InnerFrame(self._session,
                                   self,
                                   screen,
