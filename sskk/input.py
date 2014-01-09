@@ -598,7 +598,14 @@ class InputHandler(tff.DefaultHandler,
                 listbox.movenext()
             elif charbuf.isempty():
                 context.write(c)
-            elif not charbuf.put(c):
+            elif charbuf.test(c):
+                charbuf.put(c)
+                s = charbuf.drain()
+                if s.startswith('@'):
+                    self._dispatch_command(s, context)
+                else:
+                    context.write(c)
+            else:
                 context.write(c)
 
         elif c == 0x0e:  # C-n
@@ -654,8 +661,8 @@ class InputHandler(tff.DefaultHandler,
 
         elif c == 0x20:  # SP
             word = wordbuf.get()
-            if word.startswith('$'):
-                wordbuf.append(' ')
+            if word.startswith(u'$'):
+                wordbuf.append(u' ')
             elif not wordbuf.isempty():
                 s = self._draincharacters()
                 wordbuf.append(s)
