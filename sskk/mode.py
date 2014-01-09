@@ -75,18 +75,19 @@ class InputMode(IModeListenerImpl):
     '''
     _value = -1
 
-    def __init__(self, tty):
-        self._tty = tty
-        self.__setmode(_SKK_MODE_HANKAKU)
+    def __init__(self, session):
+        self._session = session
+        self._setmode(_SKK_MODE_HANKAKU)
 
-    def __setmode(self, mode):
+    def _setmode(self, mode):
         if self._value != mode:
             self._value = mode
             if self.hasevent():
+                process = self._session.getactiveprocess()
                 if self.isabbrev():
-                    self._tty.write("\x1b[8854~")
+                    process.write("\x1b[8854~")
                 else:
-                    self._tty.write("\x1b[%d~" % (8850 + self._value))
+                    process.write("\x1b[%d~" % (8850 + self._value))
         title.setmode(_SKK_MODE_MARK_MAP[min(mode, 4)])
 
     def handle_char(self, context, c):
@@ -117,31 +118,31 @@ class InputMode(IModeListenerImpl):
         return value == _SKK_MODE_HANKAKU or value == _SKK_MODE_ZENKAKU
 
     def reset(self):
-        self.__setmode(_SKK_MODE_HANKAKU)
+        self._setmode(_SKK_MODE_HANKAKU)
 
     def startabbrev(self):
         ''' 英数サブモードを開始 '''
         if self.getenabled():
-            self.__setmode(self._value | _SKK_SUBMODE_ABBREV)
+            self._setmode(self._value | _SKK_SUBMODE_ABBREV)
 
     def endabbrev(self):
         ''' 英数サブモードを終了 '''
-        self.__setmode(self._value & ~_SKK_SUBMODE_ABBREV)
+        self._setmode(self._value & ~_SKK_SUBMODE_ABBREV)
 
     def startzen(self):
         ''' 全角英数モードを開始 '''
         if self.getenabled():
-            self.__setmode(_SKK_MODE_ZENKAKU)
+            self._setmode(_SKK_MODE_ZENKAKU)
 
     def starthira(self):
         ''' ひらがなモードを開始 '''
         if self.getenabled():
-            self.__setmode(_SKK_MODE_HIRAGANA)
+            self._setmode(_SKK_MODE_HIRAGANA)
 
     def startkata(self):
         ''' カタカナモードを開始 '''
         if self.getenabled():
-            self.__setmode(_SKK_MODE_KATAKANA)
+            self._setmode(_SKK_MODE_KATAKANA)
 
     def ishira(self):
         ''' ひらがなモードかどうか '''
