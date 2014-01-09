@@ -271,7 +271,7 @@ def _mainloop(termenc, termprop, command, term, lang):
         from mode import InputMode
         from canossa import ModeHandler
         from input import InputHandler
-        inputmode = InputMode(tty)
+        inputmode = InputMode(session)
         mode_handler = ModeHandler(inputmode, termprop)
         inputhandler = InputHandler(session=session,
                                     screen=screen,
