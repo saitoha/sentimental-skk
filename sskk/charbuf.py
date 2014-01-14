@@ -203,7 +203,7 @@ class CharacterContext:
         """
         >>> charbuf = CharacterContext()
         >>> charbuf.compile("builtin_normal")
-        >>> charbuf.put(ord('A'))
+        >>> charbuf.put(ord('a'))
         True
         """
         if c in self.context:

@@ -287,8 +287,7 @@ def _load_history_impl(filename):
 
 def _load_user_dict():
     """
-    >>> dictdir = os.path.join(rcdir, 'dict')
-    >>> _load()
+    >>> _load_user_dict()
     """
     import glob
     try:
@@ -337,6 +336,9 @@ def _load_user_dict():
             logging.exception(e)
 
 def _load_builtin_dict():
+    """
+    >>> _load_user_dict()
+    """
     try:
         _load_dict(_get_fallback_dict_path('SKK-JISYO.builtin'))
     except Exception, e:
