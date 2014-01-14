@@ -638,10 +638,16 @@ class InputHandler(tff.DefaultHandler,
                 charbuf_alter.put(c)
                 s = charbuf_alter.drain()
                 if s.startswith('@'):
+                    charbuf.reset()
                     self._dispatch_command(context, c, s)
                     return True
-
-            context.puts(chr(c))
+                #if c == 0x70:
+                #    raise 1
+                #charbuf.reset()
+                #charbuf.put(c)
+                #wordbuf.append(s)
+                return True
+            #charbuf.reset()
 
             return True
 

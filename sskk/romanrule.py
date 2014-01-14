@@ -27,7 +27,7 @@ SKK_ROMAN_NEXT = 65541
 SKK_ROMAN_PREV = 65542
 SKK_ROMAN_BUFFER = 65543
 
-def _maketree(rule, s, txu, nn):
+def _maketree(rule, onbin, txu, nn):
     """ makes try-tree """
     tree = {}
 
@@ -37,13 +37,13 @@ def _maketree(rule, s, txu, nn):
         for c in key:
             code = ord(c)
             if not code in context:
-                context[code] = {SKK_ROMAN_PREV: context}
+                context[code] = { SKK_ROMAN_PREV: context }
             context = context[code]
             buf += chr(code)
             context[SKK_ROMAN_BUFFER] = buf
         context[SKK_ROMAN_VALUE] = value
         first = key[0]
-        if first in s:
+        if first in onbin:
             key = first + key
             value = txu + value
             buf = u''
@@ -51,7 +51,7 @@ def _maketree(rule, s, txu, nn):
             for c in key:
                 code = ord(c)
                 if not code in context:
-                    context[code] = {SKK_ROMAN_PREV: context}
+                    context[code] = { SKK_ROMAN_PREV: context }
                 context = context[code]
                 if buf == chr(code):
                     buf = txu
@@ -63,7 +63,7 @@ def _maketree(rule, s, txu, nn):
     for key, value in tree.items():
         context = tree
         if key == 0x6e:  # 'n'
-            for c in s:
+            for c in onbin:
                 code = ord(c)
                 value[code] = {SKK_ROMAN_VALUE: nn,
                                SKK_ROMAN_NEXT: tree[code]}
@@ -82,6 +82,8 @@ def compile(method="builtin_normal"):
     ''' make hiragana/katakana input state trie-tree
     >>> hira_tree, kata_tree = compile('builtin_normal')
     >>> hira_tree[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
+    u'\u304d\u3083'
+    >>> hira_tree[ord('t')][ord('t')][ord('a')][SKK_ROMAN_VALUE]
     u'\u304d\u3083'
     >>> kata_tree[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u30ad\u30e3'
@@ -105,7 +107,7 @@ def compile(method="builtin_normal"):
     ruledict.update(base_ruledict)
 
     hira_rule, kata_rule = _make_rules(ruledict)
-    if method == 'normal':
+    if method == 'builtin_normal':
         onbin = 'bcdfghjkmprstvwxz'
     else:
         onbin = 'w'
