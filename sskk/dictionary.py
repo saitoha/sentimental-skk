@@ -205,6 +205,12 @@ _decoder = LineDecoder()
 
 
 def _load_dict(filename):
+    try:
+        thread.start_new_thread(_load_dict_impl, (filename))
+    except Exception, e:
+        _load_dict_impl(filename)
+
+def _load_dict_impl(filename):
     logging.info("load_dict: loading %s." % filename)
     try:
         for line in open(filename):
@@ -255,8 +261,15 @@ def _get_fallback_dict_path(name):
 
 
 def _load_history(filename):
+    try:
+        thread.start_new_thread(_load_history_impl, (filename))
+    except Exception, e:
+        _load_history_impl(filename)
+
+
+def _load_history_impl(filename):
     for line in open(filename):
-        value = line
+        value = _escape(line)
         key = _escape(line)
         if len(key) > 70:
             continue
@@ -272,7 +285,7 @@ def _load_history(filename):
         else:
             _tangodb[key] = [value]
 
-def _load():
+def _load_user_dict():
     """
     >>> dictdir = os.path.join(rcdir, 'dict')
     >>> _load()
