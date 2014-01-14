@@ -421,7 +421,7 @@ class InputHandler(tff.DefaultHandler,
             word += s
             if word.startswith(u'@'):
                 word = u''
-        if not self._inputmode.isabbrev() and word.startswith(u'$'):
+        if word.startswith(u'$'):
             command = word[1:]
             self.open_with_command(command, context)
             word = u''
@@ -563,11 +563,13 @@ class InputHandler(tff.DefaultHandler,
             if charbuf_alter.test(c):
                 charbuf_alter.put(c)
                 s = charbuf_alter.drain()
+                charbuf_alter.reset()
                 if s.startswith('@'):
                     self._dispatch_command(context, c, s)
                     return True
 
             wordbuf.append(unichr(c))
+#            charbuf.reset()
             self._complete()
 
         elif self._inputmode.ishira() or self._inputmode.iskata():
@@ -642,10 +644,7 @@ class InputHandler(tff.DefaultHandler,
                     self._dispatch_command(context, c, s)
                     return True
                 charbuf.reset()
-                #self._wordbuf.startedit()
-                #charbuf.put(c)
                 self.handle_char(context, c)
-                #wordbuf.append(s)
                 return True
             if wordbuf.isempty():
                 context.puts(chr(c))
@@ -822,7 +821,7 @@ class InputHandler(tff.DefaultHandler,
         wordbuf = self._wordbuf
         charbuf = self._charbuf
         word = wordbuf.get()
-        if not self._inputmode.isabbrev() and word.startswith(u'$'):
+        if word.startswith(u'$'):
             wordbuf.append(u' ')
             return True 
         if not wordbuf.isempty():
