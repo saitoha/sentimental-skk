@@ -1115,7 +1115,9 @@ class InputHandler(tff.DefaultHandler,
                 self._optimize = False
             elif clauses and not listbox.isempty():
                 self._draw_clauses_with_popup(output)
-            elif not wordbuf.isempty() or not charbuf.isempty():
+            elif not wordbuf.isempty():
+                self._draw_word(output)
+            elif not charbuf.isempty():
                 self._draw_word(output)
             else:
                 self._draw_nothing(output)
