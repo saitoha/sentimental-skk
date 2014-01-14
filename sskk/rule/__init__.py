@@ -71,7 +71,10 @@ def get(s):
     >>> sys.path == sys_path_backup
     True
     """
-    import os, sys, inspect
+    import os
+    import sys
+    import inspect
+
     filename = inspect.getfile(inspect.currentframe())
     dirpath = os.path.abspath(os.path.dirname(filename))
     sys_path_backup = sys.path
