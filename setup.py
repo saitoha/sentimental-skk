@@ -56,6 +56,7 @@ setup(name                  = 'sentimental-skk',
       entry_points          = """
                               [console_scripts]
                               sskk = sskk.sskk:main
+                              sskk-test-terminal = sskk.sskk:test_terminal
                               """
       )
 
