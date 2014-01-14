@@ -252,15 +252,40 @@ class InputHandler(tff.DefaultHandler,
         self._listbox.setposition(x, y)
 
         # detects libvte + Ambiguous=narrow environment
+        self._selectmark = _SKK_MARK_SELECT
+        self._bracket_left = _SKK_MARK_OPEN
+        self._bracket_right = _SKK_MARK_CLOSE
         if not termprop.is_cjk and termprop.is_vte():
-            pad = u" "
-            self._selectmark = _SKK_MARK_SELECT + pad
-            self._bracket_left = _SKK_MARK_OPEN + pad
-            self._bracket_right = _SKK_MARK_CLOSE + pad
-        else:
-            self._selectmark = _SKK_MARK_SELECT
-            self._bracket_left = _SKK_MARK_OPEN
-            self._bracket_right = _SKK_MARK_CLOSE
+            pad = u' '
+            self._selectmark += pad
+            self._bracket_left += pad
+            self._bracket_right += pad
+
+        self._command_map = {
+            u'@pass'                     : self._pass,
+            u'@ignore'                   : self._ignore,
+            u'@skk-cancel-pass'          : self._skk_cancel_pass,
+            u'@skk-j-mode-off'           : self._skk_j_mode_off,
+            u'@skk-kakutei-key'          : self._skk_kakutei_key,
+            u'@skk-cancel'               : self._skk_cancel,
+            u'@skk-abbrev-mode'          : self._start_abbrev,
+            u'@skk-toggle-kana'          : self._skk_toggle_kana,
+            u'@skk-start-eisuu'          : self._skk_start_eisuu,
+            u'@skk-back'                 : self._skk_back,
+            u'@skkmenu-prev'             : self._skkmenu_prev,
+            u'@skkmenu-next'             : self._skkmenu_next,
+            u'@skkwm-switch'             : self._skkwm_task_switch,
+            u'@skkwm-prev'               : self._skkwm_prev,
+            u'@skkwm-next'               : self._skkwm_next,
+            u'@skkwm-blur'               : self._skkwm_blur,
+            u'@skksh-start'              : self._skksh_start,
+            u'@skkconf-start'            : self._skkconf_start,
+            u'@skk-set-henkan-point-subr': self._skk_set_henkan_point_subr,
+            u'@skkapp-wikipedia'         : self._skkapp_wikipedia,
+            u'@skk-delete-candidate'     : self._skk_delete_candidate,
+            u'@skk-move-next-clause'     : self._skk_move_next_clause,
+            u'@skk-henkan'               : self._skk_henkan,
+        }
 
     def _reset(self):
         self._listbox.close()
@@ -794,89 +819,276 @@ class InputHandler(tff.DefaultHandler,
                         s = charbuf.drain()
                         wordbuf.append(s)
                         self._complete()
-                    elif c == 0x4c:  # L
-                        if self._iscooking():
-                            self._settle(context)
-                        self._inputmode.startzen()
-                        self._reset()
-                else:
-                    # ある
-                    s = currentbuffer
-                    if s == u'n':
-                        charbuf.put(0x6e)  # n
-                        s = charbuf.drain()
-                        wordbuf.append(s)
-                        charbuf.reset()
-                    if (not charbuf.put(c)
-                            and not charbuf.isfinal()
-                            and c == 0x4c):  # L
-                        if self._iscooking():
-                            self._settle(context)
-                        self._inputmode.startzen()
-                        self._reset()
-                    else:
-                        if charbuf.hasnext():
-                            s = charbuf.getbuffer()
-                            wordbuf.append(s)
-                            charbuf.reset()
-                            charbuf.put(c)
-                        # 先行する入力があるとき、送り仮名マーク('*')をつける
-                        wordbuf.startokuri()
-                        # キャラクタバッファが終了状態か
-                        if charbuf.isfinal():
-                            # 送り仮名変換
-                            self._convert_okuri()
-
-            #elif (0x61 <= c and c <= 0x7a) or c == 0x2d: # _, a - z, z*
-            elif charbuf.put(c):
-                # a - z @
-                # 小文字のとき
-                # 先行する入力があるか
-                if wordbuf.isempty():
-                    s = charbuf.drain()
-                    if s.startswith('@'):
-                        self._dispatch_command(s, context)
-                    else:
-                        context.putu(s)
-                        if clauses:
-                            self._optimize = True
-
-                elif wordbuf.has_okuri():
+                    return True
+                # ある
+                s = charbuf.getbuffer()
+                nn = u''
+                if s == u'n' and c != 0x4e:
+                    charbuf.put(0x6e)  # n
+                    nn = charbuf.drain()
+                    charbuf.reset()
+                charbuf.put(c)
+                # 先行する入力があるとき、送り仮名マーク('*')をつける
+                wordbuf.startokuri()
+                # キャラクタバッファが終了状態か
+                if charbuf.isfinal():
                     # 送り仮名変換
-                    self._convert_okuri()
-                else:
-                    s = charbuf.drain()
-                    wordbuf.append(s)
-                    self._complete()
-            else:
-                wordbuf.append(unichr(c))
+                    self._convert_okuri(nn)
+                return True
+
+            charbuf_alter = self._charbuf_alter
+            if charbuf_alter.test(c):
+                charbuf_alter.put(c)
+                s = charbuf_alter.drain()
+                if s.startswith('@'):
+                    self._dispatch_command(context, c, s)
+                    return True
+
+            context.puts(chr(c))
+
+            return True
 
         return True  # handled
 
+    def _handle_nonascii_char(self, context, c):
+        if c > 0x7f:
+            self._wordbuf.append(unichr(c))
+            return True
+        return False
 
-    def _dispatch_command(self, key, context):
-        if key == '@task_switch':
-            clauses = dictionary.Clauses()
-            value = [u'%%0 メインウィンドウ;builtin:task:switch:%d' % 0]
-            for window in self._screen.enumwindows():
-                label = window.getlabel()
-                if label:
-                    value.append(u'%%%d %s;builtin:task:switch:%d' % (window.id, label, window.id))
-            clauses.add(dictionary.Clause(key, value))
-            candidates = clauses.getcandidates()
-            self._listbox.assign(candidates)
-            self._clauses = clauses
-        elif key == '@task_prev':
-            self._screen.task_prev()
-        elif key == '@task_next':
-            self._screen.task_next()
-        elif key == '@task_blur':
-            self._session.blur_process()
-        elif key == '@shell_start':
+    def _pass(self, context, c):
+        return False
+
+    def _ignore(self, context, c):
+        return True
+
+    def _skksh_start(self, context, c):
+        if not self._iscooking():
             self._wordbuf.startedit()
             self._inputmode.startabbrev()
             self._wordbuf.append(u'$')
             self._complete()
+            return True
+        return False
+
+    def _skkconf_start(self, context, c):
+        if not self._iscooking():
+            self._wordbuf.startedit()
+            self._inputmode.startabbrev()
+            self._wordbuf.append('@')
+            self._complete()
+            return True
+        return False
+
+    def _start_abbrev(self, context, c):
+        if not self._iscooking():
+            self._inputmode.startabbrev()
+            wordbuf = self._wordbuf
+            wordbuf.reset()
+            wordbuf.startedit()
+            #wordbuf.append(' ')
+            return True
+        return False
+
+    def _skk_j_mode_off(self, context, c):
+        if self._listbox.isshown():
+            self._settle(context)
+        self._inputmode.reset()
+        self._reset()
+        return True
+
+    def _skk_start_eisuu(self, context, c):
+        if self._iscooking():
+            self._settle(context)
+        self._inputmode.startzen()
+        self._reset()
+        return True
+
+    def _skk_toggle_kana(self, context, c):
+        wordbuf = self._wordbuf
+        inputmode = self._inputmode
+        if self._iscooking():
+            s = self._draincharacters()
+            wordbuf.append(s)
+            word = wordbuf.get()
+            self._reset()
+            if inputmode.ishira():
+                s = kanadb.to_kata(word)
+            else:
+                s = kanadb.to_hira(word)
+            context.putu(s)
+            return True
+        else:
+            self._charbuf.toggle()
+            if inputmode.ishira():
+                inputmode.startkata()
+            elif inputmode.iskata():
+                inputmode.starthira()
+            self._reset()
+            return True
+        return False
+
+    def _skk_kakutei_key(self, context, c):
+        if self._iscooking():
+            self._settle(context)
+            return True
+        return False
+
+    def _skk_set_henkan_point_subr(self, context, c):
+        wordbuf = self._wordbuf
+        listbox = self._listbox
+
+        if listbox.isshown():
+            listbox.close()
+
+        if self._inputmode.isabbrev():
+            word = wordbuf.get()
+            word = eisuudb.to_zenkaku(word)
+            context.putu(word)
+            self._inputmode.endabbrev()
+            wordbuf.reset()
+            return True
+        if not wordbuf.isempty():
+            s = self._draincharacters()
+            word = wordbuf.get()
+            str_hankata = kanadb.to_hankata(word + s)
+            context.putu(str_hankata)
+            wordbuf.reset()
+            return True
+        return False
+
+    def _skkwm_task_switch(self, context, c):
+        clauses = dictionary.Clauses()
+        value = [u'%%0 メインウィンドウ;builtin:task:switch:%d' % 0]
+        for window in self._screen.enumwindows():
+            label = window.getlabel()
+            if label:
+                value.append(u'%%%d %s;builtin:task:switch:%d' % (window.id, label, window.id))
+        clauses.add(dictionary.Clause(u'', value))
+        candidates = clauses.getcandidates()
+        self._listbox.assign(candidates)
+        self._clauses = clauses
+        return True
+
+    def _skk_cancel_pass(self, context, c):
+        self._reset()
+        return False
+
+    def _skk_cancel(self, context, c):
+        self._reset()
+        return True
+
+    def _skk_back(self, context, c):
+        wordbuf = self._wordbuf
+        charbuf = self._charbuf
+        listbox = self._listbox
+
+        if not charbuf.isempty():
+            charbuf.back()
+            if not charbuf.getbuffer():
+                listbox.close()
+            else:
+                self._complete()
+            return True
+        if not wordbuf.isempty():
+            wordbuf.back()
+            if not wordbuf.getbuffer():
+                listbox.close()
+            else:
+                self._complete()
+            return True
+        return False
+
+    def _skkapp_wikipedia(self, context, c):
+        wordbuf = self._wordbuf
+        if not wordbuf.isempty():
+            word = wordbuf.get()
+            self.open_wikipedia(word, context)
+            return True
+        self._reset()
+        return False
+
+    def _skk_delete_candidate(self, context, c):
+        # not implemented yet
+        return False
+
+    def _skk_henkan(self, context, c):
+        wordbuf = self._wordbuf
+        charbuf = self._charbuf
+        word = wordbuf.get()
+        if not self._inputmode.isabbrev() and word.startswith(u'$'):
+            wordbuf.append(u' ')
+            return True 
+        if not wordbuf.isempty():
+            s = self._draincharacters()
+            wordbuf.append(s)
+            if wordbuf.length() > 0:
+                self._showpopup()
+            return True 
+        if not charbuf.isempty():
+            s = self._draincharacters()
+            wordbuf.startedit()
+            wordbuf.append(s)
+            if wordbuf.length() > 0:
+                self._settle(context)
+            return True 
+        return False
+
+    def _skkwm_prev(self, context, c):
+        self._screen.task_prev()
+        return True
+
+    def _skkwm_next(self, context, c):
+        self._screen.task_next()
+        return True
+
+    def _skkwm_blur(self, context, c):
+        self._session.blur_process()
+        return True
+
+    def _skkmenu_complete(self, context, c):
+        wordbuf = self._wordbuf
+        charbuf = self._charbuf
+        listbox = self._listbox
+        if not wordbuf.isempty():
+            # ワードバッファ編集中
+            s = self._draincharacters()
+            wordbuf.append(s)
+            wordbuf.complete()
+            charbuf.reset()
+            listbox.movenext()
+            return True
+        return False
+
+    def _skkmenu_next(self, context, c):
+        listbox = self._listbox
+        if listbox.isshown():
+            listbox.movenext()
+            return True
+        elif not self._wordbuf.isempty():
+            self._showpopup()
+            return True
+        elif not self._charbuf.isempty():
+            self._showpopup()
+            return True
+        return False
+
+    def _skkmenu_prev(self, context, c):
+        listbox = self._listbox
+        if listbox.isshown():
+            listbox.moveprev()
+            return True
+        if not self._wordbuf.isempty():
+            return True
+        if not self._charbuf.isempty():
+            return True
+        return False
+
+    def _dispatch_command(self, context, c, key):
+        if key in self._command_map:
+            f = self._command_map[key]
+            if not f(context, c):
+                context.write(c)
         else:
             logging.warning('Unknown command: %s' % key)
 
@@ -906,7 +1118,7 @@ class InputHandler(tff.DefaultHandler,
                 return True
         return False
 
-    def _movenextclause(self):
+    def _skk_move_next_clause(self, context, final):
         clauses = self._clauses
         if clauses:
             clauses.movenext()
@@ -917,7 +1129,7 @@ class InputHandler(tff.DefaultHandler,
             return True
         return False
 
-    def _moveprevclause(self):
+    def _skk_move_prev_clause(self, context, final):
         clauses = self._clauses
         if clauses:
             clauses.moveprev()
@@ -931,20 +1143,20 @@ class InputHandler(tff.DefaultHandler,
         listbox = self._listbox
         if listbox.isshown():
             if final == 0x43:  # C
-                self._movenextclause()
+                self._skk_move_next_clause(context, final)
                 return True
             elif final == 0x44:  # D
-                self._moveprevclause()
+                self._skk_move_prev_clause(context, final)
                 return True
         return False
 
     def _handle_ss3_cursor(self, context, final):
         if self._listbox.isshown():
             if final == 0x43:  # C
-                self._movenextclause()
+                self._skk_move_next_clause(context, final)
                 return True
             elif final == 0x44:  # D
-                self._moveprevclause()
+                self._skk_move_prev_clause(context, final)
                 return True
         return False
 
