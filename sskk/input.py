@@ -238,6 +238,7 @@ class InputHandler(tff.DefaultHandler,
         self._output = output
         self._termenc = termenc
         self._charbuf = CharacterContext()
+        self._charbuf_alter = CharacterContext()
         self._inputmode = inputmode
         self._wordbuf = word.WordBuffer(termprop)
         self._listbox = Listbox(self, screen, termprop, mousemode, self._mouse_decoder)
