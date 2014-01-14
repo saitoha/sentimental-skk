@@ -176,7 +176,13 @@ class CharacterContext:
             for key, value in context.items():
                 if key == romanrule.SKK_ROMAN_VALUE:
                     yield value
-                elif key > 0x1f and key != 0x6e:
+                elif key == romanrule.SKK_ROMAN_NEXT:
+                    pass
+                elif key == romanrule.SKK_ROMAN_PREV:
+                    pass
+                elif key == romanrule.SKK_ROMAN_BUFFER:
+                    pass
+                elif key != 0x6e:
                     for key, value in value.items():
                         if key == romanrule.SKK_ROMAN_VALUE:
                             yield value
