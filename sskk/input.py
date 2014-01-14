@@ -421,7 +421,7 @@ class InputHandler(tff.DefaultHandler,
             word += s
             if word.startswith(u'@'):
                 word = u''
-        if word.startswith(u'$'):
+        if not self._inputmode.isabbrev() and word.startswith(u'$'):
             command = word[1:]
             self.open_with_command(command, context)
             word = u''
