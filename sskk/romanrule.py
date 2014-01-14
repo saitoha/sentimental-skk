@@ -22,10 +22,10 @@ import kanadb
 import rule
 import logging
 
-SKK_ROMAN_VALUE = 0
-SKK_ROMAN_NEXT = 1
-SKK_ROMAN_PREV = 2
-SKK_ROMAN_BUFFER = 3
+SKK_ROMAN_VALUE = 65540
+SKK_ROMAN_NEXT = 65541
+SKK_ROMAN_PREV = 65542
+SKK_ROMAN_BUFFER = 65543
 
 def _maketree(rule, s, txu, nn):
     """ makes try-tree """
