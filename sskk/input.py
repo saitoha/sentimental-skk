@@ -642,7 +642,7 @@ class InputHandler(tff.DefaultHandler,
                     self._dispatch_command(context, c, s)
                     return True
                 charbuf.reset()
-                self._wordbuf.startedit()
+                #self._wordbuf.startedit()
                 #charbuf.put(c)
                 self.handle_char(context, c)
                 #wordbuf.append(s)
