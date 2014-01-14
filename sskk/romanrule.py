@@ -84,7 +84,7 @@ def compile(method="builtin_normal"):
     >>> hira_tree[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u304d\u3083'
     >>> hira_tree[ord('t')][ord('t')][ord('a')][SKK_ROMAN_VALUE]
-    u'\u304d\u3083'
+    u'\u3063\u305f'
     >>> kata_tree[ord('k')][ord('y')][ord('a')][SKK_ROMAN_VALUE]
     u'\u30ad\u30e3'
     >>> hira_tree, kata_tree = compile('builtin_azik')
