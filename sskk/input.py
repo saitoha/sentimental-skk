@@ -338,17 +338,21 @@ class InputHandler(tff.DefaultHandler,
         self.settitle(key)
         return True
 
-    def _convert_okuri(self):
+    def _convert_okuri(self, nn=u''):
 
         clauses = self._clauses
         wordbuf = self._wordbuf
+        charbuf = self._charbuf
 
-        buf = self._charbuf.getbuffer()
+        buf = charbuf.getbuffer()
         if not buf:
             return False
-        okuri = self._draincharacters()
+        okuri = nn + self._draincharacters()
         self._okuri = okuri
-        buf = buf[0]
+        if nn:
+            buf = 'n'
+        else:
+            buf = buf[0]
         key = wordbuf.get()
 
         if self._inputmode.iskata():
