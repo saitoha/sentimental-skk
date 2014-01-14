@@ -532,39 +532,6 @@ class InputHandler(tff.DefaultHandler,
     # override
     def handle_char(self, context, c):
 
-        # 0x00 C-SP
-        # 0x01 C-a
-        # 0x02 C-b
-        # 0x03 C-c
-        # 0x04 C-d
-        # 0x05 C-e
-        # 0x06 C-f
-        # 0x07 C-g
-        # 0x08 BS
-        # 0x09 TAB
-        # 0x0a C-j
-        # 0x0b C-k
-        # 0x0c C-l
-        # 0x0d CR
-        # 0x0e C-n
-        # 0x0f C-o
-        # 0x10 C-p
-        # 0x11 C-q
-        # 0x12 C-r
-        # 0x13 C-s
-        # 0x14 C-t
-        # 0x15 C-u
-        # 0x16 C-v
-        # 0x17 C-w
-        # 0x18 C-x
-        # 0x19 C-y
-        # 0x1a C-z
-        # 0x1b ESC
-        # 0x1c C-\
-        # 0x1d C-]
-        # 0x1e C-^
-        # 0x1f C-_
-
         wordbuf = self._wordbuf
         charbuf = self._charbuf
         listbox = self._listbox
