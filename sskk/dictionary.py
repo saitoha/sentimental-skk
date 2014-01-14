@@ -336,6 +336,7 @@ def _load_user_dict():
         except ImportError, e:
             logging.exception(e)
 
+def _load_builtin_dict():
     try:
         _load_dict(_get_fallback_dict_path('SKK-JISYO.builtin'))
     except Exception, e:
@@ -641,11 +642,13 @@ def _create_dns_cache():
 try:
     import thread
     thread.start_new_thread(_create_dns_cache, ())
-    thread.start_new_thread(_load, ())
+    thread.start_new_thread(_load_user_dict, ())
+    thread.start_new_thread(_load_builtin_dict, ())
 except Exception, e:
     logging.warning(e)
     logging.warning("Fallback to synchronous initialization for dictionaries.")
-    _load()
+    _load_user_dict()
+    _load_builtin_dict()
 
 def test():
     import doctest
