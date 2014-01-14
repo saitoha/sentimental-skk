@@ -554,235 +554,60 @@ class InputHandler(tff.DefaultHandler,
         if charbuf.handle_char(context, c):
             return True
 
-        if c == settings.get('skk-kakutei-key'):  # LF C-j
-            if self._iscooking():
-                self._settle(context)
-
-        elif c == 0x0d:  # CR C-m
-            if self._iscooking():
-                self._settle(context)
-            else:
-                context.write(c)
-
-        elif c == 0x07:  # BEL C-g
-            if self._iscooking():
-                self._reset()
-            else:
-                context.write(c)
-
-        elif c == 0x08 or c == 0x7f:  # BS or DEL
-            if not charbuf.isempty():
-                charbuf.back()
-                if not charbuf.getbuffer():
-                    listbox.close()
-                else:
-                    self._complete()
-            elif not wordbuf.isempty():
-                wordbuf.back()
-                if not wordbuf.getbuffer():
-                    listbox.close()
-                else:
-                    self._complete()
-            else:
-                context.write(c)
-
-        elif c == 0x09:  # TAB C-i
-            if not wordbuf.isempty():
-                # ワードバッファ編集中
-                s = self._draincharacters()
-                wordbuf.append(s)
-                wordbuf.complete()
-                charbuf.reset()
-                listbox.movenext()
-            elif charbuf.isempty():
-                context.write(c)
-            elif charbuf.test(c):
-                charbuf.put(c)
-                s = charbuf.drain()
-                if s.startswith('@'):
-                    self._dispatch_command(s, context)
-                else:
-                    context.write(c)
-            else:
-                context.write(c)
-
-        elif c == 0x0e:  # C-n
-            if listbox.isshown():
-                listbox.movenext()
-            elif not wordbuf.isempty():
-                self._showpopup()
-            elif not charbuf.isempty():
-                self._showpopup()
-            else:
-                context.write(c)
-
-        elif c == 0x10:  # C-p
-            if listbox.isshown():
-                listbox.moveprev()
-            elif wordbuf.isempty():
-                if charbuf.isempty():
-                    context.write(c)
-
-        elif c == settings.get('skk-set-henkan-point-subr'):  # C-q
-
-            if listbox.isshown():
-                listbox.close()
-
-            if self._inputmode.isabbrev():
-                word = wordbuf.get()
-                word = eisuudb.to_zenkaku(word)
-                context.putu(word)
-                self._inputmode.endabbrev()
-                wordbuf.reset()
-            elif not wordbuf.isempty():
-                s = self._draincharacters()
-                word = wordbuf.get()
-                str_hankata = kanadb.to_hankata(word + s)
-                context.putu(str_hankata)
-                wordbuf.reset()
-            else:
-                context.write(c)
-
-        elif c == 0x17:  # C-w
-            if not wordbuf.isempty():
-                word = wordbuf.get()
-                self.open_wikipedia(word, context)
-            else:
-                self._reset()
-                context.write(c)
-
-        elif c == 0x1b:  # ESC
-            if self._iscooking():
-                self._reset()
-                self._inputmode.reset()
-            context.write(c)
-
-        elif c == 0x20:  # SP
-            word = wordbuf.get()
-            if word.startswith(u'$'):
-                wordbuf.append(u' ')
-            elif not wordbuf.isempty():
-                s = self._draincharacters()
-                wordbuf.append(s)
-                if wordbuf.length() > 0:
-                    self._showpopup()
-            elif not charbuf.isempty():
-                s = self._draincharacters()
-                wordbuf.startedit()
-                wordbuf.append(s)
-                if wordbuf.length() > 0:
-                    self._settle(context)
-            else:
-                context.write(c)
-
-        elif c == 0x02:  # C-b
-            if not self._moveprevclause():
-                context.write(c)
-
-        elif c == 0x06:  # C-f
-            if not self._movenextclause():
-                context.write(c)
-
-        elif c < 0x20:
-            self._reset()
-            context.write(c)
-
-        elif c > 0x7f:
-            wordbuf.append(unichr(c))
+        if self._handle_nonascii_char(context, c):
+            return True
 
         elif self._inputmode.isabbrev():
             # abbrev mode
+            charbuf_alter = self._charbuf_alter
+            if charbuf_alter.test(c):
+                charbuf_alter.put(c)
+                s = charbuf_alter.drain()
+                if s.startswith('@'):
+                    self._dispatch_command(context, c, s)
+                    return True
+
             wordbuf.append(unichr(c))
             self._complete()
+
         elif self._inputmode.ishira() or self._inputmode.iskata():
+
             # ひらがな変換モード・カタカナ変換モード
-            inputmode = self._inputmode
-            currentbuffer = charbuf.getbuffer()
-
-            if c == 0x2f and (charbuf.isempty() or currentbuffer != u'z'):  # /
-                #
-                # / が入力されたとき
-                #
-                if not self._iscooking():
-                    inputmode.startabbrev()
-                    wordbuf.reset()
-                    wordbuf.startedit()
-                    #wordbuf.append(' ')
-
-            elif c == 0x24 and (charbuf.isempty() or currentbuffer != u'z'):  # $
-                #
-                # $ が入力されたとき
-                #
-                if not self._iscooking():
-                    inputmode.startabbrev()
-                    wordbuf.startedit()
-
-            elif c == 0x40 and (charbuf.isempty() or currentbuffer != u'z'):  # @
-                #
-                # @ が入力されたとき
-                #
-                wordbuf.append('@')
-                self._complete()
-                self._inputmode.endabbrev()
-
-            elif c == settings.get('skk-toggle-kana'):  # q
-                #
-                # q が入力されたとき
-                #
-                if self._iscooking():
-                    s = self._draincharacters()
-                    wordbuf.append(s)
-                    word = wordbuf.get()
-                    self._reset()
-                    if inputmode.ishira():
-                        s = kanadb.to_kata(word)
-                    else:
-                        s = kanadb.to_hira(word)
+            if charbuf.test(c):
+                charbuf.put(c)
+                # a - z @
+                # 小文字のとき
+                # 先行する入力があるか
+                if wordbuf.isempty():
+                    s = charbuf.drain()
+                    if s.startswith('@'):
+                        self._dispatch_command(context, c, s)
+                        return True
                     context.putu(s)
-                else:
-                    charbuf.toggle()
-                    if inputmode.ishira():
-                        inputmode.startkata()
-                    elif inputmode.iskata():
-                        inputmode.starthira()
-                    self._reset()
-            elif c == 0x6c and currentbuffer != "z":  # l
-                #
-                # l が入力されたとき
-                #
-                if listbox.isshown():
-                    self._settle(context)
-                inputmode.reset()
-                self._reset()
-            elif c in (0x2c, 0x2e, 0x3a, 0x5b): # , . : [ ]
-#                  c == 0x3b or c == 0x5b or c == 0x5d):  # , . ; : [ ]
-                #
-                # 区切り文字 ( , . : [ ]) が入力されたとき
-                #
-                charbuf.reset()
-                if listbox.isempty():
-                    if not wordbuf.isempty():
-                        self._convert_word()
-                        charbuf.put(c)
-                        s = charbuf.drain()
-                        self._okuri += s
-                    elif charbuf.put(c):
-                        s = charbuf.drain()
-                        context.write(ord(s))
-                    else:
-                        context.write(c)
-                else:
-                    self._settle(context)
-                    if charbuf.put(c):
-                        s = charbuf.drain()
-                        context.write(ord(s))
-                    else:
-                        context.write(c)
+                    if clauses:
+                        self._optimize = True
+                    return True
+                if wordbuf.has_okuri():
+                    # 送り仮名変換
+                    self._convert_okuri()
+                    return True
+                s = charbuf.getbuffer()
+                if s in u'、。，．：；［］,.:;[]':
+                    self._convert_okuri()
+                    return True
+                s = charbuf.drain()
+                if s.startswith('@'):
+                    self._dispatch_command(context, c, s)
+                    return True
+                wordbuf.append(s)
+                self._complete()
+                return True
 
-            elif 0x41 <= c and c <= 0x5a and currentbuffer != "z":
+            if 0x41 <= c and c <= 0x5a:
                 # A - Z
                 # 大文字のとき
                 # 先行する入力があるか
+                c += 0x20
                 if wordbuf.isempty() or not wordbuf.get():
                     # ない
                     wordbuf.startedit()
