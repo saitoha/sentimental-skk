@@ -192,13 +192,9 @@ class CharacterContext:
         """
         >>> charbuf = CharacterContext()
         >>> charbuf.compile("builtin_normal")
-        >>> charbuf.test(ord('A'))
+        >>> charbuf.test(ord('a'))
         True
         """
-        if c in self.context:
-            return True
-        if 0x41 <= c and c <= 0x5a:  # A - Z
-            c += 0x20  # convert to a - z
         if c in self.context:
             return True
         return False
@@ -210,11 +206,6 @@ class CharacterContext:
         >>> charbuf.put(ord('A'))
         True
         """
-        if c in self.context:
-            self.context = self.context[c]
-            return True
-        if 0x41 <= c and c <= 0x5a:  # A - Z
-            c += 0x20  # convert to a - z
         if c in self.context:
             self.context = self.context[c]
             return True
