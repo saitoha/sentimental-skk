@@ -473,6 +473,7 @@ class InputHandler(tff.DefaultHandler,
                     return False
                 if key == 'romanrule':
                     self._charbuf.compile(value)
+                    self._charbuf_alter.compile(value)
                 elif key == 'use_title':
                     title.setenabled(value)
                 settings.set(key, value)
