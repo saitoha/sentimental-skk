@@ -633,21 +633,24 @@ class InputHandler(tff.DefaultHandler,
                     self._convert_okuri(nn)
                 return True
 
+            #charbuf.reset()
             charbuf_alter = self._charbuf_alter
             if charbuf_alter.test(c):
                 charbuf_alter.put(c)
                 s = charbuf_alter.drain()
                 if s.startswith('@'):
-                    charbuf.reset()
                     self._dispatch_command(context, c, s)
                     return True
-                #if c == 0x70:
-                #    raise 1
-                #charbuf.reset()
+                charbuf.reset()
+                self._wordbuf.startedit()
                 #charbuf.put(c)
+                self.handle_char(context, c)
                 #wordbuf.append(s)
                 return True
-            #charbuf.reset()
+            if wordbuf.isempty():
+                context.puts(chr(c))
+            else:
+                wordbuf.append(chr(c))
 
             return True
 
