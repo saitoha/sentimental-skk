@@ -282,6 +282,7 @@ class InputHandler(tff.DefaultHandler,
             u'@skk-set-henkan-point-subr': self._skk_set_henkan_point_subr,
             u'@skkapp-wikipedia'         : self._skkapp_wikipedia,
             u'@skk-delete-candidate'     : self._skk_delete_candidate,
+            u'@skk-move-prev-clause'     : self._skk_move_prev_clause,
             u'@skk-move-next-clause'     : self._skk_move_next_clause,
             u'@skk-henkan'               : self._skk_henkan,
         }
