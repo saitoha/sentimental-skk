@@ -777,7 +777,12 @@ class InputHandler(tff.DefaultHandler,
         wordbuf = self._wordbuf
         charbuf = self._charbuf
         listbox = self._listbox
-
+        clauses = self._clauses
+        if clauses:
+            clauses.shift_left()
+            candidates = clauses.getcandidates()
+            listbox.assign(candidates)
+            return True
         if not charbuf.isempty():
             charbuf.back()
             if not charbuf.getbuffer():
