@@ -20,49 +20,49 @@
 
 
 _rule = {
-    '\x00': u'@skk-cancel-pass',             # C-SP C-@
+    '\x00': u'@skk-cancel-pass',             # C-@ C-SP
     '\x01': u'@skk-cancel-pass',             # C-a
-    '\x02': u'@skk-move-next-clause',        # C-b
+    '\x02': u'@skk-move-prev-clause',        # C-b
     '\x03': u'@skk-cancel-pass',             # C-c
     '\x04': u'@skk-cancel-pass',             # C-d
-    '\x05': u'@skk-cancel-pass',
-    '\x06': u'@skk-move-prev-clause',        # C-f
-    '\x07': u'@skk-cancel',                  # BEL C-g
-    '\x08': u'@skk-back',                    # BS C-h
-    '\x09': u'@skkmenu-next',                # TAB C-i
-    '\x0a': u'@skk-kakutei-key',
-    '\x0b': u'@skk-cancel-pass',
-    '\x0c': u'@skk-cancel-pass',
-    '\x0d': u'@skk-kakutei-key',             # CR C-m
+    '\x05': u'@skk-cancel-pass',             # C-e
+    '\x06': u'@skk-move-next-clause',        # C-f
+    '\x07': u'@skk-cancel',                  # C-g
+    '\x08': u'@skk-back',                    # C-h BS
+    '\x09': u'@skkmenu-next',                # C-i TAB
+    '\x0a': u'@skk-kakutei-key',             # C-j
+    '\x0b': u'@skk-cancel-pass',             # C-k
+    '\x0c': u'@skk-cancel-pass',             # C-l
+    '\x0d': u'@skk-kakutei-key',             # C-m Enter
     '\x0e': u'@skkmenu-next',                # C-n
-    '\x0f': u'@skk-cancel-pass',
+    '\x0f': u'@skk-cancel-pass',             # C-o
     '\x10': u'@skkmenu-prev',                # C-p
     '\x11': u'@skk-set-henkan-point-subr',   # C-q
-    '\x12': u'@skk-cancel-pass',
-    '\x13': u'@skk-cancel-pass',
-    '\x14': u'@skk-cancel-pass',
-    '\x15': u'@skk-cancel-pass',
-    '\x16': u'@skk-cancel-pass',
+    '\x12': u'@skk-cancel-pass',             # C-r
+    '\x13': u'@skk-cancel-pass',             # C-s
+    '\x14': u'@skk-cancel-pass',             # C-t
+    '\x15': u'@skk-cancel-pass',             # C-u
+    '\x16': u'@skk-cancel-pass',             # C-v
     '\x17': u'@skkapp-wikipedia',            # C-w
     '\x18': u'@skk-delete-candidate',        # C-x
-    '\x19': u'@skk-cancel-pass',
-    '\x1a': u'@skk-cancel-pass',
-    '\x1b': u'@skk-j-mode-off',
-    '\x1c': u'@skk-cancel-pass',
-    '\x1d': u'@skk-cancel-pass',
-    '\x1e': u'@skk-cancel-pass',
-    '\x1f': u'@skk-cancel-pass',
-    '\x20': u'@skk-henkan',
+    '\x19': u'@skk-cancel-pass',             # C-y
+    '\x1a': u'@skk-cancel-pass',             # C-z
+    '\x1b': u'@skk-j-mode-off',              # C-[ ESC
+    '\x1c': u'@skk-cancel-pass',             # C-\
+    '\x1d': u'@skk-cancel-pass',             # C-]
+    '\x1e': u'@skk-cancel-pass',             # C-^
+    '\x1f': u'@skk-cancel-pass',             # C-_
+    '\x20': u'@skk-henkan',                  # SP
     '\x7f': u'@skk-back',                    # DEL
     '/'   : u'@skk-abbrev-mode',
     'l'   : u'@skk-j-mode-off',
     'q'   : u'@skk-toggle-kana',
     'L'   : u'@skk-start-eisuu',
-    's1'  : u'@skkwm-switch',
-    'n1'  : u'@skkwm-next',
-    'p1'  : u'@skkwm-prev',
-    'd1'  : u'@skkwm-blur',
-    '4'   : u'@skksh-start',
+    'wws' : u'@skkwm-switch',
+    'wwn' : u'@skkwm-next',
+    'wwp' : u'@skkwm-prev',
+    'wwd' : u'@skkwm-blur',
+    'w4'  : u'@skksh-start',
     '$'   : u'@skksh-start',
     '@'   : u'@skkconf-start',
 }
