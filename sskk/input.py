@@ -633,15 +633,23 @@ class InputHandler(tff.DefaultHandler,
             charbuf_alter.put(c)
             s = charbuf_alter.drain()
             if s.startswith('@'):
+                #wordbuf.reset()
+                #charbuf.reset()
+                #listbox.close()
                 self._dispatch_command(context, c, s)
                 return True
+            #wordbuf.reset()
             charbuf.reset()
+            #listbox.close()
             self.handle_char(context, c)
             return True
-        if wordbuf.isempty():
-            context.puts(chr(c))
-        else:
-            wordbuf.append(chr(c))
+        #wordbuf.reset()
+        charbuf.reset()
+        #listbox.close()
+        #if wordbuf.isempty():
+        #    context.puts(chr(c))
+        #else:
+        #    wordbuf.append(chr(c))
 
         return True  # handled
 
