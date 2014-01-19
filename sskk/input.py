@@ -506,8 +506,10 @@ class InputHandler(tff.DefaultHandler,
 
         height = min(20, int(screen.height * 0.7))
         width = min(60, int(screen.width * 0.7))
-        top = int((screen.height - height) / 2)
-        left = int((screen.width - width) / 2)
+
+        import random
+        left = random.randint(0 + 1, screen.width - (width + 2) + 1)
+        top = random.randint(0 + 1, screen.height - (height + 2) + 1)
 
         self._draw_nothing(self._output)
         self._inputmode.reset()
