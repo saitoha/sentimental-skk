@@ -360,33 +360,25 @@ class InputHandler(tff.DefaultHandler,
         result = dictionary.getokuri(key + buf)
         clauses = dictionary.Clauses()
 
+        self._draw_nothing(self._output)
         if result or key[0] == u'@':
             clauses.add(dictionary.Clause(key, result))
-        elif not settings.get('cgi-api.enabled'):
-            pass
-        elif not dictionary.get_from_cgi_api(clauses, key):
-            pass
-
-        if not clauses:
-            result = dictionary.gettango(key + buf)
-            if result or key[0] == u'@':
-                clauses.add(dictionary.Clause(key, result))
-            elif not settings.get('cgi-api.enabled'):
+        else:
+            if settings.get('cgi-api.enabled'):
+                dictionary.get_from_cgi_api(clauses, key)
+            if not clauses:
                 clauses.add(dictionary.Clause(key, [key]))
-            elif not dictionary.get_from_cgi_api(clauses, key):
-                clauses.add(dictionary.Clause(key, [key]))
-            else:
-                self._okuri = u''
             clauses.add(dictionary.Clause(okuri, [okuri]))
-
-        if self._inputmode.iskata():
-            key = kanadb.to_kata(key)
+            self._okuri = u''
 
         self._clauses = clauses
         self._listbox.assign(clauses.getcandidates())
         wordbuf.startedit()
 
+        if self._inputmode.iskata():
+            key = kanadb.to_kata(key)
         self.settitle(u'%s - %s' % (key, buf))
+
         return True
 
     def _settle(self, context):
