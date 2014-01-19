@@ -1114,7 +1114,9 @@ class InputHandler(tff.DefaultHandler,
         wordbuf = self._wordbuf
         charbuf = self._charbuf
 
+        widget = screen.getactivewidget()
         output.write('\x1b[?25l')
+
         try:
             screen.drawwindows(context)
 
@@ -1131,7 +1133,6 @@ class InputHandler(tff.DefaultHandler,
 
             self._refleshtitle()
 
-            widget = screen.getactivewidget()
             if widget:
                 widget.drawcursor()
             else:
@@ -1143,8 +1144,12 @@ class InputHandler(tff.DefaultHandler,
                 output.truncate(0)
 
         finally:
-            if screen.dectcem:
-                context.puts('\x1b[?25h')
+            if widget:
+                if widget.innerscreen.dectcem:
+                    context.puts('\x1b[?25h')
+            else:
+                if screen.dectcem:
+                    context.puts('\x1b[?25h')
 
 def test():
     import doctest
