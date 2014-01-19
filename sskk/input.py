@@ -816,8 +816,12 @@ class InputHandler(tff.DefaultHandler,
         wordbuf = self._wordbuf
         charbuf = self._charbuf
         word = wordbuf.get()
+        listbox = self._listbox
         if word.startswith(u'$'):
             wordbuf.append(u' ')
+            return True 
+        if self._clauses:
+            listbox.movenext()
             return True 
         if not wordbuf.isempty():
             s = self._draincharacters()
