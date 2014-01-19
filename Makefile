@@ -11,6 +11,8 @@ PIP=pip
 
 .PHONY: smoketest nosetest build setuptools install uninstall clean update
 
+all:
+
 setup_environment:
 	if test -d tools; do \
 		ln -f tools/gitignore .gitignore \
@@ -67,4 +69,10 @@ update: clean test
 	$(PYTHON25) $(SETUP_SCRIPT) bdist_egg upload
 	$(PYTHON26) $(SETUP_SCRIPT) bdist_egg upload
 	$(PYTHON27) $(SETUP_SCRIPT) bdist_egg upload
+
+cleanupdate: update
+	ssh zuse.jp "rm -rf $(PACKAGE_NAME)"
+	ssh zuse.jp "git clone git@github.com:saitoha/$(PACKAGE_NAME) --recursive"
+	ssh zuse.jp "cd $(PACKAGE_NAME) && $(PYTHON26) $(SETUP_SCRIPT) bdist_egg upload"
+	ssh zuse.jp "cd $(PACKAGE_NAME) && $(PYTHON27) $(SETUP_SCRIPT) bdist_egg upload"
 
