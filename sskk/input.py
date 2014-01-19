@@ -95,49 +95,48 @@ class IListboxListenerImpl(IListboxListener):
             self.onsettled(listbox, context)
         elif c == 0x07:  # BEL C-g
             self.oncancel(listbox, context)
+            return True
         elif c == 0x08 or c == 0x7f:  # C-h BS or DEL
-            if self._clauses:
-                self._clauses.shift_left()
-                candidates = self._clauses.getcandidates()
-
-                listbox.assign(candidates)
-            else:
-                self.onsettled(listbox, context)
-                context.write(c)
+            return False
         elif c == 0x09:  # TAB C-i
-            listbox.movenext()
-        elif c == 0x0c:  # LF C-l
+            #listbox.movenext()
+            return False
+        elif c == 0x0c:  # C-l
             clauses = self._clauses
             if clauses:
                 clauses.shift_right()
                 candidates = clauses.getcandidates()
                 listbox.assign(candidates)
+            return True                
         elif c == 0x0e:  # C-n
-            listbox.movenext()
+            #listbox.movenext()
+            return False
         elif c == 0x16:  # C-v
             listbox.jumpnext()
         elif c == 0x17:  # C-w
             value = self._clauses.getvalue()
             self.open_wikipedia(value, context)
         elif c == 0x10:  # C-p
-            listbox.moveprev()
+            #listbox.moveprev()
+            return False
         elif c == 0x1b:  # ESC C-[
             self.oncancel(listbox, context)
         elif c == 0x02:  # C-b
             return False
         elif c == 0x06:  # C-f
             return False
+        elif c == 0x20:  # C-f
+            self._skk_henkan(context, c)
+            return False
         elif c < 0x20:  # other control chars
             self.onsettled(listbox, context)
             context.write(c)
-        elif c == 0x20:  # SP
-            listbox.movenext()
         elif c == 0x78:  # x
             listbox.moveprev()
         elif c <= 0x7e:
             self.onsettled(listbox, context)
             return False
-        return True
+        return False
 
     def onselected(self, listbox, index, text, remarks):
         if self._clauses:
