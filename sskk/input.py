@@ -551,13 +551,12 @@ class InputHandler(tff.DefaultHandler,
         if self._handle_nonascii_char(context, c):
             return True
 
-        elif self._inputmode.isabbrev():
+        if inputmode.isabbrev():
             # abbrev mode
-            charbuf_alter = self._charbuf_alter
-            if charbuf_alter.test(c):
-                charbuf_alter.put(c)
-                s = charbuf_alter.drain()
-                charbuf_alter.reset()
+            if charbuf.test(c):
+                charbuf.put(c)
+                s = charbuf.drain()
+                charbuf.reset()
                 if s.startswith('@'):
                     self._dispatch_command(context, c, s)
                     return True
@@ -565,87 +564,84 @@ class InputHandler(tff.DefaultHandler,
             wordbuf.append(unichr(c))
 #            charbuf.reset()
             self._complete()
+            return True
 
-        elif self._inputmode.ishira() or self._inputmode.iskata():
-
-            # ひらがな変換モード・カタカナ変換モード
-            if charbuf.test(c):
-                charbuf.put(c)
-                # a - z @
-                # 小文字のとき
-                # 先行する入力があるか
-                if wordbuf.isempty():
-                    s = charbuf.drain()
-                    if s.startswith('@'):
-                        self._dispatch_command(context, c, s)
-                        return True
-                    context.putu(s)
-                    if clauses:
-                        self._optimize = True
-                    return True
-                if wordbuf.has_okuri():
-                    # 送り仮名変換
-                    self._convert_okuri()
-                    return True
-                s = charbuf.getbuffer()
-                if s in u'、。，．：；［］,.:;[]':
-                    self._convert_okuri()
-                    return True
+        # ひらがな変換モード・カタカナ変換モード
+        if charbuf.test(c):
+            charbuf.put(c)
+            # a - z @
+            # 小文字のとき
+            # 先行する入力があるか
+            if wordbuf.isempty():
                 s = charbuf.drain()
                 if s.startswith('@'):
                     self._dispatch_command(context, c, s)
                     return True
-                wordbuf.append(s)
-                self._complete()
+                context.putu(s)
+                if clauses:
+                    self._optimize = True
                 return True
-
-            if 0x41 <= c and c <= 0x5a:
-                # A - Z
-                # 大文字のとき
-                # 先行する入力があるか
-                c += 0x20
-                if wordbuf.isempty() or not wordbuf.get():
-                    # ない
-                    wordbuf.startedit()
-                    charbuf.put(c)
-                    if charbuf.isfinal():  # 文字バッファに溜める
-                        s = charbuf.drain()
-                        wordbuf.append(s)
-                        self._complete()
-                    return True
-                # ある
-                s = charbuf.getbuffer()
-                nn = u''
-                if s == u'n' and c != 0x4e:
-                    charbuf.put(0x6e)  # n
-                    nn = charbuf.drain()
-                    charbuf.reset()
-                charbuf.put(c)
-                # 先行する入力があるとき、送り仮名マーク('*')をつける
-                wordbuf.startokuri()
-                # キャラクタバッファが終了状態か
-                if charbuf.isfinal():
-                    # 送り仮名変換
-                    self._convert_okuri(nn)
+            if wordbuf.has_okuri():
+                # 送り仮名変換
+                self._convert_okuri()
                 return True
-
-            #charbuf.reset()
-            charbuf_alter = self._charbuf_alter
-            if charbuf_alter.test(c):
-                charbuf_alter.put(c)
-                s = charbuf_alter.drain()
-                if s.startswith('@'):
-                    self._dispatch_command(context, c, s)
-                    return True
-                charbuf.reset()
-                self.handle_char(context, c)
+            s = charbuf.getbuffer()
+            if s in u'、。，．：；［］,.:;[]':
+                self._convert_okuri()
                 return True
-            if wordbuf.isempty():
-                context.puts(chr(c))
-            else:
-                wordbuf.append(chr(c))
-
+            s = charbuf.drain()
+            if s.startswith('@'):
+                self._dispatch_command(context, c, s)
+                return True
+            wordbuf.append(s)
+            self._complete()
             return True
+
+        if 0x41 <= c and c <= 0x5a:
+            # A - Z
+            # 大文字のとき
+            # 先行する入力があるか
+            c += 0x20
+            if wordbuf.isempty() or not wordbuf.get():
+                # ない
+                wordbuf.startedit()
+                charbuf.put(c)
+                if charbuf.isfinal():  # 文字バッファに溜める
+                    s = charbuf.drain()
+                    wordbuf.append(s)
+                    self._complete()
+                return True
+            # ある
+            s = charbuf.getbuffer()
+            nn = u''
+            if s == u'n' and c != 0x4e:
+                charbuf.put(0x6e)  # n
+                nn = charbuf.drain()
+                charbuf.reset()
+            charbuf.put(c)
+            # 先行する入力があるとき、送り仮名マーク('*')をつける
+            wordbuf.startokuri()
+            # キャラクタバッファが終了状態か
+            if charbuf.isfinal():
+                # 送り仮名変換
+                self._convert_okuri(nn)
+            return True
+
+        #charbuf.reset()
+        charbuf_alter = self._charbuf_alter
+        if charbuf_alter.test(c):
+            charbuf_alter.put(c)
+            s = charbuf_alter.drain()
+            if s.startswith('@'):
+                self._dispatch_command(context, c, s)
+                return True
+            charbuf.reset()
+            self.handle_char(context, c)
+            return True
+        if wordbuf.isempty():
+            context.puts(chr(c))
+        else:
+            wordbuf.append(chr(c))
 
         return True  # handled
 
