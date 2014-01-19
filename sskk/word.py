@@ -72,24 +72,24 @@ class WordBuffer():
         return self._mode == _SKK_WORD_NONE
 
     def complete(self):
-        """
-        >>> from canossa import termprop
-        >>> termprop = termprop.MockTermprop()
-        >>> wordbuf = WordBuffer(termprop)
-        >>> wordbuf.startedit()
-        >>> wordbuf.append(u'\u3060\u3057\u3083')
-        >>> wordbuf.complete()
-        >>> wordbuf._comp
-        [u'\u3059\u3046', u'\u305d\u3046\u3057\u3083']
-        >>> wordbuf._comp_index
-        0
-        >>> wordbuf.complete()
-        >>> wordbuf._comp_index
-        1
-        >>> wordbuf.complete()
-        >>> wordbuf._comp_index
-        0
-        """
+#        """
+#        >>> from canossa import termprop
+#        >>> termprop = termprop.MockTermprop()
+#        >>> wordbuf = WordBuffer(termprop)
+#        >>> wordbuf.startedit()
+#        >>> wordbuf.append(u'\u3060\u3057\u3083')
+#        >>> wordbuf.complete()
+#        >>> wordbuf._comp
+#        [u'\u3059\u3046', u'\u305d\u3046\u3057\u3083']
+#        >>> wordbuf._comp_index
+#        0
+#        >>> wordbuf.complete()
+#        >>> wordbuf._comp_index
+#        1
+#        >>> wordbuf.complete()
+#        >>> wordbuf._comp_index
+#        0
+#        """
         if self._comp:
             self._comp_index = (self._comp_index + 1) % len(self._comp)
         else:
@@ -97,15 +97,15 @@ class WordBuffer():
             self._comp = dictionary.suggest(key, None)
 
     def suggest(self, finals=None):
-        """
-        >>> from canossa import termprop
-        >>> termprop = termprop.MockTermprop()
-        >>> wordbuf = WordBuffer(termprop)
-        >>> wordbuf.startedit()
-        >>> wordbuf.append(u'\u3060\u3057\u3083\u3059')
-        >>> wordbuf.suggest()
-        [u'\u3060\u3057\u3083\u3059\u3046']
-        """
+#        """
+#        >>> from canossa import termprop
+#        >>> termprop = termprop.MockTermprop()
+#        >>> wordbuf = WordBuffer(termprop)
+#        >>> wordbuf.startedit()
+#        >>> wordbuf.append(u'\u3060\u3057\u3083\u3059')
+#        >>> wordbuf.suggest()
+#        [u'\u3060\u3057\u3083\u3059\u3046']
+#        """
         if self._main or finals:
             key = kanadb.to_hira(self._main)
             completions = dictionary.suggest(key, finals)
