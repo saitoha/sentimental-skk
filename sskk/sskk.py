@@ -197,9 +197,8 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
 
         termenc = encoding
 
-    if termenc is None:
-        raise Exception(
-            'Invalid TERM environment is detected: \'%s\'' % termenc)
+    if not termenc:
+        termenc = 'utf-8'
 
     # fix for cygwin environment, such as utf_8_cjknarrow
     if termenc.lower().startswith("utf_8_"):
