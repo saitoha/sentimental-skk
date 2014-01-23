@@ -206,6 +206,8 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
 
     output = codecs.getwriter(termenc)(sys.stdout, errors='ignore')
 
+    import dictionary
+
     termprop = _showsplash(output)
 
     import __init__
