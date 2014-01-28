@@ -215,7 +215,8 @@ def _load_dict_impl(filename):
     try:
         for line in open(filename):
             _decode_line(line)
-    except:
+    except Exception, e:
+        logging.exception(e)
         template = '_load_dict: loading process failed. filename: %s'
         logging.exception(template % filename)
 
@@ -485,7 +486,8 @@ def get_from_cgi_api(clauses, key):
                     candidates.append(candidate)
             clause = Clause(key, candidates)
             clauses.add(clause)
-    except:
+    except Exception, e:
+        logging.exception(e)
         logging.exception('get_from_cgi_api failed. key: %s' % key)
         return None
     return clauses
