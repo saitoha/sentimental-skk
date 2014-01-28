@@ -11,7 +11,7 @@ PIP=pip
 
 .PHONY: smoketest nosetest build setuptools install uninstall clean update
 
-all:
+all: build
 
 setup_environment:
 	if test -d tools; do \
@@ -31,7 +31,8 @@ update_license_block:
 
 setuptools:
 	$(PYTHON) -c "import setuptools" || \
-		curl http://peak.telecommunity.com/dist/ez_$(SETUP_SCRIPT) | $(PYTHON)
+		curl http://peak.telecommunity.com/dist/ez_$(SETUP_SCRIPT) | \
+		$(PYTHON)
 
 install: smoketest setuptools
 	$(PYTHON) $(SETUP_SCRIPT) install
@@ -43,8 +44,11 @@ uninstall:
 	done
 
 clean:
-	for name in dist build *.egg-info htmlcov *.pyc *.o; \
+	for name in dist build *.egg-info htmlcov cover; \
 		do find . -type d -name $$name || true; \
+	done | xargs $(RM)
+	for name in *.pyc *.o; \
+		do find . -type f -name $$name || true; \
 	done | xargs $(RM)
 
 test: smoketest nosetest
