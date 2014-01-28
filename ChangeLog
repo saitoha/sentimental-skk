@@ -3,6 +3,7 @@
     * Version 0.0.137
     * SKK-Shell内でl(skk-j-mode-off)が効いてしまうエンバグを修正
     * TFF C moduleに依存するようにした
+    * 拡張モード8428/8840が壊れていたので直した
 
 2013-12-15 Hayaki Saito <user@zuse.jp>
 
