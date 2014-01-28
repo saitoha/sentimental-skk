@@ -557,8 +557,8 @@ class InputHandler(tff.DefaultHandler,
                 s = charbuf.drain()
                 charbuf.reset()
                 if s.startswith('@'):
-                    self._dispatch_command(context, c, s)
-                    return True
+                    if self._dispatch_command(context, c, s):
+                        return True
 
             wordbuf.append(unichr(c))
 #            charbuf.reset()
@@ -574,8 +574,9 @@ class InputHandler(tff.DefaultHandler,
             if wordbuf.isempty():
                 s = charbuf.drain()
                 if s.startswith('@'):
-                    self._dispatch_command(context, c, s)
-                    return True
+                    if self._dispatch_command(context, c, s):
+                        return True
+                    return False
                 context.putu(s)
                 if clauses:
                     self._optimize = True
@@ -590,8 +591,9 @@ class InputHandler(tff.DefaultHandler,
                 return True
             s = charbuf.drain()
             if s.startswith('@'):
-                self._dispatch_command(context, c, s)
-                return True
+                if self._dispatch_command(context, c, s):
+                    return True
+                return False
             wordbuf.append(s)
             self._complete()
             return True
@@ -693,9 +695,12 @@ class InputHandler(tff.DefaultHandler,
         return False
 
     def _skk_j_mode_off(self, context, c):
+        inputmode = self._inputmode
+        if inputmode.isabbrev():
+            return False
         if self._listbox.isshown():
             self._settle(context)
-        self._inputmode.reset()
+        inputmode.reset()
         self._reset()
         return True
 
@@ -898,10 +903,13 @@ class InputHandler(tff.DefaultHandler,
     def _dispatch_command(self, context, c, key):
         if key in self._command_map:
             f = self._command_map[key]
-            if not f(context, c):
-                context.write(c)
-        else:
-            logging.warning('Unknown command: %s' % key)
+            if f(context, c):
+                return True
+            #context.write(c)
+            return False
+
+        logging.warning('Unknown command: %s' % key)
+        return False
 
     def _handle_amb_report(self, context, parameter, intermediate, final):
         """
