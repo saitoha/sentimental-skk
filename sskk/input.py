@@ -125,8 +125,7 @@ class IListboxListenerImpl(IListboxListener):
             return False
         elif c == 0x06:  # C-f
             return False
-        elif c == 0x20:  # C-f
-            self._skk_henkan(context, c)
+        elif c == 0x20:  # SP
             return False
         elif c < 0x20:  # other control chars
             self.onsettled(listbox, context)
