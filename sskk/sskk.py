@@ -238,8 +238,9 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
 
     try:
         _mainloop(termenc, termprop, command, term, lang)
-    except:
+    except Exception, e:
         output.write(u'\x1bc')
+        logging.exception(e)
         logging.exception('Aborted by exception.')
         print('sskk aborted by an uncaught exception.'
               ' see $HOME/.sskk/log/log.txt.')

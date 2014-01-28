@@ -22,7 +22,7 @@
 from canossa import tff
 try:
     from cStringIO import StringIO
-except:
+except ImportError:
     from StringIO import StringIO
 
 class OutputHandler(tff.DefaultHandler):

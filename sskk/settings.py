@@ -21,6 +21,7 @@
 
 import os
 import sys
+import logging
 
 _CONFDB = {
     'skk-j-mode': 0x0a,
@@ -68,8 +69,8 @@ try:
     import conf
     for key, value in conf.get().items():
         _CONFDB[key] = value
-except:
-    print str(sys.exc_info())
+except Exception, e:
+    logging.exception(e)
 finally:
     sys.path.remove(rcdir)
 
