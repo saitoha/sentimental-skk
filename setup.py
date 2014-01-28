@@ -3,7 +3,8 @@
 from setuptools import setup, find_packages
 from sskk import __version__, __license__, __author__
 
-import inspect, os
+import inspect
+import os
 
 filename = inspect.getfile(inspect.currentframe())
 dirpath = os.path.abspath(os.path.dirname(filename))
