@@ -923,17 +923,17 @@ class InputHandler(tff.DefaultHandler,
                     """
                     CSI W
                     """
-                    self._termprop.set_amb_as_single()
+                    self._termprop.set_nocjk()
                 elif parameter[0] == 0x32:
                     """
                     CSI 2 W
                     """
-                    self._termprop.set_amb_as_double()
+                    self._termprop.set_cjk()
                 elif parameter[0] == 0x31:
                     """
                     CSI 1 W
                     """
-                    self._termprop.set_amb_as_single()
+                    self._termprop.set_nocjk()
                 return True
         return False
 
