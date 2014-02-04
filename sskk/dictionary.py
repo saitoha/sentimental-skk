@@ -48,17 +48,53 @@ _okuridb = {}
 
 user_dict_file = None
 
-class LineDecoder():
+class SkkLineLoader():
 
     _encoding = 0
     _encoding_list = [u'euc-jp', u'utf-8']
+    _pattern = re.compile('^(?:([0-9a-z\.\^]+?)|(.+?)([a-z])?) /(.+)/')
 
-    def decode_line(self, line):
+    def _decode_line(self, line):
         try:
             return unicode(line, self._encoding_list[self._encoding])
         except UnicodeDecodeError, e:
             self._encoding = 1 - self._encoding # flip
         return unicode(line, self._encoding_list[self._encoding])
+
+    def parse(self, line):
+        if len(line) < 4 or line[1] == ';':
+            return
+        line = self._decode_line(line)
+        match = self._pattern.match(line)
+        if not match:
+            template = '_load_dict: can\'t load the entry: %s'
+            logging.warning(template % line)
+        alphakey, key, okuri, value = match.groups()
+        if key:
+            if okuri:
+                key += okuri
+            else:
+                completer.register(key, value)
+            if key in _tangodb:
+                values = _tangodb[key]
+                new_values = value.split('/')
+                for new_value in new_values:
+                    if not new_value in values:
+                        values.append(new_value)
+            else:
+                _tangodb[key] = value.split('/')
+        else:
+            completer.register(alphakey, value)
+            if alphakey in _tangodb:
+                values = _tangodb[alphakey]
+                new_values = value.split('/')
+                for new_value in new_values:
+                    if not new_value in values:
+                        values.append(new_value)
+            else:
+                _tangodb[alphakey] = value.split('/')
+
+
 
 
 class Expander():
@@ -200,10 +236,6 @@ def _escape(s):
     return _control_chars.sub('', s)
 
 
-_p = re.compile('^(?:([0-9a-z\.\^]+?)|(.+?)([a-z])?) /(.+)/')
-_decoder = LineDecoder()
-
-
 def _load_dict(filename):
     try:
         thread.start_new_thread(_load_dict_impl, (filename))
@@ -211,48 +243,17 @@ def _load_dict(filename):
         _load_dict_impl(filename)
 
 def _load_dict_impl(filename):
+
+    loader = SkkLineLoader()
+
     logging.info("load_dict: loading %s." % filename)
     try:
         for line in open(filename):
-            _decode_line(line)
+            loader.parse(line)
     except Exception, e:
         logging.exception(e)
         template = '_load_dict: loading process failed. filename: %s'
         logging.exception(template % filename)
-
-
-def _decode_line(line):
-    if len(line) < 4 or line[1] == ';':
-        return
-    line = _decoder.decode_line(line)
-    match = _p.match(line)
-    if not match:
-        template = '_load_dict: can\'t load the entry: %s'
-        logging.warning(template % line)
-    alphakey, key, okuri, value = match.groups()
-    if key:
-        if okuri:
-            key += okuri
-        else:
-            completer.register(key, value)
-        if key in _tangodb:
-            values = _tangodb[key]
-            new_values = value.split('/')
-            for new_value in new_values:
-                if not new_value in values:
-                    values.append(new_value)
-        else:
-            _tangodb[key] = value.split('/')
-    else:
-        completer.register(alphakey, value)
-        if alphakey in _tangodb:
-            values = _tangodb[alphakey]
-            new_values = value.split('/')
-            for new_value in new_values:
-                if not new_value in values:
-                    values.append(new_value)
-        else:
-            _tangodb[alphakey] = value.split('/')
 
 
 def _get_fallback_dict_path(name):
@@ -348,10 +349,11 @@ def _load_builtin_dict():
     import rule
     template = "@ローマ字ルール /%s;builtin:settings:romanrule:'%s'/"
     try:
+        loader = SkkLineLoader()
         for rulename in rule.list():
             try:
                 ruledisplay, ruledict = rule.get(rulename)
-                _decode_line(template % (ruledisplay, rulename))
+                loader.parse(template % (ruledisplay, rulename))
             except ImportError, e:
                 logging.exception(e)
     except Exception, e:
