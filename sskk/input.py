@@ -276,6 +276,10 @@ class InputHandler(tff.DefaultHandler,
             u'@skkwm-prev'               : self._skkwm_prev,
             u'@skkwm-next'               : self._skkwm_next,
             u'@skkwm-blur'               : self._skkwm_blur,
+            u'@skkwm-left'               : self._skkwm_left,
+            u'@skkwm-down'               : self._skkwm_down,
+            u'@skkwm-up'                 : self._skkwm_up,
+            u'@skkwm-right'              : self._skkwm_right,
             u'@skksh-start'              : self._skksh_start,
             u'@skkconf-start'            : self._skkconf_start,
             u'@skk-set-henkan-point-subr': self._skk_set_henkan_point_subr,
@@ -553,6 +557,7 @@ class InputHandler(tff.DefaultHandler,
         if inputmode.isabbrev():
             # abbrev mode
             if charbuf.test(c):
+                charbuf.save()
                 charbuf.put(c)
                 s = charbuf.drain()
                 charbuf.reset()
@@ -567,6 +572,7 @@ class InputHandler(tff.DefaultHandler,
 
         # ひらがな変換モード・カタカナ変換モード
         if charbuf.test(c):
+            charbuf.save()
             charbuf.put(c)
             # a - z @
             # 小文字のとき
@@ -860,6 +866,54 @@ class InputHandler(tff.DefaultHandler,
 
     def _skkwm_blur(self, context, c):
         self._session.blur_process()
+        return True
+
+    def _skkwm_left(self, context, c):
+        screen = self._screen
+        widget = screen.getactivewidget()
+        left = widget.left + 1
+        top = widget.top - 1
+        widget.onmousedown(context, left, top)
+        widget.ondragstart(context, left, top)
+        widget.ondragmove(context, left - 1, top)
+        widget.ondragend(context, left, top)
+        self._charbuf.restore()
+        return True
+
+    def _skkwm_right(self, context, c):
+        screen = self._screen
+        widget = screen.getactivewidget()
+        left = widget.left + 1
+        top = widget.top - 1
+        widget.onmousedown(context, left, top)
+        widget.ondragstart(context, left, top)
+        widget.ondragmove(context, left + 1, top)
+        widget.ondragend(context, left, top)
+        self._charbuf.restore()
+        return True
+
+    def _skkwm_up(self, context, c):
+        screen = self._screen
+        widget = screen.getactivewidget()
+        left = widget.left + 1
+        top = widget.top - 1
+        widget.onmousedown(context, left, top)
+        widget.ondragstart(context, left, top)
+        widget.ondragmove(context, left, top - 1)
+        widget.ondragend(context, left, top)
+        self._charbuf.restore()
+        return True
+
+    def _skkwm_down(self, context, c):
+        screen = self._screen
+        widget = screen.getactivewidget()
+        left = widget.left + 1
+        top = widget.top - 1
+        widget.onmousedown(context, left, top)
+        widget.ondragstart(context, left, top)
+        widget.ondragmove(context, left, top + 1)
+        widget.ondragend(context, left, top)
+        self._charbuf.restore()
         return True
 
     def _skkmenu_complete(self, context, c):

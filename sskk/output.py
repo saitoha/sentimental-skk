@@ -96,6 +96,11 @@ class OutputHandler(tff.DefaultHandler):
                     self.dirty_flag = True
         return False
 
+#    def handle_control_string(self, context, prefix, value):
+#        if prefix != 0x5d:  # not OSC
+#            return False
+#        return False
+
     def handle_draw(self, context):
         """
         >>> mode_handler = tff.DefaultHandler()
