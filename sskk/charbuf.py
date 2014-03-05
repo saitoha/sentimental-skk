@@ -230,6 +230,12 @@ class CharacterContext:
         """
         self.context = self.context[romanrule.SKK_ROMAN_PREV]
 
+    def save(self):
+        self._backup = self.context
+
+    def restore(self):
+        self.context = self._backup
+
     def handle_char(self, context, c):
         """
         >>> charbuf = CharacterContext()
