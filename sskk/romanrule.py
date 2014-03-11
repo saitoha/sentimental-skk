@@ -27,6 +27,7 @@ SKK_ROMAN_NEXT = 65541
 SKK_ROMAN_PREV = 65542
 SKK_ROMAN_BUFFER = 65543
 
+
 def _maketree(rule, onbin, txu, nn):
     """ makes try-tree """
     tree = {}
@@ -37,7 +38,7 @@ def _maketree(rule, onbin, txu, nn):
         for c in key:
             code = ord(c)
             if not code in context:
-                context[code] = { SKK_ROMAN_PREV: context }
+                context[code] = {SKK_ROMAN_PREV: context}
             context = context[code]
             buf += chr(code)
             context[SKK_ROMAN_BUFFER] = buf
@@ -51,7 +52,7 @@ def _maketree(rule, onbin, txu, nn):
             for c in key:
                 code = ord(c)
                 if not code in context:
-                    context[code] = { SKK_ROMAN_PREV: context }
+                    context[code] = {SKK_ROMAN_PREV: context}
                 context = context[code]
                 if buf == chr(code):
                     buf = txu
@@ -71,12 +72,14 @@ def _maketree(rule, onbin, txu, nn):
     tree[SKK_ROMAN_PREV] = tree
     return tree
 
+
 def _make_rules(rule):
     hira_rule = rule
     kata_rule = {}
     for key, value in hira_rule.items():
         kata_rule[key] = kanadb.to_kata(value)
     return (hira_rule, kata_rule)
+
 
 def compile(method="builtin_normal"):
     ''' make hiragana/katakana input state trie-tree

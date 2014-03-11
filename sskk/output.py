@@ -25,6 +25,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+
 class OutputHandler(tff.DefaultHandler):
 
     def __init__(self, screen, mode_handler):
@@ -125,7 +126,7 @@ class OutputHandler(tff.DefaultHandler):
         screen.cursor.attr.draw(output)
         context.puts(output.getvalue())
         output.truncate(0)
-        
+
         if self.dirty_flag:
             self.dirty_flag = False
             y, x = screen.getyx()
@@ -135,6 +136,7 @@ class OutputHandler(tff.DefaultHandler):
             context.puts("\x1b[%d;%dH" % (y + 1, x + 1))
 
         return False
+
 
 def test():
     import doctest

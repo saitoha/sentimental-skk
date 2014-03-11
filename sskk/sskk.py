@@ -18,6 +18,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
+import dictionary
+
+dictionary.initialize()
 
 def _parseopt():
 
@@ -141,6 +144,8 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
     import os
     import codecs
     import logging
+    import __init__
+    import settings
 
     if options.version:
         _showversion()
@@ -206,14 +211,9 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
 
     output = codecs.getwriter(termenc)(sys.stdout, errors='ignore')
 
-    import dictionary
-
     termprop = _showsplash(output)
 
-    import __init__
     os.environ['__SSKK_VERTION'] = __init__.__version__
-
-    import settings
     if settings.get('use_title'):
         use_title = True
     else:

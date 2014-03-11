@@ -24,6 +24,7 @@ import re
 import settings
 import logging
 import time
+import thread
 
 homedir = os.path.expanduser('~')
 rcdir = os.path.join(homedir, '.sskk')
@@ -652,17 +653,17 @@ def _create_dns_cache():
         logging.warning(e)
 
 
-# load dictionaries asynchronously if possible
-try:
-    import thread
-    thread.start_new_thread(_create_dns_cache, ())
-    thread.start_new_thread(_load_user_dict, ())
-    thread.start_new_thread(_load_builtin_dict, ())
-except Exception, e:
-    logging.warning(e)
-    logging.warning("Fallback to synchronous initialization for dictionaries.")
-    _load_user_dict()
-    _load_builtin_dict()
+def initialize():
+    # load dictionaries asynchronously if possible
+    try:
+        thread.start_new_thread(_create_dns_cache, ())
+        thread.start_new_thread(_load_user_dict, ())
+        thread.start_new_thread(_load_builtin_dict, ())
+    except Exception, e:
+        logging.warning(e)
+        logging.warning("Fallback to synchronous initialization for dictionaries.")
+        _load_user_dict()
+        _load_builtin_dict()
 
 
 def test():

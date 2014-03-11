@@ -74,13 +74,16 @@ except Exception, e:
 finally:
     sys.path.remove(rcdir)
 
+
 def get(key):
     if key in _CONFDB:
         return _CONFDB[key]
     return None
 
+
 def set(key, value):
     _CONFDB[key] = value
+
 
 def save():
     f = open(confpath, "w")

@@ -223,6 +223,7 @@ class WordBuffer():
             return self._cookmark + self.get() + _SKK_MARK_OKURI
         return self._cookmark + self.get()
 
+
 def test():
     import doctest
     doctest.testmod()

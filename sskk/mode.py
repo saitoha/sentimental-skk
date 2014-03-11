@@ -70,6 +70,7 @@ import eisuudb
 
 
 class InputMode(IModeListenerImpl):
+
     '''
     モードの管理をします。
     '''
