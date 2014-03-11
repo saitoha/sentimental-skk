@@ -24,7 +24,6 @@ import re
 import settings
 import logging
 import time
-import socket
 
 homedir = os.path.expanduser('~')
 rcdir = os.path.join(homedir, '.sskk')
@@ -48,6 +47,7 @@ _okuridb = {}
 
 user_dict_file = None
 
+
 class SkkLineLoader():
 
     _encoding = 0
@@ -57,14 +57,17 @@ class SkkLineLoader():
     def _decode_line(self, line):
         try:
             return unicode(line, self._encoding_list[self._encoding])
-        except UnicodeDecodeError, e:
-            self._encoding = 1 - self._encoding # flip
+        except UnicodeDecodeError:
+            self._encoding = 1 - self._encoding  # flip
         return unicode(line, self._encoding_list[self._encoding])
 
     def parse(self, line):
         if len(line) < 4 or line[1] == ';':
             return
-        line = self._decode_line(line)
+        try:
+            line = self._decode_line(line)
+        except UnicodeDecodeError:
+            return
         match = self._pattern.match(line)
         if not match:
             template = '_load_dict: can\'t load the entry: %s'
@@ -95,8 +98,6 @@ class SkkLineLoader():
                 _tangodb[alphakey] = value.split('/')
 
 
-
-
 class Expander():
 
     limit = 10
@@ -110,7 +111,7 @@ class Expander():
                 candidate.append(key + c)
             else:
                 self._expand_all(key + c, (x for x in value.items()), candidate)
-    
+
     def _expand_sparse(self, key, current, candidate, generators):
         limit = self.limit
         for c, value in current:
@@ -124,7 +125,7 @@ class Expander():
                 generators.append((key, current))
                 return True
         return False
-    
+
     def expand(self, key, current, candidate):
         limit = settings.get('suggest.max')
         self.limit = limit
@@ -148,6 +149,7 @@ class Expander():
                                 break
                 elif not current:
                     candidate.append(key)
+
 
 class Completer():
 
@@ -174,9 +176,9 @@ class Completer():
                 _current = _current[_c]
             else:
                 return None
-    
+
         expander = self._expander
-    
+
         candidate = list()
         if not finals:
             expander.expand(u'', _current, candidate)
@@ -201,6 +203,7 @@ class Completer():
 completer = Completer()
 
 _control_chars = re.compile('[\x00-\x1f\x7f\x80-\x9f\xff]')
+
 
 def feedback(key, value):
     global user_dict_file
@@ -239,8 +242,9 @@ def _escape(s):
 def _load_dict(filename):
     try:
         thread.start_new_thread(_load_dict_impl, (filename))
-    except Exception, e:
+    except Exception:
         _load_dict_impl(filename)
+
 
 def _load_dict_impl(filename):
 
@@ -265,7 +269,7 @@ def _get_fallback_dict_path(name):
 def _load_history(filename):
     try:
         thread.start_new_thread(_load_history_impl, (filename))
-    except Exception, e:
+    except Exception:
         _load_history_impl(filename)
 
 
@@ -286,6 +290,7 @@ def _load_history_impl(filename):
             values.append(value)
         else:
             _tangodb[key] = [value]
+
 
 def _load_user_dict():
     """
@@ -336,6 +341,7 @@ def _load_user_dict():
             _load_dict(os.path.join(dictdir, f))
         except ImportError, e:
             logging.exception(e)
+
 
 def _load_builtin_dict():
     """
@@ -397,6 +403,7 @@ def _load_builtin_dict():
             logging.exception(e)
 
     logging.info("Dictionary initialization processes are completed.")
+
 
 def gettango(key):
     if key in _user_tangodb:
@@ -484,7 +491,7 @@ def get_from_cgi_api(clauses, key):
             key, cgi_candidates = clauseinfo
             candidates = gettango(key)
             for candidate in cgi_candidates:
-                if not candidate in candidates: 
+                if not candidate in candidates:
                     candidates.append(candidate)
             clause = Clause(key, candidates)
             clauses.add(clause)
@@ -634,6 +641,7 @@ class Clauses:
 
 
 def _create_dns_cache():
+    import socket
     """
     create DNS cache for www.google.com
     """
@@ -655,6 +663,7 @@ except Exception, e:
     logging.warning("Fallback to synchronous initialization for dictionaries.")
     _load_user_dict()
     _load_builtin_dict()
+
 
 def test():
     import doctest
