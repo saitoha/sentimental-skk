@@ -18,10 +18,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ***** END LICENSE BLOCK *****
 
-import dictionary
-
-dictionary.initialize()
-
 def _parseopt():
 
     import optparse
@@ -140,12 +136,15 @@ def _start_logging():
 
 
 def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
+    import dictionary
     import sys
     import os
     import codecs
     import logging
     import __init__
     import settings
+
+    dictionary.initialize()
 
     if options.version:
         _showversion()
