@@ -136,15 +136,10 @@ def _start_logging():
 
 
 def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
-    import dictionary
     import sys
     import os
     import codecs
     import logging
-    import __init__
-    import settings
-
-    dictionary.initialize()
 
     if options.version:
         _showversion()
@@ -156,6 +151,11 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
         return
 
     _start_logging()
+
+    import __init__
+    import settings
+    import dictionary
+    dictionary.initialize()
 
     # retrive starting command
     if args:
