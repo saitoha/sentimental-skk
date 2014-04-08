@@ -140,21 +140,10 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
     import os
     import codecs
     import logging
-
-    if options.version:
-        _showversion()
-        return
-
-    if os.getenv('__SSKK_VERTION'):
-        print('\n＼SSKK process is already running！！！／\n')
-        print('       三 ( ´_ゝ`）三 ( ´_ゝ`）\n')
-        return
-
-    _start_logging()
-
     import __init__
     import settings
     import dictionary
+
     dictionary.initialize()
 
     # retrive starting command
@@ -306,7 +295,18 @@ def main():
 
     import os
 
+    if os.getenv('__SSKK_VERTION'):
+        print('\n＼SSKK process is already running！！！／\n')
+        print('       三 ( ´_ゝ`）三 ( ´_ゝ`）\n')
+        return
+
+    _start_logging()
+
     options, args = _parseopt()
+
+    if options.version:
+        _showversion()
+        return
 
     _mainimpl(options, args,
               env_shell=os.getenv('SHELL'),
