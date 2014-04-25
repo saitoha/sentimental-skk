@@ -201,7 +201,7 @@ def _mainimpl(options, args, env_shell='', env_term='', env_lang=''):
 
     termprop = _showsplash(output)
 
-    os.environ['__SSKK_VERTION'] = __init__.__version__
+    os.environ['__SSKK_VERSION'] = __init__.__version__
     if settings.get('use_title'):
         use_title = True
     else:
