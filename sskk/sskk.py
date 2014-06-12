@@ -295,7 +295,7 @@ def main():
 
     import os
 
-    if os.getenv('__SSKK_VERTION'):
+    if os.getenv('__SSKK_VERSION'):
         print('\n＼SSKK process is already running！！！／\n')
         print('       三 ( ´_ゝ`）三 ( ´_ゝ`）\n')
         return
