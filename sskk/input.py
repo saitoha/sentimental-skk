@@ -91,8 +91,12 @@ class IListboxListenerImpl(IListboxListener):
     def oninput(self, listbox, context, c):
         if c == 0x0d:  # CR C-m
             self.onsettled(listbox, context)
-        elif c == settings.get('skk-kakutei-key'):  # LF C-j
+        elif c == settings.get('skk-kakutei-key-pass'):  # LF C-j
             self.onsettled(listbox, context)
+            return False
+        elif c == settings.get('skk-kakutei-key'):  # CR C-m
+            self.onsettled(listbox, context)
+            return True
         elif c == 0x07:  # BEL C-g
             self.oncancel(listbox, context)
             return True

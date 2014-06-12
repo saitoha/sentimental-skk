@@ -30,7 +30,7 @@ _rule = {
     '\x07': u'@skk-cancel',                  # C-g
     '\x08': u'@skk-back',                    # C-h BS
     '\x09': u'@skkmenu-next',                # C-i TAB
-    '\x0a': u'@skk-kakutei-key',             # C-j
+    '\x0a': u'@skk-kakutei-key-pass',        # C-j
     '\x0b': u'@skk-cancel-pass',             # C-k
     '\x0c': u'@skk-cancel-pass',             # C-l
     '\x0d': u'@skk-kakutei-key',             # C-m Enter
